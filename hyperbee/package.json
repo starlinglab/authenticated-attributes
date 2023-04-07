@@ -1,0 +1,7 @@
+{
+  "dependencies": {
+    "bson": "^5.2.0",
+    "corestore": "^6.5.1",
+    "hyperbee": "^2.6.0"
+  }
+}
