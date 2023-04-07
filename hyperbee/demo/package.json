@@ -6,7 +6,9 @@
   "dependencies": {
     "bson": "^5.2.0",
     "hyperbee": "^2.7.3",
-    "hypercore": "^10.8.1"
+    "hypercore": "^10.8.1",
+    "multiformats": "^11.0.2",
+    "opentimestamps": "^0.4.9"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
