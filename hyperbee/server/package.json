@@ -1,0 +1,11 @@
+{
+  "name": "server",
+  "main": "index.js",
+  "dependencies": {
+    "bson": "^5.2.0",
+    "express": "^4.18.2",
+    "hyperbee": "^2.7.3",
+    "hypercore": "^10.8.1"
+  },
+  "type": "module"
+}

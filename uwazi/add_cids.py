@@ -4,7 +4,7 @@ import json
 import subprocess
 
 UWAZI_ROOT = "/home/makeworld/uwazi"
-CID_METADATA_NAME = "cid"
+CID_METADATA_NAME = "sha256cid"
 USERNAME = "admin"
 PASSWORD = "change this password now"
 
