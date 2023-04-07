@@ -1,4 +1,4 @@
-hyperbee/demo-storage
+*.hypercore
 
 # Created by https://www.toptal.com/developers/gitignore/api/python,node,linux,macos,windows
 # Edit at https://www.toptal.com/developers/gitignore?templates=python,node,linux,macos,windows
