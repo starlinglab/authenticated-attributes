@@ -2,7 +2,7 @@ import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
 import { BSON } from "bson";
 
-const core = new Hypercore("./demo-storage");
+const core = new Hypercore('./demo.hypercore')
 
 // core.key and core.discoveryKey will only be set after core.ready resolves
 await core.ready();
