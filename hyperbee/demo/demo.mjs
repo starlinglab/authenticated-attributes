@@ -2,7 +2,7 @@ import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
 import { BSON } from "bson";
 
-const core = new Hypercore('./demo.hypercore')
+const core = new Hypercore("./demo.hypercore");
 
 // core.key and core.discoveryKey will only be set after core.ready resolves
 await core.ready();
@@ -30,31 +30,32 @@ const encrypt = (v, encryptionKey) => "xxxxx";
 
 const dbPut = (id, attr, value, encryptionKey = false) => {
   const rawAttestation = { CID: id, [attr]: value };
-  const encryptedAttestation = { CID: id, [attr]: encrypt(value, encryptionKey) };
   const signature = signAttestation(rawAttestation);
   const signedAttestation = {
     ...rawAttestation,
     signature,
   };
 
+  let attestation;
+
   if (encryptionKey) {
-    db.put(
-      makeKey(id, attr),
-      BSON.serialize({
-        ...encryptedAttestation,
-        signature,
-        timestamp: timestampAttestation(signedAttestation),
-      })
-    );
+    attestation = {
+      CID: id,
+      [attr]: encrypt(value, encryptionKey),
+    };
   } else {
-    db.put(
-      makeKey(id, attr),
-      BSON.serialize({
-        ...signedAttestation,
-        timestamp: timestampAttestation(signedAttestation),
-      })
-    );
+    attestation = rawAttestation;
   }
+
+  const key = makeKey(id, attr);
+  return db.put(
+    key,
+    BSON.serialize({
+      ...attestation,
+      signature,
+      timestamp: timestampAttestation(signedAttestation),
+    })
+  );
 };
 
 // Put BSON value
