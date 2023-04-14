@@ -1,5 +1,4 @@
 import OpenTimestamps from "opentimestamps";
-import { CID } from "multiformats";
 
 const dummyCID = "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54";
 
@@ -11,15 +10,10 @@ const timestampAttestation = (signedAtt) => {
   return timestampHash(cidForAtt);
 };
 
-const getSHA256FromCIDv1 = (cidStr) => CID.parse(cidStr).multihash.digest;
-
 const timestampHash = async (cidStr) => {
-  const hash = getSHA256FromCIDv1(cidStr);
-  // hash must be the same length as SHA256 and be an Array or ArrayBuffer, see
-  // https://github.com/opentimestamps/javascript-opentimestamps/blob/36e27fca500273a63e013fff62d963357e882a27/src/detached-timestamp-file.js#L151
-  const detached = OpenTimestamps.DetachedTimestampFile.fromHash(
+  const detached = OpenTimestamps.DetachedTimestampFile.fromBytes(
     new OpenTimestamps.Ops.OpSHA256(),
-    hash
+    Buffer.from(cidStr)
   );
 
   await OpenTimestamps.stamp(detached);
