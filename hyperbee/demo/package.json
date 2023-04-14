@@ -1,12 +1,13 @@
 {
   "name": "hyperbee-demo",
   "version": "0.0.1",
-  "description": "Testing BSON/Schema",
+  "description": "Testing schema",
   "main": "example.mjs",
   "dependencies": {
-    "bson": "^5.2.0",
+    "@ipld/dag-cbor": "^9.0.0",
     "hyperbee": "^2.7.3",
     "hypercore": "^10.8.1",
+    "multiformats": "^11.0.2",
     "opentimestamps": "^0.4.9"
   },
   "scripts": {

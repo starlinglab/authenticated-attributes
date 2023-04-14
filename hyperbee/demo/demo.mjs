@@ -1,6 +1,6 @@
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
-import { BSON } from "bson";
+import { decode } from "@ipld/dag-cbor";
 
 import { dbPut } from "./src/dbPut.mjs";
 import { makeKey } from "./src/makeKey.mjs";
@@ -23,6 +23,6 @@ const value =
 // Add attestation, sign, timestamp, and encrypt as needed.
 await dbPut(db, waczCID, attribute, value, false);
 
-// Decode and print BSON value
+// Decode and print value
 const data = await db.get(makeKey(waczCID, attribute));
-console.log(BSON.deserialize(data.value, { promoteBuffers: true }));
+console.log(decode(data.value));

@@ -2,7 +2,8 @@ import express from 'express'
 import Hypercore from 'hypercore'
 import Hyperbee from 'hyperbee'
 import { toString } from 'b4a'
-import { BSON } from 'bson'
+import { encode, decode } from '@ipld/dag-cbor'
+import { CID } from 'multiformats'
 
 const app = express()
 const port = 3000
@@ -17,8 +18,8 @@ const db = new Hyperbee(core, {
     valueEncoding: 'binary'
 })
 
-// await db.put("abc/test", BSON.serialize({ "sig": 123, "timestamp": new Uint8Array([0x0, 0x1, 0x2, 0x3]) }))
-// await db.put("abc/test2", BSON.serialize({ "value": "another value" }))
+// await db.put("abc/test", encode({ "sig": 123, "timestamp": new Uint8Array([0x0, 0x1, 0x2, 0x3]) }))
+// await db.put("abc/test2", encode({ "value": "another value" }))
 
 app.get('/:cid', async (req, res) => {
     let metadata = {}
@@ -26,11 +27,11 @@ app.get('/:cid', async (req, res) => {
         gte: req.params.cid,
         lt: `${req.params.cid}0`, // 0 is the symbol before / in binary, so the range of keys is the keys in the format <cid>/<any>
     })) {
-        metadata[key.slice(req.params.cid.length + 1)] = BSON.deserialize(value)
+        metadata[key.slice(req.params.cid.length + 1)] = decode(value)
     }
 
-    res.type('application/bson')
-    res.send(BSON.serialize(metadata))
+    res.type('application/cbor')
+    res.send(Buffer.from(encode(metadata)))
 })
 
 app.listen(port, () => {
