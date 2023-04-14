@@ -2,7 +2,7 @@
 
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
-import { BSON } from "bson";
+import { decode } from "@ipld/dag-cbor";
 
 import { makeKey } from "./src/makeKey.mjs";
 import { getInfo } from "./src/timestamp.mjs";
@@ -20,8 +20,8 @@ const db = new Hyperbee(core, {
 const waczCID = "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54";
 const attribute = "description";
 
-// Decode and print BSON value
+// Decode and print value
 const result = await db.get(makeKey(waczCID, attribute));
-const resultObj = BSON.deserialize(result.value, { promoteBuffers: true });
+const resultObj = decode(result.value);
 console.log(resultObj);
 getInfo(resultObj.timestamp);
