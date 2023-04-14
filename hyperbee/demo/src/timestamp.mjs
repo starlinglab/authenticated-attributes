@@ -21,8 +21,6 @@ const timestampHash = async (cidStr) => {
   return fileOts;
 };
 
-// TODO: fix, doesn't fully work yet
-// Throws error 'StreamDeserialization deserialize: Invalid param'
 const getInfo = (bytes) => {
   const detached = OpenTimestamps.DetachedTimestampFile.deserialize(bytes);
   const infoResult = OpenTimestamps.info(detached);
