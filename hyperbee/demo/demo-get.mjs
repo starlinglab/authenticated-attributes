@@ -22,6 +22,6 @@ const attribute = "description";
 
 // Decode and print BSON value
 const result = await db.get(makeKey(waczCID, attribute));
-const resultObj = BSON.deserialize(result.value);
+const resultObj = BSON.deserialize(result.value, { promoteBuffers: true });
 console.log(resultObj);
-console.log(getInfo(resultObj.timestamp));
+getInfo(resultObj.timestamp);

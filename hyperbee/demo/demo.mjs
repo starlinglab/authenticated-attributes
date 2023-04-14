@@ -25,4 +25,4 @@ await dbPut(db, waczCID, attribute, value, false);
 
 // Decode and print BSON value
 const data = await db.get(makeKey(waczCID, attribute));
-console.log(BSON.deserialize(data.value));
+console.log(BSON.deserialize(data.value, { promoteBuffers: true }));
