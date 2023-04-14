@@ -1,7 +1,20 @@
 {
+  "name": "hyperbee-demo",
+  "version": "0.0.1",
+  "description": "Testing BSON/Schema",
+  "main": "example.mjs",
   "dependencies": {
     "bson": "^5.2.0",
-    "corestore": "^6.5.1",
-    "hyperbee": "^2.6.0"
+    "hyperbee": "^2.7.3",
+    "hypercore": "^10.8.1",
+    "opentimestamps": "^0.4.9"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "prettier": "2.8.7"
   }
 }
