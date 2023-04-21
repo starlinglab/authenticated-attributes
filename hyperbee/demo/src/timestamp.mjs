@@ -1,24 +1,21 @@
 import OpenTimestamps from "opentimestamps";
 
-const dummyCID = "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54";
+import { encodeAttestation } from "./encodeAttestation.mjs";
 
-// TODO: replace with non-dummy CID
-const getCIDForAtt = (a) => dummyCID;
-
-const timestampAttestation = (signedAtt) => {
-  const cidForAtt = getCIDForAtt(signedAtt);
-  return timestampHash(cidForAtt);
-};
-
-const timestampHash = async (cidStr) => {
+const timestampAttestation = async (signedAttestation) => {
+  const signedAttCID = await encodeAttestation(signedAttestation);
   const detached = OpenTimestamps.DetachedTimestampFile.fromBytes(
     new OpenTimestamps.Ops.OpSHA256(),
-    Buffer.from(cidStr)
+    Buffer.from(signedAttCID.toString())
   );
 
   await OpenTimestamps.stamp(detached);
   const fileOts = detached.serializeToBytes();
-  return fileOts;
+  return {
+    incompleteProof: fileOts,
+    timestampedValue: signedAttCID,
+    submitted: new Date().toISOString(),
+  };
 };
 
 const getInfo = (bytes) => {
@@ -27,4 +24,4 @@ const getInfo = (bytes) => {
   console.log(infoResult);
 };
 
-export { timestampAttestation, timestampHash, getInfo };
+export { timestampAttestation, getInfo };

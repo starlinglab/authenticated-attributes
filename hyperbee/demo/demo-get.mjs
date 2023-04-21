@@ -6,6 +6,7 @@ import { decode } from "@ipld/dag-cbor";
 
 import { makeKey } from "./src/makeKey.mjs";
 import { getInfo } from "./src/timestamp.mjs";
+import { verifyAttSignature } from "./src/verifySignature.mjs";
 
 // Set up Hypercore and Hyperbee
 const core = new Hypercore("./demo.hypercore");
@@ -24,4 +25,8 @@ const attribute = "description";
 const result = await db.get(makeKey(waczCID, attribute));
 const resultObj = decode(result.value);
 console.log(resultObj);
-getInfo(resultObj.timestamp);
+console.log("signature verified?", await verifyAttSignature(resultObj));
+// TODO
+// console.log('timestamp verified?', verifyTimestamp(resultObj));
+
+getInfo(resultObj.timestamp.incompleteProof);
