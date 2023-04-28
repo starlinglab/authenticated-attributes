@@ -26,3 +26,12 @@ await dbPut(db, waczCID, attribute, value, false);
 // Decode and print value
 const data = await db.get(makeKey(waczCID, attribute));
 console.log(decode(data.value));
+
+// Encrypted value
+//
+// 32 byte DEMO encryption key that is reused in demo-get.mjs
+const key = Buffer.from(
+  "QHle+CRiaq8iv1fP9xopZGbO6F7F8926TpSOrReQJ1Q=",
+  "base64"
+);
+await dbPut(db, waczCID, "secret-stuff", [123, "secret value"], key);

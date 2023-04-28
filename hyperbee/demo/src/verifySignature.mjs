@@ -2,7 +2,7 @@ import * as ed from "@noble/ed25519";
 
 import { encodeAttestation } from "./encodeAttestation.mjs";
 
-const verifyAttSignature = async (attestationObj) => {
+const verifyAttSignature = async (attestationObj, givenPubKey) => {
   // check that the signedMsg is the CID for the rawAttestation
   const rawAttestationCID = await encodeAttestation(attestationObj.attestation);
   if (!rawAttestationCID.equals(attestationObj.signature.signedMsg)) {
@@ -12,8 +12,20 @@ const verifyAttSignature = async (attestationObj) => {
   }
 
   // verify the signature object
+
   const { signature, signedMsg, pubKey } = attestationObj.signature;
-  const isValid = await ed.verifyAsync(signature, signedMsg, pubKey);
+
+  // Confirm public key matches expected one
+  const areEqual =
+    givenPubKey.length === pubKey.length &&
+    givenPubKey.every((value, index) => value === pubKey[index]);
+  if (!areEqual) {
+    console.log(givenPubKey);
+    console.log(pubKey);
+    throw new Error("given public key does not match stored one");
+  }
+
+  const isValid = await ed.verifyAsync(signature, signedMsg, givenPubKey);
   if (!isValid) {
     throw new Error("signature could not be validated");
   }

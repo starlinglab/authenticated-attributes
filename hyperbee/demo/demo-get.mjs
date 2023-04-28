@@ -2,11 +2,10 @@
 
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
-import { decode } from "@ipld/dag-cbor";
+import * as ed from "@noble/ed25519";
 
-import { makeKey } from "./src/makeKey.mjs";
 import { getInfo } from "./src/timestamp.mjs";
-import { verifyAttSignature } from "./src/verifySignature.mjs";
+import { dbGet } from "./src/dbGet.mjs";
 
 // Set up Hypercore and Hyperbee
 const core = new Hypercore("./demo.hypercore");
@@ -20,13 +19,22 @@ const db = new Hyperbee(core, {
 // Attestation data
 const waczCID = "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54";
 const attribute = "description";
+// TODO: this is just a demo key
+const sigPubKey = await ed.getPublicKeyAsync(
+  Buffer.from("l/bAXV2FQcmsE1zK9P7s6Lih+Traa6hpg9vLRht2wys=", "base64")
+);
 
 // Decode and print value
-const result = await db.get(makeKey(waczCID, attribute));
-const resultObj = decode(result.value);
-console.log(resultObj);
-console.log("signature verified?", await verifyAttSignature(resultObj));
+const result = await dbGet(db, waczCID, attribute, sigPubKey);
+console.log(result);
 // TODO
 // console.log('timestamp verified?', verifyTimestamp(resultObj));
 
-getInfo(resultObj.timestamp.incompleteProof);
+getInfo(result.timestamp.incompleteProof);
+
+// Encrypted value
+const key = Buffer.from(
+  "QHle+CRiaq8iv1fP9xopZGbO6F7F8926TpSOrReQJ1Q=",
+  "base64"
+);
+console.log(await dbGet(db, waczCID, "secret-stuff", sigPubKey, key));
