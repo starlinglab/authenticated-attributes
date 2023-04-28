@@ -22,7 +22,7 @@ const verifyAttSignature = async (attestationObj, givenPubKey) => {
   if (!areEqual) {
     console.log(givenPubKey);
     console.log(pubKey);
-    throw new Error("given public key does not match stored one");
+    throw new Error(`given public key (${givenPubKey}) does not match stored one (${pubKey}`);
   }
 
   const isValid = await ed.verifyAsync(signature, signedMsg, givenPubKey);
