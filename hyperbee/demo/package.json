@@ -9,7 +9,8 @@
     "hyperbee": "^2.7.3",
     "hypercore": "^10.8.1",
     "multiformats": "^11.0.2",
-    "opentimestamps": "^0.4.9"
+    "opentimestamps": "^0.4.9",
+    "tweetnacl": "^1.0.3"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
