@@ -15,6 +15,8 @@ import { makeKey } from "./makeKey.mjs";
  * not the whole object.
  *
  * Timestamping is currently not validated.
+ *
+ * sigKey is an ed25519 public key.
  */
 const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
   const result = await db.get(makeKey(id, attr));

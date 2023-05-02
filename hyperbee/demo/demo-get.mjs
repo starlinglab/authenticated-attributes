@@ -4,6 +4,7 @@ import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
 import * as ed from "@noble/ed25519";
 
+import { keyFromPem } from "./src/signAttestation.mjs";
 import { getInfo } from "./src/timestamp.mjs";
 import { dbGet } from "./src/dbGet.mjs";
 
@@ -19,10 +20,8 @@ const db = new Hyperbee(core, {
 // Attestation data
 const waczCID = "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54";
 const attribute = "description";
-// TODO: this is just a demo key
-const sigPubKey = await ed.getPublicKeyAsync(
-  Buffer.from("l/bAXV2FQcmsE1zK9P7s6Lih+Traa6hpg9vLRht2wys=", "base64")
-);
+// XXX: just a demo key
+const sigPubKey = await ed.getPublicKeyAsync(await keyFromPem("./demokey.pem"));
 
 // Decode and print value
 const result = await dbGet(db, waczCID, attribute, sigPubKey);
@@ -33,6 +32,8 @@ console.log(result);
 getInfo(result.timestamp.incompleteProof);
 
 // Encrypted value
+//
+// 32 byte DEMO encryption key that is reused in demo.mjs
 const key = Buffer.from(
   "QHle+CRiaq8iv1fP9xopZGbO6F7F8926TpSOrReQJ1Q=",
   "base64"
