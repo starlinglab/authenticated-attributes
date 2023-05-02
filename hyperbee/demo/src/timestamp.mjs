@@ -9,7 +9,12 @@ const timestampAttestation = async (signedAttestation) => {
     Buffer.from(signedAttCID.toString())
   );
 
+  // Timestamp, but disable console.log first to prevent "Submitting to remote calendar" messages
+  var oldConsoleLog = console.log;
+  console.log = () => {};
   await OpenTimestamps.stamp(detached);
+  console.log = oldConsoleLog;
+
   const fileOts = detached.serializeToBytes();
   return {
     incompleteProof: fileOts,

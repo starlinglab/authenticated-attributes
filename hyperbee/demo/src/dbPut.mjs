@@ -1,6 +1,5 @@
 import { encode } from "@ipld/dag-cbor";
 import { CID } from "multiformats";
-import * as ed from "@noble/ed25519";
 
 import { signAttestation } from "./signAttestation.mjs";
 import { encryptValue } from "./encryptValue.mjs";
