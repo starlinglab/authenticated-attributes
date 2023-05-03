@@ -6,6 +6,7 @@ import * as ed from "@noble/ed25519";
 
 import { getInfo } from "./src/timestamp.mjs";
 import { dbGet } from "./src/dbGet.mjs";
+import { dbUpgrade } from "./src/dbUpgrade.mjs";
 
 // Set up Hypercore and Hyperbee
 const core = new Hypercore("./demo.hypercore");
@@ -30,7 +31,14 @@ console.log(result);
 // TODO
 // console.log('timestamp verified?', verifyTimestamp(resultObj));
 
-getInfo(result.timestamp.incompleteProof);
+getInfo(result.timestamp.proof);
+
+// Upgrade and check
+// console.log("Upgrading...");
+// await dbUpgrade(db, waczCID, attribute);
+// getInfo(result.timestamp.proof);
+
+console.log(result);
 
 // Encrypted value
 const key = Buffer.from(
