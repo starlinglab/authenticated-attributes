@@ -30,7 +30,7 @@ const datadb = new Hyperbee(datacore, {
 });
 
 const keycore = new Hypercore(keycorePath, undefined, {
-  encryptionKey: env.KEYCORE_KEY,
+  encryptionKey: Buffer.from(env.KEYCORE_KEY, "base64"),
 });
 await keycore.ready();
 const keydb = new Hyperbee(keycore, {
