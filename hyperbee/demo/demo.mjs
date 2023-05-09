@@ -4,6 +4,7 @@ import { decode } from "@ipld/dag-cbor";
 
 import { dbPut } from "./src/dbPut.mjs";
 import { makeKey } from "./src/makeKey.mjs";
+import { dbGet } from "./src/dbGet.mjs";
 
 // Set up Hypercore and Hyperbee
 const core = new Hypercore("./demo.hypercore");
@@ -20,12 +21,14 @@ const attribute = "description";
 const value =
   "Web archive [ https://t.me/place_kh, https://t.me/place_kh/7848, https://t.me/s/place_kh/7848 ] captured using Browsertrix on 2022-06-07";
 
-// Add attestation, sign, timestamp, and encrypt as needed.
-await dbPut(db, waczCID, attribute, value, false);
+console.log(`CID: ${waczCID}`);
+console.log(`Attribute: ${attribute}`);
+console.log(`Value: ${value}`);
 
-// Decode and print value
-const data = await db.get(makeKey(waczCID, attribute));
-console.log(decode(data.value));
+// Add attestation, sign, timestamp, and encrypt as needed.
+console.log("Storing...");
+await dbPut(db, waczCID, attribute, value, false);
+console.log("Done");
 
 // Encrypted value
 //
@@ -34,4 +37,7 @@ const key = Buffer.from(
   "QHle+CRiaq8iv1fP9xopZGbO6F7F8926TpSOrReQJ1Q=",
   "base64"
 );
+
+console.log("Storing encrypted attribute 'secret-stuff'");
 await dbPut(db, waczCID, "secret-stuff", [123, "secret value"], key);
+console.log("Done");
