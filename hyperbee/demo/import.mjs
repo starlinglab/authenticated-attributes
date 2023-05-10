@@ -88,12 +88,35 @@ const ipfsProc = spawnSync(
 );
 const waczCID = ipfsProc.stdout.toString("utf-8").trim();
 
-await dbPut(datadb, waczCID, "asset", waczCID);
+const ipfsProc2 = spawnSync("ipfs", [
+  "add",
+  "--only-hash=true",
+  "--wrap-with-directory=false",
+  "--cid-version=1",
+  "--hash=sha2-256",
+  "--pin=true",
+  "--raw-leaves=true",
+  "--chunker=size-262144",
+  "--nocopy=false",
+  "--fscache=false",
+  "--inline=false",
+  "--inline-limit=32",
+  "--quieter",
+  zipPath,
+]);
+const zipCID = ipfsProc2.stdout.toString("utf-8").trim();
+
+await dbPut(datadb, waczCID, "asset", waczCID); // So that asset CID is ts'd and signed directly
 console.log(`Recorded CID in db: ${waczCID}`);
 await dbPut(datadb, waczCID, "filename", waczEntry.entryName);
 console.log(`Recorded filename in db: ${waczEntry.entryName}`);
 await dbPut(datadb, waczCID, "zipname", path.basename(zipPath));
 console.log(`Recorded zipname in db: ${path.basename(zipPath)}`);
+
+// Store as attribute and alias
+await dbPut(datadb, waczCID, "zipcid", zipCID);
+await dbPut(datadb, zipCID, "assetcid", waczCID);
+console.log(`Recorded zipcid in db: ${zipCID}`);
 
 // Make encryption key and store
 const encKey = newKey();
