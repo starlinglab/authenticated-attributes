@@ -1,17 +1,15 @@
 import express from "express";
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
-import { toString } from "b4a";
 import { encode, decode } from "@ipld/dag-cbor";
 
 const app = express();
-const port = 3001;
-const corePath = "server.hypercore";
+const port = process.env.PORT ?? 3001;
+const corePath = process.env.UWAZI_HYPERCORE ?? "server.hypercore";
 
 // Setup hyperbee
 const core = new Hypercore(corePath);
 await core.ready();
-console.log("hypercore key:", toString(core.key, "hex"));
 const db = new Hyperbee(core, {
   keyEncoding: "utf-8",
   valueEncoding: "binary",
