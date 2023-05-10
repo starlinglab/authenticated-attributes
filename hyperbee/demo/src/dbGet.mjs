@@ -15,9 +15,14 @@ import { makeKey } from "./makeKey.mjs";
  * not the whole object.
  *
  * Timestamping is currently not validated.
+ *
+ * null is returned if the key doesn't exist in the database.
  */
 const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
   const result = await db.get(makeKey(id, attr));
+  if (result === null) {
+    return null;
+  }
   const resultObj = decode(result.value);
   if (resultObj.attestation.encrypted && encKey) {
     resultObj.attestation.value = decryptValue(

@@ -6,6 +6,7 @@ import Hyperbee from "hyperbee";
 import AdmZip from "adm-zip";
 
 import { dbPut } from "./src/dbPut.mjs";
+import { dbGet } from "./src/dbGet.mjs";
 import { newKey } from "./src/encryptValue.mjs";
 import path from "node:path";
 
@@ -14,6 +15,11 @@ if (argv.length != 5) {
     "must specify hypercore for import and for key storage, as well as ZIP file"
   );
 }
+
+// TODO: load from elsewhere.
+const sigPubKey = await ed.getPublicKeyAsync(
+  Buffer.from("l/bAXV2FQcmsE1zK9P7s6Lih+Traa6hpg9vLRht2wys=", "base64")
+);
 
 // Element 0 and 1 are "node" and "import.mjs"
 const datacorePath = argv[2];
@@ -133,6 +139,29 @@ for (var key in metaContent) {
 
   if (key === "extras") {
     for (var extrasKey in metaContent[key]) {
+      if (extrasKey === "relatedAssetCid") {
+        // Store this as parent<->child relationship
+        //
+        // First transform from zip CID into asset CID
+        const result = await dbGet(
+          datadb,
+          metaContent[key][extrasKey],
+          "assetcid",
+          sigPubKey,
+          false,
+          true
+        );
+        if (result === null) {
+          // TODO: process zips first so this doesn't happen?
+          throw new Error(
+            `couldn't find zip cid for relatedAssetCid: ${metaContent[key][extrasKey]}`
+          );
+        }
+        const parentAssetCid = result.value;
+        // Store relationship
+        dbPut(datadb, waczCID, "childOf", parentAssetCid);
+        dbPut(datadb, parentAssetCid, "parentOf", waczCID);
+      }
       dbPut(datadb, waczCID, extrasKey, metaContent[key][extrasKey]);
     }
   } else if (key === "private") {
