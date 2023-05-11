@@ -15,12 +15,19 @@ session = requests.Session()
 
 class Entity:
     def __init__(self, data: dict) -> None:
-        self.filename = data["documents"][0]["filename"]
         self.data = data
+        self.filename = self._get_filename()
         self.filepath = os.path.join(UWAZI_ROOT, "uploaded_documents", self.filename)
 
     def __repr__(self) -> str:
         return f"Entity(filename={self.filename})"
+
+    def _get_filename(self) -> str:
+        if len(self.data["documents"]) == 0:
+            # Must have an attachment instead
+            return self.data["attachments"][0]["filename"]
+        # Document (PDF)
+        return self.data["documents"][0]["filename"]
 
     def _calc_cid(self) -> str:
         proc = subprocess.run(
@@ -99,9 +106,8 @@ def entities_without_cid():
             # Has CID
             print("Has CID, skipping")
             continue
-        if len(item["documents"]) > 1:
-            # Has more than one document, not allowed
-            print("Multi-document, skipping")
+        if len(item["documents"]) + len(item["attachments"]) != 1:
+            print("Multi-file or no files, skipping")
             continue
 
         yield Entity(item)
