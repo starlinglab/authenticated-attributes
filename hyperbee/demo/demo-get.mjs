@@ -6,6 +6,7 @@ import * as ed from "@noble/ed25519";
 
 import { keyFromPem } from "./src/signAttestation.mjs";
 import { getInfo } from "./src/timestamp.mjs";
+import { dbUpgrade } from "./src/dbUpgrade.mjs";
 import { dbGet, dbIsEncrypted, dbRawValue } from "./src/dbGet.mjs";
 
 // Set up Hypercore and Hyperbee
@@ -30,7 +31,13 @@ console.log(result);
 // console.log('timestamp verified?', verifyTimestamp(resultObj));
 
 console.log("\nExtra timestamp info:");
-getInfo(result.timestamp.incompleteProof);
+getInfo(result.timestamp.proof);
+
+// Upgrade and check
+// console.log("Upgrading...");
+// await dbUpgrade(db, waczCID, attribute);
+// getInfo(result.timestamp.proof);
+
 
 // Encrypted value
 //
