@@ -1,14 +1,15 @@
 import { argv, env } from "node:process";
 import { spawnSync } from "node:child_process";
+import path from "node:path";
 
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
 import AdmZip from "adm-zip";
 
-import { dbPut } from "./src/dbPut.mjs";
+import { dbPut, setSigningKey } from "./src/dbPut.mjs";
 import { dbGet } from "./src/dbGet.mjs";
 import { newKey } from "./src/encryptValue.mjs";
-import path from "node:path";
+import { keyFromPem } from "./src/signAttestation.mjs";
 
 if (argv.length != 5) {
   throw new Error(
@@ -16,10 +17,10 @@ if (argv.length != 5) {
   );
 }
 
-// TODO: load from elsewhere.
-const sigPubKey = await ed.getPublicKeyAsync(
-  Buffer.from("l/bAXV2FQcmsE1zK9P7s6Lih+Traa6hpg9vLRht2wys=", "base64")
-);
+const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
+const sigPubKey = await ed.getPublicKeyAsync(sigKey);
+
+setSigningKey(sigKey);
 
 // Element 0 and 1 are "node" and "import.mjs"
 const datacorePath = argv[2];
