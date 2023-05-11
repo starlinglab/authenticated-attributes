@@ -1,11 +1,8 @@
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
-import { decode } from "@ipld/dag-cbor";
 
 import { dbPut, setSigningKey } from "./src/dbPut.mjs";
-import { makeKey } from "./src/makeKey.mjs";
 import { keyFromPem } from "./src/signAttestation.mjs";
-import { dbGet } from "./src/dbGet.mjs";
 
 // Set up Hypercore and Hyperbee
 const core = new Hypercore("./demo.hypercore");

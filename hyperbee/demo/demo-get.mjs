@@ -1,12 +1,9 @@
-// Test getting the timestamp value from the HyperbeeInstance
-
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
 import * as ed from "@noble/ed25519";
 
 import { keyFromPem } from "./src/signAttestation.mjs";
 import { getInfo } from "./src/timestamp.mjs";
-import { dbUpgrade } from "./src/dbUpgrade.mjs";
 import { dbGet, dbIsEncrypted, dbRawValue } from "./src/dbGet.mjs";
 
 // Set up Hypercore and Hyperbee
@@ -35,9 +32,8 @@ getInfo(result.timestamp.proof);
 
 // Upgrade and check
 // console.log("Upgrading...");
-// await dbUpgrade(db, waczCID, attribute);
+// await dbUpgrade(db, waczCID, attribute, sigPubKey);
 // getInfo(result.timestamp.proof);
-
 
 // Encrypted value
 //
