@@ -1,13 +1,14 @@
 import { argv, env } from "node:process";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
+import fs from "node:fs";
 
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
 import AdmZip from "adm-zip";
+import { CID } from "multiformats";
 
-import { dbPut, setSigningKey } from "./src/dbPut.mjs";
-import { dbGet } from "./src/dbGet.mjs";
+import { dbAppend, dbPut, setSigningKey } from "./src/dbPut.mjs";
 import { newKey } from "./src/encryptValue.mjs";
 import { keyFromPem } from "./src/signAttestation.mjs";
 
@@ -18,14 +19,17 @@ if (argv.length != 5) {
 }
 
 const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
-const sigPubKey = await ed.getPublicKeyAsync(sigKey);
-
 setSigningKey(sigKey);
 
 // Element 0 and 1 are "node" and "import.mjs"
 const datacorePath = argv[2];
 const keycorePath = argv[3];
 const zipPath = argv[4];
+
+// JSON file mapping encrypted archive CIDs to content CIDs
+const cidMapping = JSON.parse(
+  fs.readFileSync(env.MAPPING_JSON_PATH, { encoding: "utf-8" })
+);
 
 // Set up Hypercore and Hyperbee
 
@@ -113,7 +117,7 @@ const ipfsProc2 = spawnSync("ipfs", [
 ]);
 const zipCID = ipfsProc2.stdout.toString("utf-8").trim();
 
-await dbPut(datadb, waczCID, "asset", waczCID); // So that asset CID is ts'd and signed directly
+await dbPut(datadb, waczCID, "asset", CID.parse(waczCID)); // So that asset CID is ts'd and signed directly
 console.log(`Recorded CID in db: ${waczCID}`);
 await dbPut(datadb, waczCID, "filename", waczEntry.entryName);
 console.log(`Recorded filename in db: ${waczEntry.entryName}`);
@@ -121,8 +125,8 @@ await dbPut(datadb, waczCID, "zipname", path.basename(zipPath));
 console.log(`Recorded zipname in db: ${path.basename(zipPath)}`);
 
 // Store as attribute and alias
-await dbPut(datadb, waczCID, "zipcid", zipCID);
-await dbPut(datadb, zipCID, "assetcid", waczCID);
+await dbPut(datadb, waczCID, "zipcid", CID.parse(zipCID));
+await dbPut(datadb, zipCID, "assetcid", CID.parse(waczCID));
 console.log(`Recorded zipcid in db: ${zipCID}`);
 
 // Make encryption key and store
@@ -133,7 +137,7 @@ const metaContent = JSON.parse(metaContentEntry.getData())["contentMetadata"];
 const metaRecorder = JSON.parse(metaRecorderEntry.getData());
 
 // Add all keys, and go inside known object keys
-// dbPut functions are called asynchronously to speed things up
+// dbPut/dbAppend functions are called asynchronously to speed things up
 
 for (var key in metaContent) {
   console.log(`Processing key: ${key}`);
@@ -142,26 +146,12 @@ for (var key in metaContent) {
     for (var extrasKey in metaContent[key]) {
       if (extrasKey === "relatedAssetCid") {
         // Store this as parent<->child relationship
-        //
-        // First transform from zip CID into asset CID
-        const result = await dbGet(
-          datadb,
-          metaContent[key][extrasKey],
-          "assetcid",
-          sigPubKey,
-          false,
-          true
-        );
-        if (result === null) {
-          // TODO: process zips first so this doesn't happen?
-          throw new Error(
-            `couldn't find zip cid for relatedAssetCid: ${metaContent[key][extrasKey]}`
-          );
-        }
-        const parentAssetCid = result.value;
-        // Store relationship
-        dbPut(datadb, waczCID, "childOf", parentAssetCid);
-        dbPut(datadb, parentAssetCid, "parentOf", waczCID);
+        // Use mapping file to turn this encrypted archive CID into a content CID,
+        // then store it as an array
+        const parentEncryptedArchiveCid = metaContent[key][extrasKey];
+        const parentContentCid = cidMapping[parentEncryptedArchiveCid];
+        dbAppend(datadb, waczCID, "childOf", CID.parse(parentContentCid));
+        dbAppend(datadb, parentContentCid, "parentOf", CID.parse(waczCID));
       }
       dbPut(datadb, waczCID, extrasKey, metaContent[key][extrasKey]);
     }

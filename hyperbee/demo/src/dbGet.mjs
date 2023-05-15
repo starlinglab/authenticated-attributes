@@ -44,6 +44,11 @@ const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
   return resultObj;
 };
 
+/**
+ * Returns if the attribute is listed as encrypted.
+ *
+ * No signatures are validated.
+ */
 const dbIsEncrypted = async (db, id, attr) => {
   const result = await db.get(makeKey(id, attr));
   const resultObj = decode(result.value);
