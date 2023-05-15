@@ -60,19 +60,22 @@ if (zipEntries.length < 3) {
 
 let metaContentEntry = false,
   metaRecorderEntry = false,
-  waczEntry = false;
+  contentEntry = false;
 
 zipEntries.forEach(function (zipEntry) {
   if (zipEntry.entryName.endsWith("-meta-content.json")) {
     metaContentEntry = zipEntry;
   } else if (zipEntry.entryName.endsWith("-meta-recorder.json")) {
     metaRecorderEntry = zipEntry;
-  } else if (zipEntry.entryName.endsWith(".wacz")) {
-    waczEntry = zipEntry;
+  } else if (
+    !zipEntry.entryName.includes("-meta-") &&
+    !zipEntry.entryName.includes("/")
+  ) {
+    contentEntry = zipEntry;
   }
 });
 
-if (!metaContentEntry || !metaRecorderEntry || !waczEntry) {
+if (!metaContentEntry || !metaRecorderEntry || !contentEntry) {
   throw new Error("not all three required files were found in the ZIP");
 }
 
@@ -95,9 +98,9 @@ const ipfsProc = spawnSync(
     "--quieter",
     "-",
   ],
-  { input: waczEntry.getData() }
+  { input: contentEntry.getData() }
 );
-const waczCID = ipfsProc.stdout.toString("utf-8").trim();
+const contentCID = ipfsProc.stdout.toString("utf-8").trim();
 
 const ipfsProc2 = spawnSync("ipfs", [
   "add",
@@ -117,21 +120,21 @@ const ipfsProc2 = spawnSync("ipfs", [
 ]);
 const zipCID = ipfsProc2.stdout.toString("utf-8").trim();
 
-await dbPut(datadb, waczCID, "asset", CID.parse(waczCID)); // So that asset CID is ts'd and signed directly
-console.log(`Recorded CID in db: ${waczCID}`);
-await dbPut(datadb, waczCID, "filename", waczEntry.entryName);
-console.log(`Recorded filename in db: ${waczEntry.entryName}`);
-await dbPut(datadb, waczCID, "zipname", path.basename(zipPath));
+await dbPut(datadb, contentCID, "asset", CID.parse(contentCID)); // So that asset CID is ts'd and signed directly
+console.log(`Recorded CID in db: ${contentCID}`);
+await dbPut(datadb, contentCID, "filename", contentEntry.entryName);
+console.log(`Recorded filename in db: ${contentEntry.entryName}`);
+await dbPut(datadb, contentCID, "zipname", path.basename(zipPath));
 console.log(`Recorded zipname in db: ${path.basename(zipPath)}`);
 
 // Store as attribute and alias
-await dbPut(datadb, waczCID, "zipcid", CID.parse(zipCID));
-await dbPut(datadb, zipCID, "assetcid", CID.parse(waczCID));
+await dbPut(datadb, contentCID, "zipcid", CID.parse(zipCID));
+await dbPut(datadb, zipCID, "assetcid", CID.parse(contentCID));
 console.log(`Recorded zipcid in db: ${zipCID}`);
 
 // Make encryption key and store
 const encKey = newKey();
-await dbPut(keydb, waczCID, "enckey", encKey);
+await dbPut(keydb, contentCID, "enckey", encKey);
 
 const metaContent = JSON.parse(metaContentEntry.getData())["contentMetadata"];
 const metaRecorder = JSON.parse(metaRecorderEntry.getData());
@@ -150,18 +153,24 @@ for (var key in metaContent) {
         // then store it as an array
         const parentEncryptedArchiveCid = metaContent[key][extrasKey];
         const parentContentCid = cidMapping[parentEncryptedArchiveCid];
-        dbAppend(datadb, waczCID, "childOf", CID.parse(parentContentCid));
-        dbAppend(datadb, parentContentCid, "parentOf", CID.parse(waczCID));
+        dbAppend(datadb, contentCID, "childOf", CID.parse(parentContentCid));
+        dbAppend(datadb, parentContentCid, "parentOf", CID.parse(contentCID));
       }
-      dbPut(datadb, waczCID, extrasKey, metaContent[key][extrasKey]);
+      dbPut(datadb, contentCID, extrasKey, metaContent[key][extrasKey]);
     }
   } else if (key === "private") {
     for (var privateKey in metaContent[key]) {
       // Encrypt these ones
-      dbPut(datadb, waczCID, privateKey, metaContent[key][privateKey], encKey);
+      dbPut(
+        datadb,
+        contentCID,
+        privateKey,
+        metaContent[key][privateKey],
+        encKey
+      );
     }
   } else {
-    dbPut(datadb, waczCID, key, metaContent[key]);
+    dbPut(datadb, contentCID, key, metaContent[key]);
   }
 }
 
