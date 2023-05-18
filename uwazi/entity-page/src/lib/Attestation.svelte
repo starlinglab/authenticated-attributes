@@ -2,11 +2,16 @@
   import Modal from "./Modal.svelte";
 
   export let data;
+  export let customTitle = "";
   export let signer = "";
 
-  let showModal = false;
-  let modalPos = { x: 0, y: 0 };
+  let showAttrModal = false;
+  let attrModalPos = { x: 0, y: 0 };
   let attrIcon; // Element
+
+  let showAltModal = false;
+  let altModalPos = { x: 0, y: 0 };
+  let attrTitle; // Element
 
   function uint8ArrayToBase64(uint8Array) {
     let binaryString = "";
@@ -15,28 +20,46 @@
     });
     return btoa(binaryString);
   }
+
+  function iconClick() {
+    let rect = attrIcon.getBoundingClientRect();
+    attrModalPos.x = rect.left + 10;
+    attrModalPos.y = rect.top + 10;
+    showAttrModal = true;
+  }
+  function attrTitleClick() {
+    let rect = attrTitle.getBoundingClientRect();
+    altModalPos.x = rect.left + 10;
+    altModalPos.y = rect.top + 10;
+    showAltModal = true;
+  }
 </script>
 
 <div id="container">
   <div id="text">
-    <h2 class="attr">{data.attestation.attribute}</h2>
-    {#if data.attestation.encrypted}
-      <span class="value encrypted">encrypted</span>
-    {:else}
-      <span class="value">{data.attestation.value}</span>
-    {/if}
+    <h2
+      class="attr"
+      bind:this={attrTitle}
+      on:click={attrTitleClick}
+      on:keydown={attrTitleClick}
+    >
+      {customTitle || data.attestation.attribute}
+    </h2>
+    <slot name="value">
+      {#if data.attestation.encrypted}
+        <span class="value encrypted">encrypted</span>
+      {:else}
+        <span class="value">{data.attestation.value}</span>
+      {/if}
+    </slot>
   </div>
   <div id="icons">
-    <!-- svelte-ignore a11y-click-events-have-key-events -->
     <svg
+      id="attr-icon"
       class="icon"
       bind:this={attrIcon}
-      on:click={() => {
-        let rect = attrIcon.getBoundingClientRect();
-        modalPos.x = rect.left + 10;
-        modalPos.y = rect.top + 10;
-        showModal = true;
-      }}
+      on:click={iconClick}
+      on:keydown={iconClick}
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 496 512"
@@ -57,7 +80,8 @@
   </div>
 </div>
 
-<Modal bind:showModal bind:pos={modalPos}>
+<!-- Attribute modal from clicking on attribution icon -->
+<Modal bind:showModal={showAttrModal} bind:pos={attrModalPos}>
   <span slot="title">
     <strong>{data.attestation.attribute}</strong>:
     {#if data.attestation.encrypted}
@@ -67,30 +91,57 @@
     {/if}
   </span>
   <span slot="content">
-    <div id="modal-content">
-      <p>
-        <strong>Source:</strong>
-        {signer}
-      </p>
-      <p>
-        <strong>Timestamp:</strong>
-        {data.timestamp.submitted}
-      </p>
-      <p>
-        <strong>Public Key:</strong>
-        <code> {uint8ArrayToBase64(data.signature.pubKey)}</code>
-      </p>
-      <p><strong>Signature:</strong> ?</p>
-      <p>
-        <strong>Attestation CID:</strong>
-        <code>{data.signature.signedMsg}</code>
-      </p>
-      <p><strong>Timestamping Proof:</strong> ?</p>
+    <!-- Center align *block*, text is actually left aligned in child -->
+    <div style="text-align: center;">
+      <div id="attr-modal-content">
+        <p>
+          <strong>Source:</strong>
+          {signer}
+        </p>
+        <p>
+          <strong>Timestamp:</strong>
+          {data.timestamp.submitted}
+        </p>
+        <p>
+          <strong>Public Key:</strong>
+          <code> {uint8ArrayToBase64(data.signature.pubKey)}</code>
+        </p>
+        <p><strong>Signature:</strong> ?</p>
+        <p>
+          <strong>Attestation CID:</strong>
+          <code>{data.signature.signedMsg}</code>
+        </p>
+        <p><strong>Timestamping Proof:</strong> ?</p>
+      </div>
     </div>
   </span>
   <span slot="buttons">
     <button type="button">Export Attestation</button>
     <button type="button">View Timestamp</button>
+  </span>
+</Modal>
+
+<!-- Alternative attribute values modal, from clicking on attribute title -->
+<Modal bind:showModal={showAltModal} bind:pos={altModalPos}>
+  <span slot="title"
+    ><strong>Alternatives: {data.attestation.attribute}</strong></span
+  >
+  <span slot="content">
+    <!-- First the current top priority signer -->
+    <p class="alt-signer-name">{signer}</p>
+    <p class="alt-value">
+      {#if data.attestation.encrypted}
+        <span class="encrypted">encrypted</span>
+      {:else}
+        {data.attestation.value}
+      {/if}
+    </p>
+    <!-- TODO: replace dummy other sources with real data -->
+    <p class="alt-signer-name">Kate Sills</p>
+    <p class="alt-value">Foo in France on April 3rd, 2012</p>
+  </span>
+  <span slot="buttons">
+    <button type="button">Reprioritize Sources</button>
   </span>
 </Modal>
 
@@ -102,6 +153,7 @@
   #text {
     padding-right: 1em;
     word-break: break-word;
+    min-width: 0; /* https://stackoverflow.com/a/12131365 */
   }
   #icons {
     margin: auto 0;
@@ -112,6 +164,10 @@
     color: var(--theme1);
     margin: 0;
     text-decoration: underline;
+    cursor: pointer;
+  }
+  #attr-icon {
+    cursor: pointer;
   }
   .value {
     color: var(--theme2);
@@ -123,10 +179,26 @@
     font-style: italic;
   }
 
-  #modal-content {
+  #attr-modal-content {
     word-break: break-all;
+    /* Undo parent center-align */
+    display: inline-block;
+    text-align: left;
   }
-  #modal-content > p {
+  #attr-modal-content > p {
     margin: 0.2em 0;
+  }
+
+  .alt-signer-name {
+    text-transform: uppercase;
+    font-size: 0.8em;
+    margin: 0.2em 0 0.4em 1ch;
+  }
+  .alt-value {
+    margin-top: 0;
+    margin-bottom: 2em;
+    border-bottom: 2px solid var(--theme-border);
+    padding-bottom: 0.5em;
+    word-break: break-all;
   }
 </style>

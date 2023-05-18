@@ -1,6 +1,5 @@
 <!--
 Adapted from https://svelte.dev/examples/modal
-Modified so the modal appears below the mouse, not centered.`
 -->
 
 <script>
@@ -10,9 +9,34 @@ Modified so the modal appears below the mouse, not centered.`
   let dialog; // HTMLDialogElement
 
   $: if (dialog && showModal) {
+    // Record the current scroll position before showing the modal,
+    // because it might cause the browser to scroll, to make it visible
+    const oldScrollY = window.scrollY;
     dialog.showModal();
     // Disable default button focus which looks bad
     dialog.querySelector("#buttons-div button:first-of-type").blur();
+
+    // Scroll back to original position so user isn't confused, and more
+    // importantly so measurements using scroll values below are correct
+    window.scrollTo(window.scrollX, oldScrollY);
+
+    // Set dialog position without it going offscreen
+    dialog.style.left = `${Math.round(pos.x)}px`;
+    dialog.style.top = `${Math.round(pos.y + window.scrollY)}px`;
+    let rect = dialog.getBoundingClientRect();
+    if (rect.x + rect.width > window.innerWidth) {
+      // Modal is too far left and would go offscreen
+      dialog.style.left = `calc(${Math.round(pos.x - rect.width)}px - 1em)`;
+    }
+    if (
+      rect.y + window.scrollY + rect.height >
+      window.innerHeight + window.scrollY
+    ) {
+      // Modal is too far down and is going offscreen
+      dialog.style.top = `calc(${Math.round(
+        pos.y + window.scrollY - rect.height
+      )}px - 1em)`;
+    }
   }
 </script>
 
@@ -21,8 +45,6 @@ Modified so the modal appears below the mouse, not centered.`
   bind:this={dialog}
   on:close={() => (showModal = false)}
   on:click|self={() => dialog.close()}
-  style:left={pos.x}
-  style:top={pos.y}
 >
   <div on:click|stopPropagation>
     <div id="icon-div">
@@ -41,9 +63,7 @@ Modified so the modal appears below the mouse, not centered.`
       <slot name="title" />
     </div>
     <div id="content-div">
-      <div style="display: inline-block; text-align: left;">
-        <slot name="content" />
-      </div>
+      <slot name="content" />
     </div>
     <div id="buttons-div">
       <slot name="buttons" />
@@ -103,15 +123,17 @@ Modified so the modal appears below the mouse, not centered.`
     text-align: center;
     margin: 1em 1em;
     overflow-wrap: break-word;
+    color: var(--theme2);
   }
   #content-div {
-    margin: 0 2em 1em;
+    margin: 0 1em 1em;
     font-size: 0.9em;
-    color: grey;
-    text-align: center;
+    color: var(--theme3);
+    /*text-align: center;*/
   }
   #buttons-div {
     text-align: center;
+    min-width: max-content;
   }
   #buttons-div :global(button) {
     text-transform: uppercase;
