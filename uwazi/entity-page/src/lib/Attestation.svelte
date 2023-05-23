@@ -22,6 +22,20 @@
     return btoa(binaryString);
   }
 
+  function saveFile(filename, type, data) {
+    const blob = new Blob([data], { type: type });
+    const elem = window.document.createElement("a");
+    elem.href = window.URL.createObjectURL(blob);
+    elem.download = filename;
+    elem.style.display = "none";
+    document.body.appendChild(elem);
+    elem.click();
+    setTimeout(function () {
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    }, 0);
+  }
+
   function iconClick() {
     let rect = attrIcon.getBoundingClientRect();
     attrModalPos.x = rect.left + 10;
@@ -117,7 +131,16 @@
     </div>
   </span>
   <span slot="buttons">
-    <Button>Export Attestation</Button>
+    <!-- svelte-ignore missing-declaration -->
+    <Button
+      on:click={() => {
+        saveFile(
+          data.attestation.attribute + ".cbor",
+          "application/cbor",
+          IpldDagCbor.encode(data)
+        );
+      }}>Export Attestation</Button
+    >
     <Button>View Timestamp</Button>
   </span>
 </Modal>

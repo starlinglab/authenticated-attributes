@@ -4,7 +4,7 @@
   export let border = false;
 </script>
 
-<button type="button" class:border><slot /></button>
+<button on:click type="button" class:border><slot /></button>
 
 {#if import.meta.env.PROD}
   <style>
