@@ -4,12 +4,18 @@
   --theme1-active: rgba(98, 0, 238, 0.8);
   --theme2: black;
   --theme3: grey;
-  --theme-border: rgb(178, 178, 178);
-  color: var(--theme2);
+  --theme-border: rgb(224, 224, 224);
+  color: unset !important;
 }
 
 .icon {
   width: 1em;
   height: 1em;
   vertical-align: -0.125em;
+}
+
+/* Undo Uwazi styling */
+code {
+  color: unset !important;
+  background-color: transparent !important;
 }

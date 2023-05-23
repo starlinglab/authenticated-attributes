@@ -26,7 +26,7 @@ Adapted from https://svelte.dev/examples/modal
     let rect = dialog.getBoundingClientRect();
     if (rect.x + rect.width > window.innerWidth) {
       // Modal is too far left and would go offscreen
-      dialog.style.left = `calc(${Math.round(pos.x - rect.width)}px - 1em)`;
+      dialog.style.left = `calc(${Math.round(pos.x - rect.width)}px - 2em)`;
     }
     if (
       rect.y + window.scrollY + rect.height >
@@ -141,7 +141,7 @@ Adapted from https://svelte.dev/examples/modal
     font-weight: bold;
     display: inline-block;
     border: none;
-    background-color: rgba(0, 0, 0, 0);
+    background-color: transparent;
     border-radius: 0.2em;
     padding: 0.5em;
   }

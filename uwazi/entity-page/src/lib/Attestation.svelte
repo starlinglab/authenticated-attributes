@@ -1,4 +1,5 @@
 <script>
+  import Button from "./Button.svelte";
   import Modal from "./Modal.svelte";
 
   export let data;
@@ -116,8 +117,8 @@
     </div>
   </span>
   <span slot="buttons">
-    <button type="button">Export Attestation</button>
-    <button type="button">View Timestamp</button>
+    <Button>Export Attestation</Button>
+    <Button>View Timestamp</Button>
   </span>
 </Modal>
 
@@ -126,7 +127,7 @@
   <span slot="title"
     ><strong>Alternatives: {data.attestation.attribute}</strong></span
   >
-  <span slot="content">
+  <div slot="content">
     <!-- First the current top priority signer -->
     <p class="alt-signer-name">{signer}</p>
     <p class="alt-value">
@@ -139,11 +140,19 @@
     <!-- TODO: replace dummy other sources with real data -->
     <p class="alt-signer-name">Kate Sills</p>
     <p class="alt-value">Foo in France on April 3rd, 2012</p>
-  </span>
+  </div>
   <span slot="buttons">
-    <button type="button">Reprioritize Sources</button>
+    <Button>Reprioritize Sources</Button>
   </span>
 </Modal>
+
+{#if import.meta.env.PROD}
+  <style>
+    .attr {
+      font-size: 1.4em !important;
+    }
+  </style>
+{/if}
 
 <style>
   #container {
