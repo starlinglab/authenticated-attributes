@@ -129,7 +129,6 @@ Adapted from https://svelte.dev/examples/modal
     margin: 0 1em 1em;
     font-size: 0.9em;
     color: var(--theme3);
-    /*text-align: center;*/
   }
   #buttons-div {
     text-align: center;

@@ -1,10 +1,15 @@
 <script>
+  import { createEventDispatcher } from "svelte";
+
   import Button from "./Button.svelte";
   import Modal from "./Modal.svelte";
 
   export let data;
   export let customTitle = "";
   export let signer = "";
+  export let alts; // [{source, data}, ...]
+
+  const dispatch = createEventDispatcher();
 
   let showAttrModal = false;
   let attrModalPos = { x: 0, y: 0 };
@@ -31,8 +36,8 @@
     document.body.appendChild(elem);
     elem.click();
     setTimeout(function () {
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
+      window.URL.revokeObjectURL(elem.href);
+      document.body.removeChild(elem);
     }, 0);
   }
 
@@ -160,12 +165,15 @@
         {data.attestation.value}
       {/if}
     </p>
-    <!-- TODO: replace dummy other sources with real data -->
-    <p class="alt-signer-name">Kate Sills</p>
-    <p class="alt-value">Foo in France on April 3rd, 2012</p>
+    {#each alts as alt}
+      <p class="alt-signer-name">{alt.source}</p>
+      <p class="alt-value">{alt.data.attestation.value}</p>
+    {/each}
   </div>
   <span slot="buttons">
-    <Button>Reprioritize Sources</Button>
+    <Button on:click={() => dispatch("changePage", "sources")}
+      >Reprioritize Sources</Button
+    >
   </span>
 </Modal>
 
