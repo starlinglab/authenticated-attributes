@@ -205,6 +205,7 @@
     margin: 0;
     text-decoration: underline;
     cursor: pointer;
+    width: fit-content;
   }
   #attr-icon {
     cursor: pointer;

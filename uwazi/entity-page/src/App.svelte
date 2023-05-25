@@ -1,6 +1,4 @@
 <script>
-  import { createEventDispatcher } from "svelte";
-
   import Attestation from "./lib/Attestation.svelte";
   import Button from "./lib/Button.svelte";
   import SourcesList from "./lib/SourcesList.svelte";
@@ -10,8 +8,8 @@
 
   const dagCborURL =
     "https://cdn.jsdelivr.net/npm/@ipld/dag-cbor@9.0.1/dist/index.min.js";
-
-  const dispatch = createEventDispatcher();
+  const replayWebURL =
+    "https://cdn.jsdelivr.net/npm/replaywebpage@1.7.14/ui.js";
 
   /// Setup funcs ///
 
@@ -174,6 +172,7 @@
   const fileSize = !entityHasAttachment || entity.attachments[0].size;
   const fileUrl =
     !entityHasAttachment || "/api/files/" + entity.attachments[0].filename;
+  const isWacz = !entityHasAttachment || fileName.endsWith(".wacz");
 
   let curPage = "entity"; // Names for different "pages" that can be viewed
   let loading = true;
@@ -209,6 +208,9 @@
 
     try {
       await loadScript(dagCborURL);
+      if (isWacz) {
+        await loadScript(replayWebURL);
+      }
       await reloadData($hyperbeeSources);
     } catch (e) {
       errMsg = e.toString();
@@ -216,7 +218,7 @@
     }
   })();
 
-  $: if (!loading && !errMsg && fileObject) {
+  $: if (!loading && !errMsg && !isWacz && fileObject) {
     // Set the embedded file CSS based on the filetype
     // Images need max-width/height set so they scale to fit the container
     // PDFs, videos need explicit width and height
@@ -283,15 +285,24 @@
               </a>
             </p>
             <div id="embed-container">
-              <object
-                bind:this={fileObject}
-                id="file-object"
-                title={fileName}
-                data={fileUrl}
-                type={fileType}
-              >
-                <span class="error">Failed to display file</span>
-              </object>
+              {#if isWacz}
+                <replay-web-page source={fileUrl} replayBase="/api/files/" />
+              {:else}
+                <object
+                  bind:this={fileObject}
+                  id="file-object"
+                  title={fileName}
+                  data={fileUrl}
+                  type={fileType}
+                >
+                  <span class="error">Failed to display file</span>
+                  <style>
+                    #embed-container {
+                      background-color: var(--theme-border);
+                    }
+                  </style>
+                </object>
+              {/if}
             </div>
             <p><strong>CID</strong> <code>{fileCid}</code></p>
           </div>
@@ -488,6 +499,11 @@
   #embed-container {
     height: 65%;
     width: 100%;
+  }
+  #embed-container .error {
+    position: relative;
+    top: 1em;
+    left: 1em;
   }
   #bottom-buttons {
     margin-bottom: 1em;
