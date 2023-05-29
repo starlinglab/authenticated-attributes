@@ -83,3 +83,11 @@ When `CID(...)` is shown that represents a CID stored natively, not as text. Tha
 Some information already in the database key is repeated in the `attestation`, such as `CID` and `attribute`. This allows for export of the whole object for external verification and use elsewhere.
 
 When the attestation is encrypted, the schema looks very similar to the above. The only change is `attestation.encrypted` is `true`, and `attestation.value` is always binary data. That binary data, once decrypted, is a DAG-CBOR encoding of whatever the original value was: object, binary data, string, integer, etc.
+
+## Timestamping
+
+Attestations are timestamped with [OpenTimestamps](https://opentimestamps.org/). This requires Internet access and takes about one second to finish. At first only the incomplete proof is stored (indicated by `timestamp.upgraded` being `false`), but the proof could be upgraded at a later date.
+
+The timestamp serves to prove that the attestation was not made after `timestamp.submitted`, within the several hours long error bars afforded by the system. In practice, this means `timestamp.submitted` is provably accurate to about a day interval.
+
+If you trust the signer you can ignore the proof and rely on `timestamp.submitted` alone, making it accurate to about a second.
