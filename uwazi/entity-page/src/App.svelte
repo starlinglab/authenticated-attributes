@@ -86,11 +86,11 @@
     return ret;
   };
 
-  const reloadData = async (sources) => {
+  const reloadData = async (sources, cid) => {
     loading = true;
     errMsg = "";
     try {
-      const datas = await loadData(sources, fileCid);
+      const datas = await loadData(sources, cid);
       dbEntries = getDbEntries(datas);
     } catch (e) {
       errMsg = e.toString();
@@ -156,17 +156,17 @@
       _id: "645b9f413f4de0737494fa2c",
     };
   } else {
-    // @ts-ignore
     entity = datasets.entity;
   }
 
   const entityTitle = entity.title;
   const entityHasAttachment = entity.attachments.length == 1;
   // Set attachment-based variables
-  const fileCid =
+  const entityCid =
     !entityHasAttachment ||
     (entity.metadata.sha256cid && entity.metadata.sha256cid.value) ||
     null;
+  let fileCid = entityCid; // Changes based on what page is viewing
   const fileType = !entityHasAttachment || entity.attachments[0].mimetype;
   const fileName = !entityHasAttachment || entity.attachments[0].originalname;
   const fileSize = !entityHasAttachment || entity.attachments[0].size;
@@ -174,7 +174,9 @@
     !entityHasAttachment || "/api/files/" + entity.attachments[0].filename;
   const isWacz = !entityHasAttachment || fileName.endsWith(".wacz");
 
-  let curPage = "entity"; // Names for different "pages" that can be viewed
+  // Names for different "pages" that can be viewed
+  // Current avail. pages: entity, sources, cid
+  let curPage = "entity";
   let loading = true;
   let errMsg = "";
   let fileObject; // <object> element
@@ -183,6 +185,7 @@
 
   let sourcesListSuccess = null; // null means sources haven't been tested yet
 
+  // Main function
   (async () => {
     if (!entityHasAttachment) {
       errMsg = "No attachment for this entity";
@@ -211,7 +214,7 @@
       if (isWacz) {
         await loadScript(replayWebURL);
       }
-      await reloadData($hyperbeeSources);
+      await reloadData($hyperbeeSources, fileCid);
     } catch (e) {
       errMsg = e.toString();
       console.error(e);
@@ -233,12 +236,24 @@
     }
   }
 
-  function handlePageChangeMsg(event) {
-    if (event.detail === "sources") {
+  function handleChangePageMsg(event) {
+    if (event.detail.page === "sources") {
       // Reset back to unknown state
       sourcesListSuccess = null;
+    } else if (event.detail.page === "cid") {
+      // Load data for cid
+      fileCid = event.detail.cid;
+      // Async function, but running it in the background is fine since it
+      // properly sets the loading variable and everything
+      reloadData($hyperbeeSources, fileCid);
+
+      if (fileCid === entityCid) {
+        // User has clicked back into the entity, so display the entity page instead
+        curPage = "entity";
+        return;
+      }
     }
-    curPage = event.detail;
+    curPage = event.detail.page;
   }
 </script>
 
@@ -254,7 +269,7 @@
           border={true}
           on:click={() => {
             errMsg = "";
-            handlePageChangeMsg({ detail: "sources" });
+            handleChangePageMsg({ detail: { page: "sources" } });
           }}>Edit Sources</Button
         >
       </div>
@@ -262,48 +277,52 @@
   {/if}
 
   {#if !loading}
-    {#if curPage === "entity" && !errMsg}
+    {#if (curPage === "entity" || curPage === "cid") && !errMsg}
       <div id="title-bar">
         <h1>{entityTitle}</h1>
       </div>
       <div id="container-6facc2a3">
         <div id="non-sidebar">
           <div id="file-info">
-            <p id="top-file-text">
-              {fileType.split("/")[1].toUpperCase()}
-              <a href={fileUrl} target="_blank">
-                <svg
-                  style="color: var(--theme1);"
-                  class="icon"
-                  fill="currentColor"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 512 512"
-                  ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
-                    d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32h82.7L201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3V192c0 17.7 14.3 32 32 32s32-14.3 32-32V32c0-17.7-14.3-32-32-32H320zM80 32C35.8 32 0 67.8 0 112V432c0 44.2 35.8 80 80 80H400c44.2 0 80-35.8 80-80V320c0-17.7-14.3-32-32-32s-32 14.3-32 32V432c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V112c0-8.8 7.2-16 16-16H192c17.7 0 32-14.3 32-32s-14.3-32-32-32H80z"
-                  /></svg
-                >
-              </a>
-            </p>
-            <div id="embed-container">
-              {#if isWacz}
-                <replay-web-page source={fileUrl} replayBase="/api/files/" />
-              {:else}
-                <object
-                  bind:this={fileObject}
-                  id="file-object"
-                  title={fileName}
-                  data={fileUrl}
-                  type={fileType}
-                >
-                  <span class="error">Failed to display file</span>
-                  <style>
-                    #embed-container {
-                      background-color: var(--theme-border);
-                    }
-                  </style>
-                </object>
-              {/if}
-            </div>
+            {#if curPage === "entity"}
+              <p id="top-file-text">
+                {fileType.split("/")[1].toUpperCase()}
+                <a href={fileUrl} target="_blank">
+                  <svg
+                    style="color: var(--theme1);"
+                    class="icon"
+                    fill="currentColor"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                    ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+                      d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32h82.7L201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3V192c0 17.7 14.3 32 32 32s32-14.3 32-32V32c0-17.7-14.3-32-32-32H320zM80 32C35.8 32 0 67.8 0 112V432c0 44.2 35.8 80 80 80H400c44.2 0 80-35.8 80-80V320c0-17.7-14.3-32-32-32s-32 14.3-32 32V432c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V112c0-8.8 7.2-16 16-16H192c17.7 0 32-14.3 32-32s-14.3-32-32-32H80z"
+                    /></svg
+                  >
+                </a>
+              </p>
+              <div id="embed-container">
+                {#if isWacz}
+                  <replay-web-page source={fileUrl} replayBase="/api/files/" />
+                {:else}
+                  <object
+                    bind:this={fileObject}
+                    id="file-object"
+                    title={fileName}
+                    data={fileUrl}
+                    type={fileType}
+                  >
+                    <span class="error">Failed to display file</span>
+                    <style>
+                      #embed-container {
+                        background-color: var(--theme-border);
+                      }
+                    </style>
+                  </object>
+                {/if}
+              </div>
+            {:else}
+              <p>Can't display file information for just a CID.</p>
+            {/if}
             <p><strong>CID</strong> <code>{fileCid}</code></p>
           </div>
           <div id="bottom-buttons">
@@ -332,8 +351,11 @@
               View Additional Metadata</Button
             >
             {#if dbEntries.length === 0}
-              <Button border={true} on:click={() => (curPage = "sources")}
-                >Edit Sources</Button
+              <Button
+                border={true}
+                on:click={() => {
+                  handleChangePageMsg({ detail: { page: "sources" } });
+                }}>Edit Sources</Button
               >
             {/if}
             <div id="delete-button"><Button border={true}>Delete</Button></div>
@@ -348,11 +370,19 @@
                   {alts}
                   signer={source}
                   customTitle="Parents"
-                  on:changePage={handlePageChangeMsg}
+                  on:changePage={handleChangePageMsg}
                 >
                   <span slot="value">
                     {#each data.attestation.value as cid}
-                      <span class="cid">{cid}</span><br />
+                      <!-- svelte-ignore a11y-click-events-have-key-events -->
+                      <span
+                        class="cid"
+                        on:click={() => {
+                          handleChangePageMsg({
+                            detail: { page: "cid", cid: cid.toString() },
+                          });
+                        }}>{cid}</span
+                      ><br />
                     {/each}
                   </span>
                 </Attestation>
@@ -362,11 +392,19 @@
                   {alts}
                   signer={source}
                   customTitle="Derivatives"
-                  on:changePage={handlePageChangeMsg}
+                  on:changePage={handleChangePageMsg}
                 >
                   <span slot="value">
                     {#each data.attestation.value as cid}
-                      <span class="cid">{cid}</span><br />
+                      <!-- svelte-ignore a11y-click-events-have-key-events -->
+                      <span
+                        class="cid"
+                        on:click={() => {
+                          handleChangePageMsg({
+                            detail: { page: "cid", cid: cid.toString() },
+                          });
+                        }}>{cid}</span
+                      ><br />
                     {/each}
                   </span>
                 </Attestation>
@@ -375,7 +413,7 @@
                   {data}
                   {alts}
                   signer={source}
-                  on:changePage={handlePageChangeMsg}
+                  on:changePage={handleChangePageMsg}
                 />
               {/if}
             {/each}
@@ -394,11 +432,11 @@
           success={sourcesListSuccess}
           on:changePage={(e) => {
             errMsg = "";
-            handlePageChangeMsg(e);
+            handleChangePageMsg(e);
           }}
           on:sourcesChange={(e) => {
             (async () => {
-              sourcesListSuccess = await reloadData($hyperbeeSources);
+              sourcesListSuccess = await reloadData($hyperbeeSources, fileCid);
               if (sourcesListSuccess) {
                 // Actually call .set so that subscribers get the update and
                 // it's stored in localStorage
@@ -428,7 +466,7 @@
         monospace;
     }
 
-    /* Use whole viewport when not running Uwazi */
+    /* Use whole viewport when not running in Uwazi */
     #top-container-6facc2a3 {
       height: 100vh !important;
     }

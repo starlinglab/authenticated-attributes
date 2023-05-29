@@ -81,7 +81,7 @@
         // Reset sources, either these ones weren't saved or failed to load when they were
         sources = sourcesCopy;
       }
-      dispatch("changePage", "entity");
+      dispatch("changePage", { page: "entity" });
     }}>Back</Button
   >
   <div id="left-buttons">

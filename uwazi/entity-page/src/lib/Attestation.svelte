@@ -171,7 +171,7 @@
     {/each}
   </div>
   <span slot="buttons">
-    <Button on:click={() => dispatch("changePage", "sources")}
+    <Button on:click={() => dispatch("changePage", { page: "sources" })}
       >Reprioritize Sources</Button
     >
   </span>

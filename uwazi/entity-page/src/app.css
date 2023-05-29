@@ -15,7 +15,11 @@
 }
 
 /* Undo Uwazi styling */
+
 code {
   color: unset !important;
   background-color: transparent !important;
+}
+#hyperbee-entity-page-app {
+  line-height: initial;
 }
