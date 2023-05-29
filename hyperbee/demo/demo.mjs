@@ -1,10 +1,8 @@
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
-import { decode } from "@ipld/dag-cbor";
 
-import { dbPut } from "./src/dbPut.mjs";
-import { makeKey } from "./src/makeKey.mjs";
-import { dbGet } from "./src/dbGet.mjs";
+import { dbPut, setSigningKey } from "./src/dbPut.mjs";
+import { keyFromPem } from "./src/signAttestation.mjs";
 
 // Set up Hypercore and Hyperbee
 const core = new Hypercore("./demo.hypercore");
@@ -14,6 +12,9 @@ const db = new Hyperbee(core, {
   keyEncoding: "utf-8",
   valueEncoding: "binary",
 });
+
+// Set signing key
+setSigningKey(await keyFromPem("./demokey.pem"));
 
 // Attestation data
 const waczCID = "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54";

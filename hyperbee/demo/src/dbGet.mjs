@@ -17,9 +17,18 @@ import { makeKey } from "./makeKey.mjs";
  * not the whole object.
  *
  * Timestamping is currently not validated.
+ *
+ * sigKey is an ed25519 public key.
+ *
+ * null is returned if the key doesn't exist in the database.
+ *
+ * Providing a batch instead of a db is allowed.
  */
 const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
   const result = await db.get(makeKey(id, attr));
+  if (result === null) {
+    return null;
+  }
   const resultObj = decode(result.value);
   if (resultObj.attestation.encrypted) {
     resultObj.attestation.value = decryptValue(
@@ -37,6 +46,11 @@ const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
   return resultObj;
 };
 
+/**
+ * Returns if the attribute is listed as encrypted.
+ *
+ * No signatures are validated.
+ */
 const dbIsEncrypted = async (db, id, attr) => {
   const result = await db.get(makeKey(id, attr));
   const resultObj = decode(result.value);
