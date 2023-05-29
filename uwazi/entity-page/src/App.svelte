@@ -177,6 +177,8 @@
   // Names for different "pages" that can be viewed
   // Current avail. pages: entity, sources, cid
   let curPage = "entity";
+  let prevPage = null;
+
   let loading = true;
   let errMsg = "";
   let fileObject; // <object> element
@@ -249,10 +251,12 @@
 
       if (fileCid === entityCid) {
         // User has clicked back into the entity, so display the entity page instead
+        prevPage = curPage;
         curPage = "entity";
         return;
       }
     }
+    prevPage = curPage;
     curPage = event.detail.page;
   }
 </script>
@@ -430,9 +434,14 @@
         <SourcesList
           sources={$hyperbeeSources}
           success={sourcesListSuccess}
-          on:changePage={(e) => {
+          on:prevPage={(e) => {
             errMsg = "";
-            handleChangePageMsg(e);
+            if (prevPage) {
+              curPage = prevPage;
+            } else {
+              curPage = "entity";
+            }
+            prevPage = null;
           }}
           on:sourcesChange={(e) => {
             (async () => {
