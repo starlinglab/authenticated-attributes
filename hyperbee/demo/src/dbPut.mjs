@@ -14,6 +14,9 @@ const setSigningKey = (privKey) => {
   sigKey = privKey;
 };
 
+/**
+ * Providing a batch instead of a db is allowed.
+ */
 const dbPut = async (db, id, attr, value, encryptionKey = false) => {
   const rawAttestation = {
     CID: CID.parse(id),
@@ -62,10 +65,16 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
  * will be thrown.
  *
  * The new value of the array is returned.
+ *
+ * A batch is used so that the append is treated as one locked atomic operation,
+ * not a separate read and write.
  */
 const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
+  const batch = db.batch();
+  await batch.lock();
+
   const result = await dbGet(
-    db,
+    batch,
     id,
     attr,
     await ed.getPublicKeyAsync(sigKey),
@@ -74,7 +83,8 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
   );
   if (result === null) {
     // Nothing is stored under this attribute yet
-    await dbPut(db, id, attr, [value], encryptionKey);
+    await dbPut(batch, id, attr, [value], encryptionKey);
+    await batch.flush();
     return [value];
   }
   if (!(result.value instanceof Array)) {
@@ -83,7 +93,8 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
 
   // Append to existing array
   result.value.push(value);
-  await dbPut(db, id, attr, result.value, encryptionKey);
+  await dbPut(batch, id, attr, result.value, encryptionKey);
+  await batch.flush();
   return result.value;
 };
 

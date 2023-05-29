@@ -21,6 +21,8 @@ import { makeKey } from "./makeKey.mjs";
  * sigKey is an ed25519 public key.
  *
  * null is returned if the key doesn't exist in the database.
+ *
+ * Providing a batch instead of a db is allowed.
  */
 const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
   const result = await db.get(makeKey(id, attr));
