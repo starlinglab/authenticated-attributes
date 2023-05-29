@@ -53,6 +53,12 @@
     altModalPos.y = rect.top + 10;
     showAltModal = true;
   }
+
+  function isLargeData(value) {
+    return value.toString() === "[object Object]";
+  }
+
+  $: largeData = isLargeData(data.attestation.value);
 </script>
 
 <div id="container">
@@ -68,6 +74,8 @@
     <slot name="value">
       {#if data.attestation.encrypted}
         <span class="value encrypted">encrypted</span>
+      {:else if largeData}
+        <span class="value large">large data</span>
       {:else}
         <span class="value">{data.attestation.value}</span>
       {/if}
@@ -106,6 +114,8 @@
     <strong>{data.attestation.attribute}</strong>:
     {#if data.attestation.encrypted}
       <span class="encrypted">encrypted</span>
+    {:else if largeData}
+      <span class="large">large data</span>
     {:else}
       {data.attestation.value}
     {/if}
@@ -161,13 +171,23 @@
     <p class="alt-value">
       {#if data.attestation.encrypted}
         <span class="encrypted">encrypted</span>
+      {:else if largeData}
+        <span class="large">large data</span>
       {:else}
         {data.attestation.value}
       {/if}
     </p>
     {#each alts as alt}
       <p class="alt-signer-name">{alt.source}</p>
-      <p class="alt-value">{alt.data.attestation.value}</p>
+      <p class="alt-value">
+        {#if alt.data.attestation.encrypted}
+          <span class="encrypted">encrypted</span>
+        {:else if isLargeData(alt.data.attestation.value)}
+          <span class="large">large data</span>
+        {:else}
+          {data.attestation.value}
+        {/if}
+      </p>
     {/each}
   </div>
   <span slot="buttons">
@@ -216,7 +236,8 @@
   .icon {
     color: var(--theme1);
   }
-  .encrypted {
+  .encrypted,
+  .large {
     font-style: italic;
   }
 
