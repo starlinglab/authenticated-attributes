@@ -1,6 +1,7 @@
 <script>
   import Attestation from "./lib/Attestation.svelte";
   import Button from "./lib/Button.svelte";
+  import Graph from "./lib/Graph.svelte";
   import SourcesList from "./lib/SourcesList.svelte";
   import { hyperbeeSources } from "./lib/store.js";
 
@@ -10,6 +11,8 @@
     "https://cdn.jsdelivr.net/npm/@ipld/dag-cbor@9.0.1/dist/index.min.js";
   const replayWebURL =
     "https://cdn.jsdelivr.net/npm/replaywebpage@1.7.14/ui.js";
+  const visURL =
+    "https://cdn.jsdelivr.net/npm/vis-network@9.1.6/standalone/umd/vis-network.min.js";
 
   /// Setup funcs ///
 
@@ -175,7 +178,7 @@
   const isWacz = !entityHasAttachment || fileName.endsWith(".wacz");
 
   // Names for different "pages" that can be viewed
-  // Current avail. pages: entity, sources, cid
+  // Current avail. pages: entity, sources, cid, graph
   let curPage = "entity";
   let prevPage = null;
 
@@ -213,6 +216,7 @@
 
     try {
       await loadScript(dagCborURL);
+      await loadScript(visURL);
       if (isWacz) {
         await loadScript(replayWebURL);
       }
@@ -238,6 +242,65 @@
     }
   }
 
+  let graphData;
+
+  /**
+   * Sets global graphData variable instead of returning anything.
+   */
+  const loadGraphData = async (sources, cid) => {
+    errMsg = "";
+    loading = true;
+    graphData = {};
+
+    const updateData = async (fcid) => {
+      const resp = await fetch(`${sources[0].server}/${fcid}`);
+      if (!resp.ok) {
+        errMsg = `failed to load data: ${resp.statusText}`;
+        loading = false;
+        throw new Error("failed to load data");
+      }
+      const attests = IpldDagCbor.decode(
+        new Uint8Array(await resp.arrayBuffer())
+      );
+
+      graphData[fcid] = {
+        childOf: (attests.childOf && attests.childOf.attestation.value) || [],
+        parentOf:
+          (attests.parentOf && attests.parentOf.attestation.value) || [],
+      };
+    };
+
+    // Walk the tree of CIDs
+    // Start with the provided one
+    await updateData(cid);
+
+    // TODO: look at parent and child CIDs
+
+    // Limit to depth of 3 (2 + 1 level already done)
+    for (let i = 0; i < 2; i++) {
+      for (const [cid, relations] of Object.entries(graphData)) {
+        // Parents
+        for (let parent of relations.childOf) {
+          parent = parent.toString();
+          if (!graphData[parent]) {
+            // Not processed yet
+            await updateData(parent);
+          }
+        }
+        // Children
+        for (let child of relations.parentOf) {
+          child = child.toString();
+          if (!graphData[child]) {
+            // Not processed yet
+            await updateData(child);
+          }
+        }
+      }
+    }
+
+    loading = false;
+  };
+
   function handleChangePageMsg(event) {
     if (event.detail.page === "sources") {
       // Reset back to unknown state
@@ -255,9 +318,24 @@
         curPage = "entity";
         return;
       }
+    } else if (event.detail.page === "graph") {
+      // Async function, but running it in the background is fine since it
+      // properly sets the loading variable and everything
+      loadGraphData($hyperbeeSources, fileCid);
     }
+
     prevPage = curPage;
     curPage = event.detail.page;
+  }
+
+  function handlePrevPageMsg(event) {
+    errMsg = "";
+    if (prevPage) {
+      curPage = prevPage;
+    } else {
+      curPage = "entity";
+    }
+    prevPage = null;
   }
 </script>
 
@@ -354,6 +432,23 @@
               >
               View Additional Metadata</Button
             >
+            <Button
+              border={true}
+              on:click={() => {
+                handleChangePageMsg({ detail: { page: "graph" } });
+              }}
+            >
+              <svg
+                class="icon"
+                fill="currentColor"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 576 512"
+                ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+                  d="M0 80C0 53.5 21.5 32 48 32h96c26.5 0 48 21.5 48 48V96H384V80c0-26.5 21.5-48 48-48h96c26.5 0 48 21.5 48 48v96c0 26.5-21.5 48-48 48H432c-26.5 0-48-21.5-48-48V160H192v16c0 1.7-.1 3.4-.3 5L272 288h96c26.5 0 48 21.5 48 48v96c0 26.5-21.5 48-48 48H272c-26.5 0-48-21.5-48-48V336c0-1.7 .1-3.4 .3-5L144 224H48c-26.5 0-48-21.5-48-48V80z"
+                /></svg
+              >
+              Graph</Button
+            >
             {#if dbEntries.length === 0}
               <Button
                 border={true}
@@ -362,7 +457,20 @@
                 }}>Edit Sources</Button
               >
             {/if}
-            <div id="delete-button"><Button border={true}>Delete</Button></div>
+            <div id="delete-button">
+              <Button border={true}>
+                <svg
+                  class="icon"
+                  fill="currentColor"
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 448 512"
+                  ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+                    d="M135.2 17.7C140.6 6.8 151.7 0 163.8 0H284.2c12.1 0 23.2 6.8 28.6 17.7L320 32h96c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 96 0 81.7 0 64S14.3 32 32 32h96l7.2-14.3zM32 128H416V448c0 35.3-28.7 64-64 64H96c-35.3 0-64-28.7-64-64V128zm96 64c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16z"
+                  /></svg
+                >
+                Delete</Button
+              >
+            </div>
           </div>
         </div>
         <div id="attestation-sidebar">
@@ -434,15 +542,7 @@
         <SourcesList
           sources={$hyperbeeSources}
           success={sourcesListSuccess}
-          on:prevPage={(e) => {
-            errMsg = "";
-            if (prevPage) {
-              curPage = prevPage;
-            } else {
-              curPage = "entity";
-            }
-            prevPage = null;
-          }}
+          on:prevPage={handlePrevPageMsg}
           on:sourcesChange={(e) => {
             (async () => {
               sourcesListSuccess = await reloadData($hyperbeeSources, fileCid);
@@ -454,6 +554,20 @@
             })();
           }}
         />
+      </div>
+    {:else if curPage === "graph"}
+      <div id="title-bar">
+        <h1>Graph</h1>
+        <p>
+          Only the first source in your sources list is used to draw this graph.
+          Only three hops are calculated.
+        </p>
+      </div>
+      <div id="graph-container">
+        <Graph data={graphData} mainCid={fileCid} />
+      </div>
+      <div id="graph-button-container">
+        <Button border={true} on:click={handlePrevPageMsg}>Back</Button>
       </div>
     {/if}
   {/if}
@@ -568,6 +682,15 @@
   #sources-list-container {
     margin-left: 2em;
     width: 40%;
+  }
+
+  #graph-container {
+    flex-grow: 1;
+    min-height: 50%;
+  }
+  #graph-button-container {
+    margin: 1em;
+    height: 10%;
   }
 
   .cid {
