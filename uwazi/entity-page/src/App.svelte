@@ -54,17 +54,18 @@
   };
 
   /**
-   * Walks through hyperbeeSources, amalgamating entries from all sources.
+   * Walks through output of loadData, amalgamating entries from all sources.
    *
    * Returns an Array of the following:
-   * {
-   *   source: <hyperbee name>,
-   *   attr: <attribute name>,
-   *   data: <attestation data>,
-   *   alts: [ // What other hyperbees have to say about this attr
-   *     {source, data}
-   *   ]
-   * }
+   *
+   *     {
+   *       source: <hyperbee name>,
+   *       attr: <attribute name>,
+   *       data: <attestation data>,
+   *       alts: [ // What other hyperbees have to say about this attr
+   *         {source, data}
+   *       ]
+   *     }
    */
   const getDbEntries = (datas) => {
     // Store already seen attribute names in a hashmap for O(1) checking
@@ -110,8 +111,6 @@
   let entity;
   if (import.meta.env.DEV) {
     // Example dataset
-    // In prod Uwazi will set this variable
-    // https://uwazi.readthedocs.io/en/latest/admin-docs/designing-your-website.html#exploring-your-datasets
     entity = {
       sharedId: "wow65tfsa2",
       permissions: [
@@ -159,6 +158,8 @@
       _id: "645b9f413f4de0737494fa2c",
     };
   } else {
+    // In prod Uwazi will set this variable
+    // https://uwazi.readthedocs.io/en/latest/admin-docs/designing-your-website.html#exploring-your-datasets
     entity = datasets.entity;
   }
 
@@ -274,8 +275,6 @@
     // Start with the provided one
     await updateData(cid);
 
-    // TODO: look at parent and child CIDs
-
     // Limit to depth of 3 (2 + 1 level already done)
     for (let i = 0; i < 2; i++) {
       for (const [cid, relations] of Object.entries(graphData)) {
@@ -300,6 +299,16 @@
 
     loading = false;
   };
+
+  function humanFileSize(size) {
+    // https://stackoverflow.com/a/20732091
+    var i = size == 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
+    return (
+      (size / Math.pow(1024, i)).toFixed(2) * 1 +
+      " " +
+      ["B", "kB", "MB", "GB", "TB"][i]
+    );
+  }
 
   function handleChangePageMsg(event) {
     if (event.detail.page === "sources") {
@@ -382,6 +391,7 @@
                   >
                 </a>
               </p>
+              <p id="file-size">{humanFileSize(fileSize)}</p>
               <div id="embed-container">
                 {#if isWacz}
                   <replay-web-page source={fileUrl} replayBase="/api/files/" />
@@ -655,7 +665,12 @@
     overflow-y: auto;
   }
   #top-file-text {
-    margin-top: 2em;
+    margin-top: 2em !important;
+    margin-bottom: 0 !important;
+  }
+  #file-size {
+    font-size: 0.85em;
+    margin-top: 0.5em !important;
   }
   #embed-container {
     height: 65%;

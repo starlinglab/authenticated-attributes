@@ -20,7 +20,7 @@ Vis docs:
   let edges = new vis.DataSet();
 
   for (const [cid, relations] of Object.entries(data)) {
-    // cid variable is a string, but all others will be CID objects.
+    // cid variable is a string, but all others are CID objects.
 
     nodes.update({ id: cid, label: cid });
 
@@ -59,7 +59,7 @@ Vis docs:
   });
 
   // Create a network
-  let container;
+  let container; // div Element
   $: if (container) {
     let network = new vis.Network(
       container,

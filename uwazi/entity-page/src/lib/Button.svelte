@@ -24,6 +24,7 @@
     background-color: transparent;
     border-radius: 0.3em;
     padding: 0.5em;
+    cursor: pointer;
   }
   button:hover {
     background-color: var(--theme1-hover);

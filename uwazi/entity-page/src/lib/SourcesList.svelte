@@ -79,7 +79,7 @@
     on:click={() => {
       if (success !== true) {
         // Reset sources, either these ones weren't saved or failed to load when they were
-        sources = sourcesCopy;
+        sources = structuredClone(sourcesCopy);
       }
       dispatch("prevPage");
     }}>Back</Button
@@ -118,14 +118,13 @@
   .icon {
     margin-top: auto;
     margin-bottom: auto;
+    cursor: pointer;
   }
   .plus {
     margin-right: 1em;
-    cursor: pointer;
   }
   .trash {
     margin-left: 1em;
-    cursor: pointer;
   }
   .input-container {
     flex-grow: 1;

@@ -134,21 +134,4 @@ Adapted from https://svelte.dev/examples/modal
     text-align: center;
     min-width: max-content;
   }
-  #buttons-div :global(button) {
-    text-transform: uppercase;
-    color: var(--theme1);
-    font-weight: bold;
-    display: inline-block;
-    border: none;
-    background-color: transparent;
-    border-radius: 0.2em;
-    padding: 0.5em;
-  }
-  #buttons-div :global(button:hover) {
-    background-color: var(--theme1-hover);
-  }
-  #buttons-div :global(button:active) {
-    background-color: var(--theme1-active);
-    color: white;
-  }
 </style>

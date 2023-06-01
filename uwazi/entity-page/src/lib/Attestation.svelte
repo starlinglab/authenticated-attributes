@@ -120,7 +120,7 @@
       {data.attestation.value}
     {/if}
   </span>
-  <span slot="content">
+  <div slot="content">
     <!-- Center align *block*, text is actually left aligned in child -->
     <div style="text-align: center;">
       <div id="attr-modal-content">
@@ -144,7 +144,7 @@
         <p><strong>Timestamping Proof:</strong> ?</p>
       </div>
     </div>
-  </span>
+  </div>
   <span slot="buttons">
     <!-- svelte-ignore missing-declaration -->
     <Button
