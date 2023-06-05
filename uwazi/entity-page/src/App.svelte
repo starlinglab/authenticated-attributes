@@ -202,18 +202,18 @@
       return;
     }
 
-    if ($hyperbeeSources.length === 0) {
-      hyperbeeSources.set([
-        {
-          name: "Local Dev",
-          server: "http://localhost:3001",
-        },
-        {
-          name: "Local Dev 2",
-          server: "http://localhost:3001",
-        },
-      ]);
-    }
+    // if ($hyperbeeSources.length === 0) {
+    //   hyperbeeSources.set([
+    //     {
+    //       name: "Local Dev",
+    //       server: "http://localhost:3001",
+    //     },
+    //     {
+    //       name: "Local Dev 2",
+    //       server: "http://localhost:3001",
+    //     },
+    //   ]);
+    // }
 
     try {
       await loadScript(dagCborURL);
@@ -243,6 +243,22 @@
     }
   }
 
+  /*
+  {
+    "<cid>": {
+      childOf: {
+        <source num>: [CID(...), CID(...), ...],
+        <source 2 num>: [CID(...), CID(...), ...]
+      },
+      parentOf: {
+        // Same as childOf
+      }
+    },
+    "<cid>": {
+      // etc
+    }
+  }
+  */
   let graphData;
 
   /**
@@ -254,21 +270,27 @@
     graphData = {};
 
     const updateData = async (fcid) => {
-      const resp = await fetch(`${sources[0].server}/${fcid}`);
-      if (!resp.ok) {
-        errMsg = `failed to load data: ${resp.statusText}`;
-        loading = false;
-        throw new Error("failed to load data");
+      if (!(fcid in graphData)) {
+        graphData[fcid] = { childOf: {}, parentOf: {} };
       }
-      const attests = IpldDagCbor.decode(
-        new Uint8Array(await resp.arrayBuffer())
-      );
 
-      graphData[fcid] = {
-        childOf: (attests.childOf && attests.childOf.attestation.value) || [],
-        parentOf:
-          (attests.parentOf && attests.parentOf.attestation.value) || [],
-      };
+      for (var i = 0; i < $hyperbeeSources.length; i++) {
+        const hb = $hyperbeeSources[i];
+        const resp = await fetch(`${hb.server}/${fcid}`);
+        if (!resp.ok) {
+          errMsg = `failed to load data: ${resp.statusText}`;
+          loading = false;
+          throw new Error("failed to load data");
+        }
+        const attests = IpldDagCbor.decode(
+          new Uint8Array(await resp.arrayBuffer())
+        );
+
+        graphData[fcid].childOf[i] =
+          (attests.childOf && attests.childOf.attestation.value) || [];
+        graphData[fcid].parentOf[i] =
+          (attests.parentOf && attests.parentOf.attestation.value) || [];
+      }
     };
 
     // Walk the tree of CIDs
@@ -279,19 +301,23 @@
     for (let i = 0; i < 2; i++) {
       for (const [cid, relations] of Object.entries(graphData)) {
         // Parents
-        for (let parent of relations.childOf) {
-          parent = parent.toString();
-          if (!graphData[parent]) {
-            // Not processed yet
-            await updateData(parent);
+        for (const [source, parents] of Object.entries(relations.childOf)) {
+          for (let parent of parents) {
+            parent = parent.toString();
+            if (!graphData[parent]) {
+              // Not processed yet
+              await updateData(parent);
+            }
           }
         }
         // Children
-        for (let child of relations.parentOf) {
-          child = child.toString();
-          if (!graphData[child]) {
-            // Not processed yet
-            await updateData(child);
+        for (const [source, children] of Object.entries(relations.parentOf)) {
+          for (let child of children) {
+            child = child.toString();
+            if (!graphData[child]) {
+              // Not processed yet
+              await updateData(child);
+            }
           }
         }
       }
@@ -568,10 +594,7 @@
     {:else if curPage === "graph"}
       <div id="title-bar">
         <h1>Graph</h1>
-        <p>
-          Only the first source in your sources list is used to draw this graph.
-          Only three hops are calculated.
-        </p>
+        <p>Only three hops are calculated.</p>
       </div>
       <div id="graph-container">
         <Graph data={graphData} mainCid={fileCid} />

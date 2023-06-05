@@ -58,6 +58,12 @@
     return value.toString() === "[object Object]";
   }
 
+  function trimLarge(value) {
+    let max = 100; // Long enough to be too wide and trigger CSS ellipsis
+    let string = JSON.stringify(value);
+    return string.length > max ? string.substring(0, max - 3) + "..." : string;
+  }
+
   $: largeData = isLargeData(data.attestation.value);
 </script>
 
@@ -75,7 +81,7 @@
       {#if data.attestation.encrypted}
         <span class="value encrypted">encrypted</span>
       {:else if largeData}
-        <span class="value large">large data</span>
+        <span class="value large">{trimLarge(data.attestation.value)}</span>
       {:else}
         <span class="value">{data.attestation.value}</span>
       {/if}
@@ -115,7 +121,7 @@
     {#if data.attestation.encrypted}
       <span class="encrypted">encrypted</span>
     {:else if largeData}
-      <span class="large">large data</span>
+      <span class="large">{trimLarge(data.attestation.value)}</span>
     {:else}
       {data.attestation.value}
     {/if}
@@ -136,12 +142,12 @@
           <strong>Public Key:</strong>
           <code> {uint8ArrayToBase64(data.signature.pubKey)}</code>
         </p>
-        <p><strong>Signature:</strong> ?</p>
+        <p><strong>Signature:</strong> ...</p>
         <p>
           <strong>Attestation CID:</strong>
           <code>{data.signature.signedMsg}</code>
         </p>
-        <p><strong>Timestamping Proof:</strong> ?</p>
+        <p><strong>Timestamping Proof:</strong> ...</p>
       </div>
     </div>
   </div>
@@ -172,7 +178,7 @@
       {#if data.attestation.encrypted}
         <span class="encrypted">encrypted</span>
       {:else if largeData}
-        <span class="large">large data</span>
+        <span class="large">{trimLarge(data.attestation.value)}</span>
       {:else}
         {data.attestation.value}
       {/if}
@@ -183,7 +189,7 @@
         {#if alt.data.attestation.encrypted}
           <span class="encrypted">encrypted</span>
         {:else if isLargeData(alt.data.attestation.value)}
-          <span class="large">large data</span>
+          <span class="large">{trimLarge(data.attestation.value)}</span>
         {:else}
           {data.attestation.value}
         {/if}
@@ -239,6 +245,11 @@
   .encrypted,
   .large {
     font-style: italic;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    white-space: nowrap;
+    display: inline-block;
+    width: 100%;
   }
 
   #attr-modal-content {
