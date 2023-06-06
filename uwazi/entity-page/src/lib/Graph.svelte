@@ -20,13 +20,13 @@ Vis docs:
 
   // Color edges according to the source that defined them
   const sourceColors = {
-    // Monokai
+    // Monokai, re-ordered
     0: "#ff6188",
-    1: "#fc9867",
-    2: "#ffd866",
-    3: "#a9dc76",
-    4: "#78dce8",
-    5: "#ab9df2",
+    1: "#ab9df2",
+    2: "#fc9867",
+    3: "#ffd866",
+    4: "#a9dc76",
+    5: "#78dce8",
   };
 
   // Process data
