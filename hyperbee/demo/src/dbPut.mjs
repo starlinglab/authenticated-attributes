@@ -141,4 +141,45 @@ const dbAddRelation = async (db, id, childOrParent, verb, relationCid) => {
   await batch.flush();
 };
 
-export { dbPut, setSigningKey, dbAppend, dbAddRelation };
+/**
+ * Same as dbAddRelation. The first CID that matches the given one is removed.
+ */
+const dbRemoveRelation = async (db, id, childOrParent, verb, relationCid) => {
+  if (childOrParent !== "children" && childOrParent !== "parents") {
+    throw new Error("childOrParent must be children or parents");
+  }
+
+  const batch = db.batch();
+  await batch.lock();
+
+  const result = await dbGet(
+    batch,
+    id,
+    childOrParent,
+    await ed.getPublicKeyAsync(sigKey),
+    false,
+    true
+  );
+  if (result === null) {
+    // Nothing is stored under this attribute yet, so do nothing
+    await batch.flush();
+    return;
+  }
+  if (!(verb in result.value)) {
+    // Array for this verb doesn't exist, so do nothing
+    await batch.flush();
+    return;
+  }
+  // Array exists for verb
+  for (let i = 0; i < result.value[verb].length; i++) {
+    const cid = result.value[verb][i];
+    if (cid.equals(relationCid)) {
+      result.value[verb].splice(i, 1);
+      break;
+    }
+  }
+  await dbPut(batch, id, childOrParent, result.value);
+  await batch.flush();
+};
+
+export { dbPut, setSigningKey, dbAppend, dbAddRelation, dbRemoveRelation };

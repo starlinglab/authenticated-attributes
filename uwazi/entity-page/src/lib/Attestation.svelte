@@ -189,9 +189,9 @@
         {#if alt.data.attestation.encrypted}
           <span class="encrypted">encrypted</span>
         {:else if isLargeData(alt.data.attestation.value)}
-          <span class="large">{trimLarge(data.attestation.value)}</span>
+          <span class="large">{trimLarge(alt.data.attestation.value)}</span>
         {:else}
-          {data.attestation.value}
+          {alt.data.attestation.value}
         {/if}
       </p>
     {/each}

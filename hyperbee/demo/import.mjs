@@ -157,14 +157,14 @@ for (var key in metaContent) {
           datadb,
           contentCID,
           "parents",
-          "related",
+          "verified",
           CID.parse(parentContentCid)
         );
         await dbAddRelation(
           datadb,
           parentContentCid,
           "children",
-          "related",
+          "verified",
           CID.parse(contentCID)
         );
       }

@@ -124,6 +124,7 @@ Vis docs:
           color: "grey",
           font: { color: "black", align: "horizontal", multi: "html" },
           labelHighlightBold: false,
+          width: 4,
         },
         nodes: {
           shape: "box",
@@ -139,7 +140,11 @@ Vis docs:
   <p>
     Source colors:
     {#each $hyperbeeSources as { name, server }, i}
-      <span style:color={sourceColors[i]}>{name} </span>
+      <span
+        class="legend"
+        style:background-color={sourceColors[i]}
+        style:border-color={sourceColors[i]}>{name}</span
+      >&nbsp;
     {/each}
   </p>
   <div bind:this={container} id="vis-container" />
@@ -157,6 +162,12 @@ Vis docs:
     display: block;
     width: 100%;
     height: 100%;
+  }
+  .legend {
+    border-radius: 0.3em;
+    padding: 0.1em;
+    border: 2px solid var(--theme-border);
+    display: inline-block;
   }
   p {
     height: fit-content;
