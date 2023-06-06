@@ -47,10 +47,10 @@ Vis docs:
               id: child.toString(),
               label: child.toString(),
             });
-            if (!edges.get(`${childType}-${cid}-${child}`)) {
+            if (!edges.get(`children-${childType}-${cid}-${child}`)) {
               // Only add edge if it doesn't already exist
               edges.update({
-                id: `${childType}-${cid}-${child}`,
+                id: `children-${childType}-${cid}-${child}`,
                 from: cid,
                 to: child.toString(),
                 label: `<b>${childType}</b>`,
@@ -69,10 +69,10 @@ Vis docs:
               id: parent.toString(),
               label: parent.toString(),
             });
-            if (!edges.get(`${parentType}-${parent}-${cid}`)) {
+            if (!edges.get(`parents-${parentType}-${parent}-${cid}`)) {
               // Only add edge if it doesn't already exist
               edges.update({
-                id: `${parentType}-${parent}-${cid}`,
+                id: `parents-${parentType}-${parent}-${cid}`,
                 from: parent.toString(),
                 to: cid,
                 label: `\n\n<b>${parentType}</b>`,
