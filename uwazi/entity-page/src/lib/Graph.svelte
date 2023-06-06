@@ -39,43 +39,46 @@ Vis docs:
 
     nodes.update({ id: cid, label: cid });
 
-    if (relations.parentOf) {
-      for (const [source, children] of Object.entries(relations.parentOf)) {
-        for (const child of children) {
-          console.log(edges);
-          nodes.update({
-            id: child.toString(),
-            label: child.toString(),
-          });
-          if (!edges.get(`parentOf-${cid}-${child}`)) {
-            // Only add edge if it doesn't already exist
-            edges.update({
-              id: `parentOf-${cid}-${child}`,
-              from: cid,
-              to: child.toString(),
-              label: "<b>parentOf</b>",
-              color: source < 6 ? sourceColors[source] : "grey",
+    if (relations.children) {
+      for (const [source, sourceData] of Object.entries(relations.children)) {
+        for (const [childType, children] of Object.entries(sourceData)) {
+          for (const child of children) {
+            nodes.update({
+              id: child.toString(),
+              label: child.toString(),
             });
+            if (!edges.get(`${childType}-${cid}-${child}`)) {
+              // Only add edge if it doesn't already exist
+              edges.update({
+                id: `${childType}-${cid}-${child}`,
+                from: cid,
+                to: child.toString(),
+                label: `<b>${childType}</b>`,
+                color: source < 6 ? sourceColors[source] : "grey",
+              });
+            }
           }
         }
       }
     }
-    if (relations.childOf) {
-      for (const [source, parents] of Object.entries(relations.childOf)) {
-        for (const parent of parents) {
-          nodes.update({
-            id: parent.toString(),
-            label: parent.toString(),
-          });
-          if (!edges.get(`childOf-${parent}-${cid}`)) {
-            // Only add edge if it doesn't already exist
-            edges.update({
-              id: `childOf-${parent}-${cid}`,
-              from: parent.toString(),
-              to: cid,
-              label: "\n\n<b>childOf</b>",
-              color: source < 6 ? sourceColors[source] : "grey",
+    if (relations.parents) {
+      for (const [source, sourceData] of Object.entries(relations.parents)) {
+        for (const [parentType, parents] of Object.entries(sourceData)) {
+          for (const parent of parents) {
+            nodes.update({
+              id: parent.toString(),
+              label: parent.toString(),
             });
+            if (!edges.get(`${parentType}-${parent}-${cid}`)) {
+              // Only add edge if it doesn't already exist
+              edges.update({
+                id: `${parentType}-${parent}-${cid}`,
+                from: parent.toString(),
+                to: cid,
+                label: `\n\n<b>${parentType}</b>`,
+                color: source < 6 ? sourceColors[source] : "grey",
+              });
+            }
           }
         }
       }

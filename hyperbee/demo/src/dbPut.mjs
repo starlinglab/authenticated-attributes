@@ -98,4 +98,47 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
   return result.value;
 };
 
-export { dbPut, setSigningKey, dbAppend };
+/**
+ * If the given key and/or verb doesn't exist it will be created.
+ *
+ * Duplicate CIDs in the array are allowed.
+ *
+ * A batch is used so that the change is treated as one locked atomic operation,
+ * not a separate read and write.
+ *
+ * @param {string} childOrParent is either "children" or "parents" as the db key
+ * @param {string} verb is a verb for the relation like "derived" or "transcoded"
+ * @param {CID} relationCid is the CID object to be added as a relation
+ */
+const dbAddRelation = async (db, id, childOrParent, verb, relationCid) => {
+  if (childOrParent !== "children" && childOrParent !== "parents") {
+    throw new Error("childOrParent must be children or parents");
+  }
+
+  const batch = db.batch();
+  await batch.lock();
+
+  const result = await dbGet(
+    batch,
+    id,
+    childOrParent,
+    await ed.getPublicKeyAsync(sigKey),
+    false,
+    true
+  );
+  if (result === null) {
+    // Nothing is stored under this attribute yet
+    await dbPut(batch, id, childOrParent, { [verb]: [relationCid] });
+    await batch.flush();
+    return;
+  }
+  if (verb in result.value) {
+    result.value[verb].push(relationCid);
+  } else {
+    result.value[verb] = [relationCid];
+  }
+  await dbPut(batch, id, childOrParent, result.value);
+  await batch.flush();
+};
+
+export { dbPut, setSigningKey, dbAppend, dbAddRelation };

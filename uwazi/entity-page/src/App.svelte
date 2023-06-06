@@ -246,12 +246,24 @@
   /*
   {
     "<cid>": {
-      childOf: {
-        <source num>: [CID(...), CID(...), ...],
-        <source 2 num>: [CID(...), CID(...), ...]
+      children: {
+        <source num>: {
+          "derived": [ CID(...), CID(...), ... ],
+          "transcoded": [ CID(...), CID(...), ... ],
+          "redacted": [ CID(...), CID(...), ... ],
+          "verified": [ CID(...), CID(...), ... ],
+          "related": [ CID(...), CID(...), ... ]
+        },
+        <source 2 num>: {
+          "derived": [ CID(...), CID(...), ... ],
+          "transcoded": [ CID(...), CID(...), ... ],
+          "redacted": [ CID(...), CID(...), ... ],
+          "verified": [ CID(...), CID(...), ... ],
+          "related": [ CID(...), CID(...), ... ]
+        }
       },
-      parentOf: {
-        // Same as childOf
+      parents: {
+        // Same as children
       }
     },
     "<cid>": {
@@ -271,7 +283,7 @@
 
     const updateData = async (fcid) => {
       if (!(fcid in graphData)) {
-        graphData[fcid] = { childOf: {}, parentOf: {} };
+        graphData[fcid] = { parents: {}, children: {} };
       }
 
       for (var i = 0; i < $hyperbeeSources.length; i++) {
@@ -286,10 +298,10 @@
           new Uint8Array(await resp.arrayBuffer())
         );
 
-        graphData[fcid].childOf[i] =
-          (attests.childOf && attests.childOf.attestation.value) || [];
-        graphData[fcid].parentOf[i] =
-          (attests.parentOf && attests.parentOf.attestation.value) || [];
+        graphData[fcid].parents[i] =
+          (attests.parents && attests.parents.attestation.value) || [];
+        graphData[fcid].children[i] =
+          (attests.children && attests.children.attestation.value) || [];
       }
     };
 
@@ -301,22 +313,26 @@
     for (let i = 0; i < 2; i++) {
       for (const [cid, relations] of Object.entries(graphData)) {
         // Parents
-        for (const [source, parents] of Object.entries(relations.childOf)) {
-          for (let parent of parents) {
-            parent = parent.toString();
-            if (!graphData[parent]) {
-              // Not processed yet
-              await updateData(parent);
+        for (const [source, sourceData] of Object.entries(relations.parents)) {
+          for (const [parentType, parents] of Object.entries(sourceData)) {
+            for (let parent of parents) {
+              parent = parent.toString();
+              if (!graphData[parent]) {
+                // Not processed yet
+                await updateData(parent);
+              }
             }
           }
         }
         // Children
-        for (const [source, children] of Object.entries(relations.parentOf)) {
-          for (let child of children) {
-            child = child.toString();
-            if (!graphData[child]) {
-              // Not processed yet
-              await updateData(child);
+        for (const [source, sourceData] of Object.entries(relations.children)) {
+          for (const [childType, children] of Object.entries(sourceData)) {
+            for (let child of children) {
+              child = child.toString();
+              if (!graphData[child]) {
+                // Not processed yet
+                await updateData(child);
+              }
             }
           }
         }
@@ -512,7 +528,7 @@
         <div id="attestation-sidebar">
           {#if dbEntries.length > 0}
             {#each dbEntries as { source, attr, data, alts }}
-              {#if attr === "childOf" && !data.attestation.encrypted}
+              {#if attr === "parents" && !data.attestation.encrypted}
                 <Attestation
                   {data}
                   {alts}
@@ -520,41 +536,47 @@
                   customTitle="Parents"
                   on:changePage={handleChangePageMsg}
                 >
-                  <span slot="value">
-                    {#each data.attestation.value as cid}
-                      <!-- svelte-ignore a11y-click-events-have-key-events -->
-                      <span
-                        class="cid"
-                        on:click={() => {
-                          handleChangePageMsg({
-                            detail: { page: "cid", cid: cid.toString() },
-                          });
-                        }}>{cid}</span
-                      ><br />
+                  <div slot="value">
+                    {#each Object.entries(data.attestation.value) as [parentType, cids]}
+                      <span class="cid-type">{parentType}</span>
+                      {#each cids as cid}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <span
+                          class="cid"
+                          on:click={() => {
+                            handleChangePageMsg({
+                              detail: { page: "cid", cid: cid.toString() },
+                            });
+                          }}>{cid}</span
+                        ><br />
+                      {/each}
                     {/each}
-                  </span>
+                  </div>
                 </Attestation>
-              {:else if attr === "parentOf" && !data.attestation.encrypted}
+              {:else if attr === "children" && !data.attestation.encrypted}
                 <Attestation
                   {data}
                   {alts}
                   signer={source}
-                  customTitle="Derivatives"
+                  customTitle="Children"
                   on:changePage={handleChangePageMsg}
                 >
-                  <span slot="value">
-                    {#each data.attestation.value as cid}
-                      <!-- svelte-ignore a11y-click-events-have-key-events -->
-                      <span
-                        class="cid"
-                        on:click={() => {
-                          handleChangePageMsg({
-                            detail: { page: "cid", cid: cid.toString() },
-                          });
-                        }}>{cid}</span
-                      ><br />
+                  <div slot="value">
+                    {#each Object.entries(data.attestation.value) as [childType, cids]}
+                      <span class="cid-type">{childType}</span>
+                      {#each cids as cid}
+                        <!-- svelte-ignore a11y-click-events-have-key-events -->
+                        <span
+                          class="cid"
+                          on:click={() => {
+                            handleChangePageMsg({
+                              detail: { page: "cid", cid: cid.toString() },
+                            });
+                          }}>{cid}</span
+                        ><br />
+                      {/each}
                     {/each}
-                  </span>
+                  </div>
                 </Attestation>
               {:else}
                 <Attestation
@@ -731,6 +753,14 @@
     height: 10%;
   }
 
+  .cid-type {
+    display: inline-block;
+    width: max-content;
+    white-space: nowrap;
+  }
+  .cid-type::first-letter {
+    text-transform: capitalize;
+  }
   .cid {
     cursor: pointer;
     text-decoration: underline;
@@ -740,6 +770,14 @@
     display: inline-block;
     width: 100%;
     color: var(--theme2);
+    padding-left: 2ch;
+    /*
+    No matter the padding values, the CID needs to not go outside its flex element box
+    Setting this fixes that. Otherwise padding pushes it outside the box.
+
+    https://stackoverflow.com/a/8075903 
+    */
+    box-sizing: border-box;
   }
 
   /* Undo Uwazi styling */

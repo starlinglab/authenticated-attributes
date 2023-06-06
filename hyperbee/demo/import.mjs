@@ -8,7 +8,7 @@ import Hyperbee from "hyperbee";
 import AdmZip from "adm-zip";
 import { CID } from "multiformats";
 
-import { dbAppend, dbPut, setSigningKey } from "./src/dbPut.mjs";
+import { dbAddRelation, dbPut, setSigningKey } from "./src/dbPut.mjs";
 import { newKey } from "./src/encryptValue.mjs";
 import { keyFromPem } from "./src/signAttestation.mjs";
 
@@ -153,8 +153,20 @@ for (var key in metaContent) {
         // then store it as an array
         const parentEncryptedArchiveCid = metaContent[key][extrasKey];
         const parentContentCid = cidMapping[parentEncryptedArchiveCid];
-        dbAppend(datadb, contentCID, "childOf", CID.parse(parentContentCid));
-        dbAppend(datadb, parentContentCid, "parentOf", CID.parse(contentCID));
+        await dbAddRelation(
+          datadb,
+          contentCID,
+          "parents",
+          "related",
+          CID.parse(parentContentCid)
+        );
+        await dbAddRelation(
+          datadb,
+          parentContentCid,
+          "children",
+          "related",
+          CID.parse(contentCID)
+        );
       }
       dbPut(datadb, contentCID, extrasKey, metaContent[key][extrasKey]);
     }
