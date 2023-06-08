@@ -14,6 +14,9 @@
   const visURL =
     "https://cdn.jsdelivr.net/npm/vis-network@9.1.6/standalone/umd/vis-network.min.js";
 
+  const DEBUG = import.meta.env.DEV;
+  console.log("Debug status:", DEBUG);
+
   /// Setup funcs ///
 
   const isScriptAlreadyIncluded = (src) => {
@@ -96,6 +99,7 @@
     try {
       const datas = await loadData(sources, cid);
       dbEntries = getDbEntries(datas);
+      entityInfo = getEntityInfo(cid);
     } catch (e) {
       errMsg = e.toString();
       console.error(e);
@@ -104,6 +108,66 @@
     }
     loading = false;
     return true;
+  };
+
+  const getEntityInfo = (cid) => {
+    if (cid === false || cid === ogEntityCid) {
+      // Original page
+      let entityHasAttachment = entity.attachments.length == 1;
+      let isWacz =
+        !entityHasAttachment ||
+        entity.attachments[0].originalname.endsWith(".wacz");
+      return {
+        title: entity.title,
+        hasAttachment: entityHasAttachment,
+        cid:
+          !entityHasAttachment ||
+          (entity.metadata.sha256cid && entity.metadata.sha256cid.value) ||
+          null,
+        fileType:
+          !entityHasAttachment ||
+          (isWacz ? "application/wacz" : entity.attachments[0].mimetype),
+        fileName: !entityHasAttachment || entity.attachments[0].originalname,
+        fileSize: !entityHasAttachment || entity.attachments[0].size,
+        fileUrl:
+          !entityHasAttachment ||
+          "/api/files/" + entity.attachments[0].filename,
+        isWacz: isWacz,
+      };
+    }
+    for (const ent of entities) {
+      if (
+        !("sha256cid" in ent.metadata) ||
+        ent.metadata.sha256cid.length === 0
+      ) {
+        continue;
+      }
+      if (ent.metadata.sha256cid[0].value === cid) {
+        let entityHasAttachment = ent.attachments.length == 1;
+        let isWacz =
+          !entityHasAttachment ||
+          ent.attachments[0].originalname.endsWith(".wacz");
+        return {
+          title: ent.title,
+          hasAttachment: entityHasAttachment,
+          cid: cid,
+          fileType:
+            !entityHasAttachment ||
+            (isWacz ? "application/wacz" : ent.attachments[0].mimetype),
+          fileName: !entityHasAttachment || ent.attachments[0].originalname,
+          fileSize: !entityHasAttachment || ent.attachments[0].size,
+          fileUrl:
+            !entityHasAttachment || "/api/files/" + ent.attachments[0].filename,
+          isWacz: isWacz,
+        };
+      }
+    }
+    // No match found, return basic info
+    return {
+      title: "Unknown",
+      hasAttachment: false,
+      cid: cid,
+    };
   };
 
   /// Variables ///
@@ -163,20 +227,19 @@
     entity = datasets.entity;
   }
 
-  const entityTitle = entity.title;
-  const entityHasAttachment = entity.attachments.length == 1;
-  // Set attachment-based variables
-  const entityCid =
-    !entityHasAttachment ||
-    (entity.metadata.sha256cid && entity.metadata.sha256cid.value) ||
-    null;
-  let fileCid = entityCid; // Changes based on what page is viewing
-  const fileType = !entityHasAttachment || entity.attachments[0].mimetype;
-  const fileName = !entityHasAttachment || entity.attachments[0].originalname;
-  const fileSize = !entityHasAttachment || entity.attachments[0].size;
-  const fileUrl =
-    !entityHasAttachment || "/api/files/" + entity.attachments[0].filename;
-  const isWacz = !entityHasAttachment || fileName.endsWith(".wacz");
+  let ogEntityCid;
+  let entityInfo = getEntityInfo(false);
+  ogEntityCid = structuredClone(entityInfo).cid;
+  let fileCid = ogEntityCid;
+
+  let entities = [];
+  if (import.meta.env.PROD) {
+    // Stores the result of an API search made using the <Query> component, see index.html
+    // https://uwazi.readthedocs.io/en/latest/admin-docs/analysing-and-visualising-your-collection.html#query-component
+    //
+    // An array of objects in a SIMILAR format as the entity variable. "metadata" is different.
+    entities = datasets.entities.rows;
+  }
 
   // Names for different "pages" that can be viewed
   // Current avail. pages: entity, sources, cid, graph
@@ -191,9 +254,10 @@
 
   let sourcesListSuccess = null; // null means sources haven't been tested yet
 
-  // Main function
+  /// Main function ///
+
   (async () => {
-    if (!entityHasAttachment) {
+    if (!entityInfo.hasAttachment) {
       errMsg = "No attachment for this entity";
       return;
     }
@@ -218,7 +282,7 @@
     try {
       await loadScript(dagCborURL);
       await loadScript(visURL);
-      if (isWacz) {
+      if (entityInfo.isWacz) {
         await loadScript(replayWebURL);
       }
       await reloadData($hyperbeeSources, fileCid);
@@ -228,13 +292,15 @@
     }
   })();
 
-  $: if (!loading && !errMsg && !isWacz && fileObject) {
+  /// Reactivity ///
+
+  $: if (!loading && !errMsg && !entityInfo.isWacz && fileObject) {
     // Set the embedded file CSS based on the filetype
     // Images need max-width/height set so they scale to fit the container
     // PDFs, videos need explicit width and height
     // Everything else is given explicit width and height since that's probably
     // the option that will work best for most files overall.
-    if (fileType.startsWith("image/")) {
+    if (entityInfo.fileType.startsWith("image/")) {
       fileObject.style.maxWidth = "100%";
       fileObject.style.maxHeight = "100%";
     } else {
@@ -242,6 +308,8 @@
       fileObject.style.height = "100%";
     }
   }
+
+  /// Functions ///
 
   /*
   {
@@ -348,9 +416,11 @@
     return (
       (size / Math.pow(1024, i)).toFixed(2) * 1 +
       " " +
-      ["B", "kB", "MB", "GB", "TB"][i]
+      ["B", "KiB", "MiB", "GiB", "TiB"][i]
     );
   }
+
+  /// Event handlers ///
 
   function handleChangePageMsg(event) {
     if (event.detail.page === "sources") {
@@ -363,7 +433,7 @@
       // properly sets the loading variable and everything
       reloadData($hyperbeeSources, fileCid);
 
-      if (fileCid === entityCid) {
+      if (fileCid === ogEntityCid) {
         // User has clicked back into the entity, so display the entity page instead
         prevPage = curPage;
         curPage = "entity";
@@ -412,15 +482,15 @@
   {#if !loading}
     {#if (curPage === "entity" || curPage === "cid") && !errMsg}
       <div id="title-bar">
-        <h1>{entityTitle}</h1>
+        <h1>{entityInfo.title}</h1>
       </div>
       <div id="container-6facc2a3">
         <div id="non-sidebar">
           <div id="file-info">
-            {#if curPage === "entity"}
+            {#if entityInfo.hasAttachment}
               <p id="top-file-text">
-                {fileType.split("/")[1].toUpperCase()}
-                <a href={fileUrl} target="_blank">
+                {entityInfo.fileType.split("/")[1].toUpperCase()}
+                <a href={entityInfo.fileUrl} target="_blank">
                   <svg
                     style="color: var(--theme1);"
                     class="icon"
@@ -433,17 +503,20 @@
                   >
                 </a>
               </p>
-              <p id="file-size">{humanFileSize(fileSize)}</p>
+              <p id="file-size">{humanFileSize(entityInfo.fileSize)}</p>
               <div id="embed-container">
-                {#if isWacz}
-                  <replay-web-page source={fileUrl} replayBase="/api/files/" />
+                {#if entityInfo.isWacz}
+                  <replay-web-page
+                    source={`https://wacz.hyperbee.dev.starlinglab.org/${entityInfo.cid}`}
+                    replayBase="/api/files/"
+                  />
                 {:else}
                   <object
                     bind:this={fileObject}
                     id="file-object"
-                    title={fileName}
-                    data={fileUrl}
-                    type={fileType}
+                    title={entityInfo.fileName}
+                    data={entityInfo.fileUrl}
+                    type={entityInfo.fileType}
                   >
                     <span class="error">Failed to display file</span>
                     <style>
@@ -455,7 +528,7 @@
                 {/if}
               </div>
             {:else}
-              <p>Can't display file information for just a CID.</p>
+              <p>No file information is available for this CID.</p>
             {/if}
             <p><strong>CID</strong> <code>{fileCid}</code></p>
           </div>
