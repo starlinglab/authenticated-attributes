@@ -466,7 +466,7 @@
   {/if}
   {#if errMsg}
     <p class="error">{errMsg}</p>
-    {#if curPage === "entity"}
+    {#if curPage === "entity" && entityInfo.hasAttachment && fileCid}
       <div id="error-button">
         <Button
           border={true}

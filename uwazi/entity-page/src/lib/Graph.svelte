@@ -161,7 +161,7 @@ Vis docs:
     flex-grow: 1;
     display: block;
     width: 100%;
-    height: 100%;
+    height: calc(100% - 2em);
   }
   .legend {
     border-radius: 0.3em;
@@ -170,7 +170,7 @@ Vis docs:
     display: inline-block;
   }
   p {
-    height: fit-content;
+    height: 2em;
     margin-left: 1em;
   }
 </style>
