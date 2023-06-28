@@ -140,7 +140,7 @@ const metaContent = JSON.parse(metaContentEntry.getData())["contentMetadata"];
 const metaRecorder = JSON.parse(metaRecorderEntry.getData());
 
 // Add all keys, and go inside known object keys
-// dbPut/dbAppend functions are called asynchronously to speed things up
+// dbPut functions are called asynchronously to speed things up
 
 for (var key in metaContent) {
   console.log(`Processing key: ${key}`);
