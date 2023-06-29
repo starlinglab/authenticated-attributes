@@ -1,13 +1,17 @@
 <script>
+  import "./modal.css";
+
   import { createEventDispatcher } from "svelte";
 
   import Button from "./Button.svelte";
   import Modal from "./Modal.svelte";
+  import { personalHyperbee } from "./store.js";
 
   export let data;
   export let customTitle = "";
   export let signer = "";
   export let alts; // [{source, data}, ...]
+  export let fileCid;
 
   const dispatch = createEventDispatcher();
 
@@ -18,6 +22,8 @@
   let showAltModal = false;
   let altModalPos = { x: 0, y: 0 };
   let attrTitle; // Element
+
+  let downloadDialog; // Element
 
   function uint8ArrayToBase64(uint8Array) {
     let binaryString = "";
@@ -52,6 +58,41 @@
     altModalPos.x = rect.left + 10;
     altModalPos.y = rect.top + 10;
     showAltModal = true;
+  }
+  async function downloadClick() {
+    if (data.attestation.encrypted) {
+      return;
+    }
+    downloadDialog.showModal();
+    const text = downloadDialog.querySelector("span");
+    text.innerText = "Loading...";
+    const body = IpldDagCbor.encode({
+      value: data.attestation.value,
+      encKey: false,
+    });
+    try {
+      console.log($personalHyperbee);
+      const res = await fetch(
+        new URL(fileCid + "/" + data.attestation.attribute, $personalHyperbee),
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/cbor",
+          },
+          body: body,
+        }
+      );
+      if (!res.ok) {
+        throw new Error("Network response was not ok: " + res.status);
+      }
+    } catch (error) {
+      console.error(error);
+      text.innerText = error;
+      return;
+    }
+    // Success
+    text.innerText =
+      "Successfully downloaded attestation to personal hyperbee.";
   }
 
   function isLargeData(value) {
@@ -103,6 +144,9 @@
       <title>{signer}</title>
     </svg>
     <svg
+      class:disabled={data.attestation.encrypted}
+      on:click={downloadClick}
+      on:keydown={downloadClick}
       class="icon"
       fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
@@ -203,6 +247,12 @@
   </span>
 </Modal>
 
+<!-- Download attestation to personal hyperbee modal -->
+<!-- svelte-ignore a11y-click-events-have-key-events -->
+<dialog bind:this={downloadDialog} on:click|self={() => downloadDialog.close()}>
+  <div on:click|stopPropagation><span /></div>
+</dialog>
+
 {#if import.meta.env.PROD}
   <style>
     .attr {
@@ -250,6 +300,9 @@
     white-space: nowrap;
     display: inline-block;
     width: 100%;
+  }
+  .disabled {
+    opacity: 0.3;
   }
 
   #attr-modal-content {

@@ -3,6 +3,8 @@ Adapted from https://svelte.dev/examples/modal
 -->
 
 <script>
+  import "./modal.css";
+
   export let showModal = false;
   export let pos = { x: 0, y: 0 };
 
@@ -73,41 +75,11 @@ Adapted from https://svelte.dev/examples/modal
 
 <style>
   dialog {
-    max-width: 22em;
-    border-radius: 0.2em;
-    border: none;
-    padding: 0;
-    box-shadow: 0 4px 8px 0 rgba(0, 0, 0, 0.2), 0 6px 20px 0 rgba(0, 0, 0, 0.19);
     position: absolute;
     margin: 0;
   }
   dialog::backdrop {
     background: rgba(0, 0, 0, 0);
-  }
-  dialog > div {
-    padding: 0.5em;
-  }
-  dialog[open] {
-    animation: zoomin 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
-  }
-  @keyframes zoomin {
-    from {
-      transform: scale(0.95);
-    }
-    to {
-      transform: scale(1);
-    }
-  }
-  dialog[open]::backdrop {
-    animation: fadein 0.2s ease-out;
-  }
-  @keyframes fadein {
-    from {
-      opacity: 0;
-    }
-    to {
-      opacity: 1;
-    }
   }
 
   #icon-div {

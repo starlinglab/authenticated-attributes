@@ -1,6 +1,7 @@
 import express from "express";
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
+import cors from "cors";
 import { encode, decode } from "@ipld/dag-cbor";
 import { env } from "node:process";
 import bodyParser from "body-parser";
@@ -24,10 +25,7 @@ const db = new Hyperbee(core, {
 });
 
 // CORS
-app.use(function (req, res, next) {
-  res.header("Access-Control-Allow-Origin", "*");
-  next();
-});
+app.use(cors());
 
 // Allow access to raw POST body bytes
 app.use(bodyParser.raw({ type: () => true }));
