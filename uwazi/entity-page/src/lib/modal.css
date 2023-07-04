@@ -1,3 +1,5 @@
+/* Adapted from https://svelte.dev/examples/modal */
+
 dialog {
   max-width: 22em;
   border-radius: 0.2em;

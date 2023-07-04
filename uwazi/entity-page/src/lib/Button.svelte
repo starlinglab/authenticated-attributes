@@ -2,9 +2,10 @@
 
 <script>
   export let border = false;
+  export let type = "button";
 </script>
 
-<button on:click type="button" class:border><slot /></button>
+<button on:click {type} class:border><slot /></button>
 
 {#if import.meta.env.PROD}
   <style>
@@ -33,7 +34,7 @@
     background-color: var(--theme1-active);
     color: white;
   }
-  .border {
+  button.border {
     border: 2px solid var(--theme-border);
   }
 </style>

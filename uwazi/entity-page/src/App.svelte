@@ -3,7 +3,7 @@
   import Button from "./lib/Button.svelte";
   import Graph from "./lib/Graph.svelte";
   import Settings from "./lib/Settings.svelte";
-  import { hyperbeeSources, personalHyperbee } from "./lib/store.js";
+  import { hyperbeeSources } from "./lib/store.js";
 
   /// Props ///
 
@@ -687,16 +687,17 @@
       </div>
       <div id="sources-list-container">
         <Settings
-          sources={$hyperbeeSources}
           success={sourcesListSuccess}
           on:prevPage={handlePrevPageMsg}
-          on:sourcesChange={(e) => {
+          on:sourcesChange={(evt) => {
             (async () => {
-              sourcesListSuccess = await reloadData($hyperbeeSources, fileCid);
+              sourcesListSuccess = await reloadData(evt.detail, fileCid);
               if (sourcesListSuccess) {
                 // Actually call .set so that subscribers get the update and
                 // it's stored in localStorage
-                hyperbeeSources.set($hyperbeeSources);
+                hyperbeeSources.set(evt.detail);
+              } else {
+                await reloadData($hyperbeeSources, fileCid);
               }
             })();
           }}

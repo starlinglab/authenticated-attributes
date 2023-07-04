@@ -14,6 +14,10 @@
   vertical-align: -0.125em;
 }
 
+form {
+  margin: 0;
+}
+
 /* Undo Uwazi styling */
 code {
   color: unset !important;

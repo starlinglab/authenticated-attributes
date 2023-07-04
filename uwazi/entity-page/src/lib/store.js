@@ -13,10 +13,3 @@ hyperbeeSources.subscribe((value) => {
     (value && JSON.stringify(value)) || "[]"
   );
 });
-
-// Stored directly as a string (URL)
-const storedPersonal = localStorage.getItem("personalHyperbee");
-export const personalHyperbee = writable(storedPersonal || "");
-personalHyperbee.subscribe((value) => {
-  localStorage.setItem("personalHyperbee", value || "");
-});

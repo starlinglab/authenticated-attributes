@@ -5,7 +5,7 @@
 
   import Button from "./Button.svelte";
   import Modal from "./Modal.svelte";
-  import { personalHyperbee } from "./store.js";
+  import { hyperbeeSources } from "./store.js";
 
   export let data;
   export let customTitle = "";
@@ -59,21 +59,42 @@
     altModalPos.y = rect.top + 10;
     showAltModal = true;
   }
-  async function downloadClick() {
+
+  function downloadClick() {
     if (data.attestation.encrypted) {
       return;
     }
     downloadDialog.showModal();
-    const text = downloadDialog.querySelector("span");
+    // Reset view
+    downloadDialog.querySelector("#dl-server-form").style.display = "block";
+    downloadDialog.querySelector("#dl-server-info").style.display = "none";
+    // Disable default input focus which looks bad
+    downloadDialog.querySelector("#dl-server-0").blur();
+  }
+
+  async function downloadFormSubmit(e) {
+    const formData = new FormData(e.target);
+
+    // Show info text in dialog now
+    downloadDialog.querySelector("#dl-server-form").style.display = "none";
+    downloadDialog.querySelector("#dl-server-info").style.display = "block";
+    const text = downloadDialog.querySelector("#dl-server-info-text");
     text.innerText = "Loading...";
+
     const body = IpldDagCbor.encode({
       value: data.attestation.value,
       encKey: false,
     });
     try {
-      console.log($personalHyperbee);
+      if (!formData.get("dl-servers")) {
+        throw new Error("somehow no server was chosen");
+      }
+
       const res = await fetch(
-        new URL(fileCid + "/" + data.attestation.attribute, $personalHyperbee),
+        new URL(
+          fileCid + "/" + data.attestation.attribute,
+          formData.get("dl-servers")
+        ),
         {
           method: "POST",
           headers: {
@@ -91,8 +112,7 @@
       return;
     }
     // Success
-    text.innerText =
-      "Successfully downloaded attestation to personal hyperbee.";
+    text.innerText = "Successfully downloaded attestation to chosen hyperbee.";
   }
 
   function isLargeData(value) {
@@ -250,7 +270,31 @@
 <!-- Download attestation to personal hyperbee modal -->
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <dialog bind:this={downloadDialog} on:click|self={() => downloadDialog.close()}>
-  <div on:click|stopPropagation><span /></div>
+  <div id="dl-server-form" on:click|stopPropagation>
+    <div id="dl-server-title">Copy attestation to</div>
+    <form on:submit|preventDefault={downloadFormSubmit}>
+      <div id="dl-server-sources">
+        {#each $hyperbeeSources as { name, server }, i}
+          <div style:width="max-content">
+            <input
+              type="radio"
+              id={`dl-server-${i}`}
+              name="dl-servers"
+              value={server}
+              checked={i === 0 || null}
+            />
+            <label for={`dl-server-${i}`}>{name} (<code>{server}</code>)</label>
+          </div>
+        {/each}
+      </div>
+      <div id="dl-server-button">
+        <Button type="submit">Submit</Button>
+      </div>
+    </form>
+  </div>
+  <div id="dl-server-info" style="display: none">
+    <div id="dl-server-info-text" />
+  </div>
 </dialog>
 
 {#if import.meta.env.PROD}
@@ -326,5 +370,22 @@
     border-bottom: 2px solid var(--theme-border);
     padding-bottom: 0.5em;
     word-break: break-all;
+  }
+
+  #dl-server-title {
+    margin: 0.5em;
+    font-weight: bold;
+    text-align: center;
+    font-size: 1.2em;
+  }
+  #dl-server-sources {
+    margin: 0.5em;
+  }
+  #dl-server-button {
+    text-align: center;
+  }
+  #dl-server-info-text {
+    margin: 0.5em;
+    text-align: center;
   }
 </style>
