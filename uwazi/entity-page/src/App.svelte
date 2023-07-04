@@ -73,12 +73,12 @@
    *       ]
    *     }
    */
-  const getDbEntries = (datas) => {
+  const getDbEntries = (sources, datas) => {
     // Store already seen attribute names in a hashmap for O(1) checking
     const usedAttrs = {};
     const ret = [];
-    for (var i = 0; i < $hyperbeeSources.length; i++) {
-      const hb = $hyperbeeSources[i];
+    for (var i = 0; i < sources.length; i++) {
+      const hb = sources[i];
       if (Object.keys(datas[i]).length === 0) {
         continue;
       }
@@ -101,7 +101,7 @@
     errMsg = "";
     try {
       const datas = await loadData(sources, cid);
-      dbEntries = getDbEntries(datas);
+      dbEntries = getDbEntries(sources, datas);
       entityInfo = getEntityInfo(cid);
     } catch (e) {
       errMsg = e.toString();
