@@ -15,7 +15,7 @@
 
   const dagCborURL =
     "https://cdn.jsdelivr.net/npm/@ipld/dag-cbor@9.0.3/dist/index.min.js";
-  const replayWebURL = "https://cdn.jsdelivr.net/npm/replaywebpage@1.8.3/ui.js";
+  const replayWebURL = "https://cdn.jsdelivr.net/npm/replaywebpage@1.8.4/ui.js";
   const visURL =
     "https://cdn.jsdelivr.net/npm/vis-network@9.1.6/standalone/umd/vis-network.min.js";
 
