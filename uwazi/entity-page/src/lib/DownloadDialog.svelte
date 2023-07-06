@@ -111,4 +111,12 @@
     margin: 0.5em;
     text-align: center;
   }
+  code {
+    /* For Uwazi */
+    font-family: Menlo, Consolas, Monaco, Liberation Mono, Lucida Console,
+      monospace;
+    margin: unset;
+    padding: unset;
+    position: unset;
+  }
 </style>
