@@ -1,9 +1,11 @@
 <script>
+  import EditAttestation from "./lib/EditAttestation.svelte";
   import Attestation from "./lib/Attestation.svelte";
   import Button from "./lib/Button.svelte";
   import Graph from "./lib/Graph.svelte";
   import Settings from "./lib/Settings.svelte";
   import { hyperbeeSources } from "./lib/store.js";
+  import NewAttestation from "./lib/NewAttestation.svelte";
 
   /// Props ///
 
@@ -245,7 +247,7 @@
   }
 
   // Names for different "pages" that can be viewed
-  // Current avail. pages: entity, sources, cid, graph
+  // Current avail. pages: entity, sources, cid, graph, edit
   let curPage = "entity";
   let prevPage = null;
 
@@ -256,6 +258,8 @@
   let dbEntries;
 
   let sourcesListSuccess = null; // null means sources haven't been tested yet
+
+  let newAttestation; // <NewAttestation> svelte component
 
   /// Main function ///
 
@@ -537,7 +541,12 @@
             <p><strong>CID</strong> <code>{fileCid}</code></p>
           </div>
           <div id="bottom-buttons">
-            <Button border={true}>
+            <Button
+              border={true}
+              on:click={() => {
+                handleChangePageMsg({ detail: { page: "edit" } });
+              }}
+            >
               <svg
                 class="icon"
                 fill="currentColor"
@@ -714,6 +723,42 @@
       <div id="graph-button-container">
         <Button border={true} on:click={handlePrevPageMsg}>Back</Button>
       </div>
+    {:else if curPage === "edit"}
+      <div id="title-bar">
+        <h1>Edit Attestations</h1>
+        <p>
+          You can resize each textarea to make sure you are viewing the full
+          value.
+        </p>
+      </div>
+      <div id="attestations-edit-box">
+        {#if dbEntries.length > 0}
+          {#each dbEntries as { source, attr, data, alts }}
+            <EditAttestation {data} {fileCid} />
+          {/each}
+        {:else}
+          <p class="error">No attestations found</p>
+        {/if}
+      </div>
+      <div id="edit-buttons">
+        <Button border={true} on:click={handlePrevPageMsg}>Back</Button>
+        <Button
+          border={true}
+          on:click={() => {
+            newAttestation.showModal();
+          }}
+          ><svg
+            class="icon"
+            fill="currentColor"
+            xmlns="http://www.w3.org/2000/svg"
+            viewBox="0 0 448 512"
+            ><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+              d="M256 80c0-17.7-14.3-32-32-32s-32 14.3-32 32V224H48c-17.7 0-32 14.3-32 32s14.3 32 32 32H192V432c0 17.7 14.3 32 32 32s32-14.3 32-32V288H400c17.7 0 32-14.3 32-32s-14.3-32-32-32H256V80z"
+            /></svg
+          > New</Button
+        >
+      </div>
+      <NewAttestation bind:this={newAttestation} {fileCid} />
     {/if}
   {/if}
 </div>
@@ -771,13 +816,13 @@
 
   #title-bar {
     flex-grow: 0;
-    margin-left: 1em;
+    padding-left: 1em;
+    border-bottom: 2px solid var(--theme-border);
   }
   #container-6facc2a3 {
     display: flex;
     flex: auto;
     overflow: hidden;
-    border-top: 2px solid var(--theme-border);
   }
   #attestation-sidebar {
     width: 30%;
@@ -868,6 +913,27 @@
     https://stackoverflow.com/a/8075903 
     */
     box-sizing: border-box;
+  }
+
+  #attestations-edit-box {
+    overflow: auto;
+    margin-left: 2em;
+    padding-right: 2em;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0em 1.5em;
+  }
+  #attestations-edit-box > :global(div) {
+    flex-grow: 1;
+    min-width: 30em;
+  }
+  #edit-buttons {
+    margin-bottom: 1em;
+    padding-left: 1em;
+    border-top: 2px solid var(--theme-border);
+    padding-top: 1em;
+    display: flex;
+    gap: 1em;
   }
 
   /* Undo Uwazi styling */

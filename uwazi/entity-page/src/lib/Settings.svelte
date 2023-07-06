@@ -160,7 +160,7 @@
   }
   .name {
     color: var(--theme3);
-    font-size: 0.8em;
+    font-size: 0.9em;
   }
   #buttons {
     display: flex;

@@ -3,9 +3,17 @@
 <script>
   export let border = false;
   export let type = "button";
+  export let disabled = false;
 </script>
 
-<button on:click {type} class:border><slot /></button>
+<button
+  autocomplete="off"
+  on:click
+  {type}
+  class:border
+  class:disabled
+  disabled={disabled || null}><slot /></button
+>
 
 {#if import.meta.env.PROD}
   <style>
@@ -27,14 +35,18 @@
     padding: 0.5em;
     cursor: pointer;
   }
-  button:hover {
+  button:hover:not(.disabled) {
     background-color: var(--theme1-hover);
   }
-  button:active {
+  button:active:not(.disabled) {
     background-color: var(--theme1-active);
     color: white;
   }
   button.border {
     border: 2px solid var(--theme-border);
+  }
+  button.disabled {
+    opacity: 0.5;
+    cursor: default;
   }
 </style>

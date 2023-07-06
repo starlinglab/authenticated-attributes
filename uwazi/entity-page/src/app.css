@@ -18,6 +18,16 @@ form {
   margin: 0;
 }
 
+/* https://developer.mozilla.org/en-US/docs/Learn/Forms/Styling_web_forms */
+input,
+textarea {
+  font-family: inherit;
+  font-size: 100%;
+  padding: 0;
+  margin: 0;
+  box-sizing: border-box;
+}
+
 /* Undo Uwazi styling */
 code {
   color: unset !important;

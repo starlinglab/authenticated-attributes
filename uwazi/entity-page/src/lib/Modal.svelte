@@ -3,8 +3,6 @@ Adapted from https://svelte.dev/examples/modal
 -->
 
 <script>
-  import "./modal.css";
-
   export let showModal = false;
   export let pos = { x: 0, y: 0 };
 
@@ -74,6 +72,8 @@ Adapted from https://svelte.dev/examples/modal
 </dialog>
 
 <style>
+  @import "./modal.css" scoped;
+
   dialog {
     position: absolute;
     margin: 0;
