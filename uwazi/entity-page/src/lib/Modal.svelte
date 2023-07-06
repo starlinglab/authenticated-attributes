@@ -50,7 +50,7 @@ Adapted from https://svelte.dev/examples/modal
     <div id="icon-div">
       <slot name="icon">
         <svg
-          fill="currentColor"
+          class="icon"
           xmlns="http://www.w3.org/2000/svg"
           viewBox="0 0 496 512"
           ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path

@@ -105,7 +105,6 @@
       bind:this={attrIcon}
       on:click={iconClick}
       on:keydown={iconClick}
-      fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 496 512"
       ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
@@ -118,7 +117,6 @@
       on:click={downloadClick}
       on:keydown={downloadClick}
       class="icon"
-      fill="currentColor"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 512 512"
       ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
