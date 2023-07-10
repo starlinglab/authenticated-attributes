@@ -52,7 +52,7 @@ app.use(
   expressjwt({
     secret: env.JWT_SECRET,
     algorithms: ["HS256"],
-  }).unless({ method: "OPTIONS" })
+  }).unless({ method: ["OPTIONS", "GET"] })
 );
 
 app.use(function (err, req, res, next) {
