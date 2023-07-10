@@ -11,12 +11,15 @@
 
   let sourcesCopy = [];
   let sourcesBackup = [];
+  let jwt = "";
 
   onMount(() => {
     // Operate on copy so unsaved changes don't affect $hyperbeeSources
     sourcesCopy = structuredClone($hyperbeeSources);
     // Backup of sources that never gets changed
     sourcesBackup = structuredClone($hyperbeeSources);
+    // Don't save jwt value
+    jwt = "";
   });
 
   $: if (success) {
@@ -34,9 +37,9 @@
   <p>Unsaved changes</p>
 {/if}
 
-<div id="sources-list">
+<div id="sources-list" class="section">
   {#each sourcesCopy as { name, server }, i}
-    <div class="source">
+    <div class="source input-style">
       <!-- svelte-ignore a11y-click-events-have-key-events -->
       <svg
         on:click={() => {
@@ -87,6 +90,29 @@
     </div>
   {/each}
 </div>
+<h2>Login</h2>
+<p>Enter JWT to allow for writing new data.</p>
+<div class="section">
+  <div class="input-style">
+    <svg
+      class="icon"
+      style="margin-right: 1em;"
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 448 512"
+      ><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+        d="M144 144v48H304V144c0-44.2-35.8-80-80-80s-80 35.8-80 80zM80 192V144C80 64.5 144.5 0 224 0s144 64.5 144 144v48h16c35.3 0 64 28.7 64 64V448c0 35.3-28.7 64-64 64H64c-35.3 0-64-28.7-64-64V256c0-35.3 28.7-64 64-64H80z"
+      /></svg
+    >
+    <div class="input-container">
+      <input
+        type="password"
+        autocomplete="off"
+        placeholder="set new jwt"
+        bind:value={jwt}
+      />
+    </div>
+  </div>
+</div>
 <div id="buttons">
   <Button
     border={true}
@@ -116,17 +142,17 @@
     <Button
       border={true}
       on:click={() => {
-        dispatch("sourcesChange", sourcesCopy);
+        dispatch("settingsChange", { sources: sourcesCopy, jwt });
       }}>Save</Button
     >
   </div>
 </div>
 
 <style>
-  #sources-list {
-    margin-bottom: 1em;
+  div.section {
+    margin-bottom: 2em;
   }
-  .source {
+  div.input-style {
     display: flex;
     padding: 0.5em 1em;
     background-color: #ededed;
@@ -159,6 +185,10 @@
   .name {
     color: var(--theme3);
     font-size: 0.9em;
+  }
+  input[type="password"] {
+    /* Increase bullet size: https://stackoverflow.com/q/6859727 */
+    font: large Verdana, sans-serif;
   }
   #buttons {
     display: flex;

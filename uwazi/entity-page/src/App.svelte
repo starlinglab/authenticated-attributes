@@ -4,7 +4,7 @@
   import Button from "./lib/Button.svelte";
   import Graph from "./lib/Graph.svelte";
   import Settings from "./lib/Settings.svelte";
-  import { hyperbeeSources } from "./lib/store.js";
+  import { hyperbeeJWT, hyperbeeSources } from "./lib/store.js";
   import NewAttestation from "./lib/NewAttestation.svelte";
 
   /// Props ///
@@ -692,13 +692,21 @@
         <Settings
           success={sourcesListSuccess}
           on:prevPage={handlePrevPageMsg}
-          on:sourcesChange={(evt) => {
+          on:settingsChange={(evt) => {
             (async () => {
-              sourcesListSuccess = await reloadData(evt.detail, fileCid);
+              // JWT
+              if (evt.detail.jwt) {
+                hyperbeeJWT.set(evt.detail.jwt);
+              }
+              // Sources
+              sourcesListSuccess = await reloadData(
+                evt.detail.sources,
+                fileCid
+              );
               if (sourcesListSuccess) {
                 // Actually call .set so that subscribers get the update and
                 // it's stored in localStorage
-                hyperbeeSources.set(evt.detail);
+                hyperbeeSources.set(evt.detail.sources);
               } else {
                 await reloadData($hyperbeeSources, fileCid);
               }

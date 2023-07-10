@@ -2,7 +2,7 @@
 
 <script>
   import Button from "./Button.svelte";
-  import { hyperbeeSources } from "./store.js";
+  import { hyperbeeJWT, hyperbeeSources } from "./store.js";
 
   export let data;
   export let fileCid;
@@ -43,8 +43,10 @@
         ),
         {
           method: "POST",
+          credentials: "include",
           headers: {
             "Content-Type": "application/cbor",
+            Authorization: "Bearer " + $hyperbeeJWT,
           },
           body: body,
         }

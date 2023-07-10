@@ -13,3 +13,10 @@ hyperbeeSources.subscribe((value) => {
     (value && JSON.stringify(value)) || "[]"
   );
 });
+
+// Stored natively, as a string
+const storedJWT = localStorage.getItem("hyperbeeJWT");
+export const hyperbeeJWT = writable(storedJWT || "");
+hyperbeeJWT.subscribe((value) => {
+  localStorage.setItem("hyperbeeJWT", value || "");
+});
