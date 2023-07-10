@@ -15,10 +15,10 @@
   $: if (data) {
     if (data.attestation.encrypted) {
       disabled = true;
-      disabledReason = "encrypted data";
+      data.attestation.value = "encrypted data";
     } else if (data.attestation.value.toString() === "[object Object]") {
       disabled = true;
-      disabledReason = "object data";
+      data.attestation.value = "object data";
     }
   }
 
@@ -53,8 +53,6 @@
   }
 
   function setTextareaSize(elem) {
-    console.log(data.attestation.attribute, elem);
-
     const lineHeight = 20; // in px, from CSS
 
     const newlines = (elem.value.match(/\n/g) || []).length;
@@ -88,7 +86,7 @@
   <div id="input">
     <textarea
       bind:this={textarea}
-      value={disabledReason || data.attestation.value}
+      bind:value={data.attestation.value}
       {disabled}
       class:disabled
       on:input={(e) => {

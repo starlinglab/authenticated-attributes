@@ -736,7 +736,7 @@
       <div id="attestations-edit-box">
         {#if dbEntries.length > 0}
           {#each dbEntries as { source, attr, data, alts }}
-            <EditAttestation {data} {fileCid} />
+            <EditAttestation data={structuredClone(data)} {fileCid} />
           {/each}
         {:else}
           <p class="error">No attestations found</p>
