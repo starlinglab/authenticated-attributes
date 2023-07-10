@@ -61,14 +61,14 @@
     }
     // Success
     text.innerText =
-      "Successfully downloaded attestation to chosen hyperbee. Reload to see updated attestation.";
+      "Successfully sent attestation to chosen hyperbee. Reload to see updated attestation.";
   }
 </script>
 
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <dialog bind:this={downloadDialog} on:click|self={() => downloadDialog.close()}>
   <div id="dl-server-form" on:click|stopPropagation>
-    <div id="dl-server-title">Copy attestation to</div>
+    <div id="dl-server-title">Send data to</div>
     <form on:submit|preventDefault={downloadFormSubmit}>
       <div id="dl-server-sources">
         {#each $hyperbeeSources as { name, server }, i}
