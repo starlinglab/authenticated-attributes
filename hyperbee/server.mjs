@@ -5,12 +5,20 @@ import cors from "cors";
 import { encode, decode } from "@ipld/dag-cbor";
 import { env } from "node:process";
 import bodyParser from "body-parser";
+import { expressjwt } from "express-jwt";
 
 import { dbAddRelation, dbPut, setSigningKey } from "./src/dbPut.mjs";
 import { keyFromPem } from "./src/signAttestation.mjs";
 
+// Last import
+import "dotenv/config";
+
 const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigKey);
+
+// Prevent leaking error msgs
+// https://expressjs.com/en/advanced/best-practice-performance.html#set-node_env-to-production
+env.NODE_ENV = "production";
 
 const app = express();
 const port = env.PORT ?? 3001;
@@ -25,10 +33,35 @@ const db = new Hyperbee(core, {
 });
 
 // CORS
-app.use(cors());
+app.use(
+  cors({
+    origin: function (origin, callback) {
+      // Allow all origins because authentication is checked
+      // This also allows non-browser clients that don't set the Origin header
+      callback(null, true);
+    },
+    credentials: true,
+  })
+);
 
 // Allow access to raw POST body bytes
 app.use(bodyParser.raw({ type: () => true }));
+
+// JWT checking
+app.use(
+  expressjwt({
+    secret: env.JWT_SECRET,
+    algorithms: ["HS256"],
+  }).unless({ method: "OPTIONS" })
+);
+
+app.use(function (err, req, res, next) {
+  if (err.name === "UnauthorizedError") {
+    res.status(401).send("401 Unauthorized");
+  } else {
+    next(err);
+  }
+});
 
 // Routes
 
@@ -66,6 +99,7 @@ app.post("/:cid/:attr", async (req, res, next) => {
   } catch (e) {
     next(e);
     res.status(500).send();
+    return;
   }
 
   res.status(200).send();
