@@ -147,6 +147,10 @@
     >
   </div>
 </div>
+<div id="version-info">
+  <!-- svelte-ignore missing-declaration -->
+  App version: <code>{__APP_VERSION__}</code>
+</div>
 
 <style>
   div.section {
@@ -200,6 +204,9 @@
   #new-button {
     margin-left: auto;
     margin-right: 0.5em;
+  }
+  #version-info {
+    margin-top: 3em;
   }
   hr {
     margin: 2em auto;
