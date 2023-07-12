@@ -1,11 +1,13 @@
-# uwazi-hyperbee-prototype
+# Authenticated Attributes
 
-Prototype of an Asset Management System ([Uwazi](https://uwazi.io/)) displaying metadata and integrity data from a [HyperBee](https://docs.holepunch.to/building-blocks/hyperbee) instance.
+This repo contains the initial implementation of the Authenticated Attributes project from The Starling Lab. It is built on top of the [HyperBee](https://docs.holepunch.to/building-blocks/hyperbee) key-value store.
+
+This repo also contains a specific frontend for Authenticated Attributes, designed to work within the asset management system [Uwazi](https://uwazi.io/).
 
 ## Repo Structure
 
 ```
-uwazi-hyperbee-prototype
+authenticated-attributes
 ├── hyperbee               // Hyperbee code
 │   ├── demo
 │   │   ├── demo-get.mjs   // Some demo scripts
