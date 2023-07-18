@@ -8,7 +8,7 @@ import { timestampAttestation } from "./timestamp.mjs";
 import { makeKey } from "./makeKey.mjs";
 import { dbGet } from "./dbGet.mjs";
 
-var sigKey = null;
+let sigKey = null;
 
 const setSigningKey = (privKey) => {
   sigKey = privKey;
