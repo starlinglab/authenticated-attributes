@@ -1,0 +1,26 @@
+{
+  "env": {
+    "node": true,
+    "es2022": true
+  },
+  "parserOptions": {
+    "sourceType": "module",
+    "ecmaVersion": 2022
+  },
+  "extends": [
+    "airbnb-base",
+    "prettier"
+  ],
+  "rules": {
+    "import/no-unresolved": "off",
+    "no-console": "off"
+  },
+  "overrides": [
+    {
+      "files": ["src/*"],
+      "rules": {
+        "no-console": 1
+      }
+    }
+  ]
+}

@@ -26,6 +26,10 @@ authenticated-attributes
         └── ...            // Svelte files
 ```
 
+## Development
+
+After cloning the repo, enter `hyperbee` and `uwazi/entity-page`, and run `npm install` in each to install dependencies. Enable pre-commit hooks with `git config core.hooksPath .githooks`. Now you should be ready to make code changes, and formatting and linting will happen automatically before committing.
+
 ## Keys
 
 ### Signing
