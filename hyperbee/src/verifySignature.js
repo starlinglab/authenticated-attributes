@@ -1,4 +1,4 @@
-import * as ed from "@noble/ed25519";
+import { verifyAsync } from "@noble/ed25519";
 
 import { encodeAttestation } from "./encodeAttestation.js";
 
@@ -25,7 +25,7 @@ const verifyAttSignature = async (attestationObj, givenPubKey) => {
     );
   }
 
-  const isValid = await ed.verifyAsync(signature, signedMsg, givenPubKey);
+  const isValid = await verifyAsync(signature, signedMsg, givenPubKey);
   if (!isValid) {
     throw new Error("signature could not be validated");
   }

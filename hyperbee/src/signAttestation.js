@@ -1,13 +1,13 @@
-import * as fs from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 
-import * as ed from "@noble/ed25519";
+import { getPublicKeyAsync, signAsync } from "@noble/ed25519";
 
 import { encodeAttestation } from "./encodeAttestation.js";
 
 const signAttestation = async (privKey, rawAttestation) => {
-  const pubKey = await ed.getPublicKeyAsync(privKey);
+  const pubKey = await getPublicKeyAsync(privKey);
   const rawAttCID = await encodeAttestation(rawAttestation);
-  const signature = await ed.signAsync(rawAttCID, privKey);
+  const signature = await signAsync(rawAttCID, privKey);
   return { signature, signedMsg: rawAttCID, pubKey };
 };
 
@@ -27,7 +27,7 @@ const keyFromPem = async (pemPath) => {
   -----END PRIVATE KEY-----
   */
 
-  const data = await fs.readFile(pemPath, { encoding: "utf8" });
+  const data = await readFile(pemPath, { encoding: "utf8" });
   return Buffer.from(data.split(/\r?\n/)[1], "base64").subarray(-32);
 };
 

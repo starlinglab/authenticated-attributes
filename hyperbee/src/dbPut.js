@@ -1,7 +1,7 @@
 import { encode } from "@ipld/dag-cbor";
 import { CID } from "multiformats";
 
-import * as ed from "@noble/ed25519";
+import { getPublicKeyAsync } from "@noble/ed25519";
 import { signAttestation } from "./signAttestation.js";
 import { encryptValue } from "./encryptValue.js";
 import { timestampAttestation } from "./timestamp.js";
@@ -77,7 +77,7 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
     batch,
     id,
     attr,
-    await ed.getPublicKeyAsync(sigKey),
+    await getPublicKeyAsync(sigKey),
     encryptionKey,
     true
   );
@@ -122,7 +122,7 @@ const dbAddRelation = async (db, id, childOrParent, verb, relationCid) => {
     batch,
     id,
     childOrParent,
-    await ed.getPublicKeyAsync(sigKey),
+    await getPublicKeyAsync(sigKey),
     false,
     true
   );
@@ -156,7 +156,7 @@ const dbRemoveRelation = async (db, id, childOrParent, verb, relationCid) => {
     batch,
     id,
     childOrParent,
-    await ed.getPublicKeyAsync(sigKey),
+    await getPublicKeyAsync(sigKey),
     false,
     true
   );

@@ -1,6 +1,6 @@
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
-import * as ed from "@noble/ed25519";
+import { getPublicKeyAsync } from "@noble/ed25519";
 
 import { keyFromPem } from "./src/signAttestation.js";
 import { getInfo } from "./src/timestamp.js";
@@ -19,7 +19,7 @@ const db = new Hyperbee(core, {
 const waczCID = "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54";
 const attribute = "description";
 // XXX: just a demo key
-const sigPubKey = await ed.getPublicKeyAsync(await keyFromPem("./demokey.pem"));
+const sigPubKey = await getPublicKeyAsync(await keyFromPem("./demokey.pem"));
 
 // Decode and print value
 const result = await dbGet(db, waczCID, attribute, sigPubKey);
