@@ -1,8 +1,8 @@
 import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
 
-import { dbPut, setSigningKey } from "./src/dbPut.mjs";
-import { keyFromPem } from "./src/signAttestation.mjs";
+import { dbPut, setSigningKey } from "./src/dbPut.js";
+import { keyFromPem } from "./src/signAttestation.js";
 
 // Set up Hypercore and Hyperbee
 const core = new Hypercore("./demo.hypercore");
@@ -33,7 +33,7 @@ console.log("Done");
 
 // Encrypted value
 //
-// 32 byte DEMO encryption key that is reused in demo-get.mjs
+// 32 byte DEMO encryption key that is reused in demo-get.js
 const key = Buffer.from(
   "QHle+CRiaq8iv1fP9xopZGbO6F7F8926TpSOrReQJ1Q=",
   "base64"

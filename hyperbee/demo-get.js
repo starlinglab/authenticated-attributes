@@ -2,9 +2,9 @@ import Hypercore from "hypercore";
 import Hyperbee from "hyperbee";
 import * as ed from "@noble/ed25519";
 
-import { keyFromPem } from "./src/signAttestation.mjs";
-import { getInfo } from "./src/timestamp.mjs";
-import { dbGet, dbIsEncrypted, dbRawValue } from "./src/dbGet.mjs";
+import { keyFromPem } from "./src/signAttestation.js";
+import { getInfo } from "./src/timestamp.js";
+import { dbGet, dbIsEncrypted, dbRawValue } from "./src/dbGet.js";
 
 // Set up Hypercore and Hyperbee
 const core = new Hypercore("./demo.hypercore");
@@ -37,7 +37,7 @@ getInfo(result.timestamp.proof);
 
 // Encrypted value
 //
-// 32 byte DEMO encryption key that is reused in demo.mjs
+// 32 byte DEMO encryption key that is reused in demo.js
 const key = Buffer.from(
   "QHle+CRiaq8iv1fP9xopZGbO6F7F8926TpSOrReQJ1Q=",
   "base64"

@@ -15,9 +15,11 @@
     dialog.showModal();
     // Reset view
     dialog.querySelectorAll("input").forEach((elem) => {
+      // eslint-disable-next-line no-param-reassign
       elem.value = "";
     });
     dialog.querySelectorAll("textarea").forEach((elem) => {
+      // eslint-disable-next-line no-param-reassign
       elem.value = "";
       elem.setAttribute("style", ""); // Reset height
     });
@@ -25,7 +27,7 @@
     // dialog.querySelector("input").blur();
   }
 
-  function formSubmit(e) {
+  function formSubmit() {
     dialog.close();
     downloadDialog.showModal();
   }

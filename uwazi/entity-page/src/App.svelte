@@ -9,7 +9,7 @@
 
   /// Props ///
 
-  export let REPLAYWEB_SW_FILENAME = "sw.js";
+  export const REPLAYWEB_SW_FILENAME = "sw.js";
 
   /// Consts ///
 
@@ -20,9 +20,12 @@
     "https://cdn.jsdelivr.net/npm/vis-network@9.1.6/standalone/umd/vis-network.min.js";
 
   const DEBUG = import.meta.env.DEV;
-  console.log("Debug status:", DEBUG);
+  // eslint-disable-next-line no-console
+  console.log("Authenticated Attributes debug status:", DEBUG);
 
   /// Setup funcs ///
+
+  /* eslint-disable no-use-before-define */
 
   const isScriptAlreadyIncluded = (src) => {
     const scripts = document.getElementsByTagName("script");
@@ -31,31 +34,30 @@
     return false;
   };
 
-  const loadScript = async (url) => {
-    return new Promise(function (resolve, reject) {
+  const loadScript = async (url) =>
+    new Promise((resolve) => {
       if (!isScriptAlreadyIncluded(url)) {
         const script = document.createElement("script");
-        script.onload = function () {
-          console.log("script loaded");
+        script.onload = () => {
           resolve();
         };
         script.src = url;
         document.head.appendChild(script);
       } else {
-        console.log("script was already loaded.");
         resolve();
       }
     });
-  };
 
   const loadData = async (sources, cid) => {
-    let datas = [];
-    for (var i = 0; i < sources.length; i++) {
+    const datas = [];
+    for (let i = 0; i < sources.length; i++) {
+      // eslint-disable-next-line no-await-in-loop
       const resp = await fetch(`${sources[i].server}/${cid}`);
       if (!resp.ok) {
         errMsg = `failed to load data: ${resp.statusText}`;
         throw new Error("failed to load data");
       }
+      // eslint-disable-next-line no-await-in-loop
       datas.push(IpldDagCbor.decode(new Uint8Array(await resp.arrayBuffer())));
     }
     return datas;
@@ -79,11 +81,12 @@
     // Store already seen attribute names in a hashmap for O(1) checking
     const usedAttrs = {};
     const ret = [];
-    for (var i = 0; i < sources.length; i++) {
+    for (let i = 0; i < sources.length; i++) {
       const hb = sources[i];
       if (Object.keys(datas[i]).length === 0) {
         continue;
       }
+      // eslint-disable-next-line no-restricted-syntax
       for (const [attr, data] of Object.entries(datas[i])) {
         if (attr in usedAttrs) {
           // Add as alternate data
@@ -96,6 +99,66 @@
       }
     }
     return ret;
+  };
+
+  const getEntityInfo = (cid) => {
+    if (cid === false || cid === ogEntityCid) {
+      // Original page
+      const entityHasAttachment = entity.attachments.length === 1;
+      const isWacz =
+        !entityHasAttachment ||
+        entity.attachments[0].originalname.endsWith(".wacz");
+      return {
+        title: entity.title,
+        hasAttachment: entityHasAttachment,
+        cid:
+          !entityHasAttachment ||
+          (entity.metadata.sha256cid && entity.metadata.sha256cid.value) ||
+          null,
+        fileType:
+          !entityHasAttachment ||
+          (isWacz ? "application/wacz" : entity.attachments[0].mimetype),
+        fileName: !entityHasAttachment || entity.attachments[0].originalname,
+        fileSize: !entityHasAttachment || entity.attachments[0].size,
+        fileUrl:
+          !entityHasAttachment ||
+          `/api/files/${entity.attachments[0].filename}`,
+        isWacz,
+      };
+    }
+    for (const ent of entities) {
+      if (
+        !("sha256cid" in ent.metadata) ||
+        ent.metadata.sha256cid.length === 0
+      ) {
+        continue;
+      }
+      if (ent.metadata.sha256cid[0].value === cid) {
+        const entityHasAttachment = ent.attachments.length === 1;
+        const isWacz =
+          !entityHasAttachment ||
+          ent.attachments[0].originalname.endsWith(".wacz");
+        return {
+          title: ent.title,
+          hasAttachment: entityHasAttachment,
+          cid,
+          fileType:
+            !entityHasAttachment ||
+            (isWacz ? "application/wacz" : ent.attachments[0].mimetype),
+          fileName: !entityHasAttachment || ent.attachments[0].originalname,
+          fileSize: !entityHasAttachment || ent.attachments[0].size,
+          fileUrl:
+            !entityHasAttachment || `/api/files/${ent.attachments[0].filename}`,
+          isWacz,
+        };
+      }
+    }
+    // No match found, return basic info
+    return {
+      title: "Unknown",
+      hasAttachment: false,
+      cid,
+    };
   };
 
   const reloadData = async (sources, cid) => {
@@ -115,65 +178,7 @@
     return true;
   };
 
-  const getEntityInfo = (cid) => {
-    if (cid === false || cid === ogEntityCid) {
-      // Original page
-      let entityHasAttachment = entity.attachments.length == 1;
-      let isWacz =
-        !entityHasAttachment ||
-        entity.attachments[0].originalname.endsWith(".wacz");
-      return {
-        title: entity.title,
-        hasAttachment: entityHasAttachment,
-        cid:
-          !entityHasAttachment ||
-          (entity.metadata.sha256cid && entity.metadata.sha256cid.value) ||
-          null,
-        fileType:
-          !entityHasAttachment ||
-          (isWacz ? "application/wacz" : entity.attachments[0].mimetype),
-        fileName: !entityHasAttachment || entity.attachments[0].originalname,
-        fileSize: !entityHasAttachment || entity.attachments[0].size,
-        fileUrl:
-          !entityHasAttachment ||
-          "/api/files/" + entity.attachments[0].filename,
-        isWacz: isWacz,
-      };
-    }
-    for (const ent of entities) {
-      if (
-        !("sha256cid" in ent.metadata) ||
-        ent.metadata.sha256cid.length === 0
-      ) {
-        continue;
-      }
-      if (ent.metadata.sha256cid[0].value === cid) {
-        let entityHasAttachment = ent.attachments.length == 1;
-        let isWacz =
-          !entityHasAttachment ||
-          ent.attachments[0].originalname.endsWith(".wacz");
-        return {
-          title: ent.title,
-          hasAttachment: entityHasAttachment,
-          cid: cid,
-          fileType:
-            !entityHasAttachment ||
-            (isWacz ? "application/wacz" : ent.attachments[0].mimetype),
-          fileName: !entityHasAttachment || ent.attachments[0].originalname,
-          fileSize: !entityHasAttachment || ent.attachments[0].size,
-          fileUrl:
-            !entityHasAttachment || "/api/files/" + ent.attachments[0].filename,
-          isWacz: isWacz,
-        };
-      }
-    }
-    // No match found, return basic info
-    return {
-      title: "Unknown",
-      hasAttachment: false,
-      cid: cid,
-    };
-  };
+  /* eslint-enable no-use-before-define */
 
   /// Variables ///
 
@@ -361,8 +366,9 @@
         graphData[fcid] = { parents: {}, children: {} };
       }
 
-      for (var i = 0; i < $hyperbeeSources.length; i++) {
+      for (let i = 0; i < $hyperbeeSources.length; i++) {
         const hb = $hyperbeeSources[i];
+        // eslint-disable-next-line no-await-in-loop
         const resp = await fetch(`${hb.server}/${fcid}`);
         if (!resp.ok) {
           errMsg = `failed to load data: ${resp.statusText}`;
@@ -370,6 +376,7 @@
           throw new Error("failed to load data");
         }
         const attests = IpldDagCbor.decode(
+          // eslint-disable-next-line no-await-in-loop
           new Uint8Array(await resp.arrayBuffer())
         );
 
@@ -386,26 +393,28 @@
 
     // Limit to depth of 3 (2 + 1 level already done)
     for (let i = 0; i < 2; i++) {
-      for (const [cid, relations] of Object.entries(graphData)) {
+      for (const relations of Object.values(graphData)) {
         // Parents
-        for (const [source, sourceData] of Object.entries(relations.parents)) {
-          for (const [parentType, parents] of Object.entries(sourceData)) {
+        for (const sourceData of Object.values(relations.parents)) {
+          for (const parents of Object.values(sourceData)) {
             for (let parent of parents) {
               parent = parent.toString();
               if (!graphData[parent]) {
                 // Not processed yet
+                // eslint-disable-next-line no-await-in-loop
                 await updateData(parent);
               }
             }
           }
         }
         // Children
-        for (const [source, sourceData] of Object.entries(relations.children)) {
-          for (const [childType, children] of Object.entries(sourceData)) {
+        for (const sourceData of Object.values(relations.children)) {
+          for (const children of Object.values(sourceData)) {
             for (let child of children) {
               child = child.toString();
               if (!graphData[child]) {
                 // Not processed yet
+                // eslint-disable-next-line no-await-in-loop
                 await updateData(child);
               }
             }
@@ -419,9 +428,10 @@
 
   function humanFileSize(size) {
     // https://stackoverflow.com/a/20732091
-    var i = size == 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
+    const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
     return (
-      (size / Math.pow(1024, i)).toFixed(2) * 1 +
+      // eslint-disable-next-line prefer-template
+      (size / 1024 ** i).toFixed(2) * 1 +
       " " +
       ["B", "KiB", "MiB", "GiB", "TiB"][i]
     );
@@ -456,7 +466,7 @@
     curPage = event.detail.page;
   }
 
-  function handlePrevPageMsg(event) {
+  function handlePrevPageMsg() {
     errMsg = "";
     if (prevPage) {
       curPage = prevPage;
@@ -735,8 +745,8 @@
       </div>
       <div id="attestations-edit-box">
         {#if dbEntries.length > 0}
-          {#each dbEntries as { source, attr, data, alts }}
-            <EditAttestation data={structuredClone(data)} {fileCid} />
+          {#each dbEntries as dbEntry}
+            <EditAttestation data={structuredClone(dbEntry.data)} {fileCid} />
           {/each}
         {:else}
           <p class="error">No attestations found</p>

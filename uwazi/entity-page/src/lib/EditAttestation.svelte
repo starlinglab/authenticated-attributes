@@ -10,7 +10,6 @@
   let downloadDialog;
 
   let disabled;
-  let disabledReason;
 
   $: if (data) {
     if (data.attestation.encrypted) {
@@ -56,9 +55,10 @@
     const lineHeight = 20; // in px, from CSS
 
     const newlines = (elem.value.match(/\n/g) || []).length;
+    // eslint-disable-next-line no-param-reassign
     elem.style.height = `${(newlines + 1) * lineHeight}px`;
 
-    if (newlines != 0) {
+    if (newlines !== 0) {
       return;
     }
     // Only one line of text, but it might be wrapped
@@ -71,7 +71,8 @@
       parseFloat(styles.paddingRight);
 
     if (textWidth > elemContentWidth) {
-      // Wrapping happens. For now just show two lines instead of calculating full size
+      // Wrapping happens. For now just show two lines instead of calculating full size.
+      // eslint-disable-next-line no-param-reassign
       elem.style.height = `${2 * lineHeight}px`;
     }
   }

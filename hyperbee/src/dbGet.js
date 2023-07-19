@@ -1,8 +1,8 @@
 import { decode } from "@ipld/dag-cbor";
 
-import { verifyAttSignature } from "./verifySignature.mjs";
-import { decryptValue } from "./decryptValue.mjs";
-import { makeKey } from "./makeKey.mjs";
+import { verifyAttSignature } from "./verifySignature.js";
+import { decryptValue } from "./decryptValue.js";
+import { makeKey } from "./makeKey.js";
 
 /**
  * Get verified output from the database.

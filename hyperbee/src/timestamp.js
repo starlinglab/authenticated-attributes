@@ -1,6 +1,7 @@
+/* eslint-disable no-console */
 import OpenTimestamps from "opentimestamps";
 
-import { encodeAttestation } from "./encodeAttestation.mjs";
+import { encodeAttestation } from "./encodeAttestation.js";
 
 const timestampAttestation = async (signedAttestation) => {
   const signedAttCID = await encodeAttestation(signedAttestation);
@@ -10,7 +11,7 @@ const timestampAttestation = async (signedAttestation) => {
   );
 
   // Timestamp, but disable console.log first to prevent "Submitting to remote calendar" messages
-  var oldConsoleLog = console.log;
+  const oldConsoleLog = console.log;
   console.log = () => {};
   await OpenTimestamps.stamp(detached);
   console.log = oldConsoleLog;
@@ -51,7 +52,7 @@ const upgradeTimestampAttestation = async (tsAtt) => {
   );
 
   // Upgrade, but disable "Got 1 attestation(s) from" messages
-  var oldConsoleLog = console.log;
+  const oldConsoleLog = console.log;
   console.log = () => {};
   await OpenTimestamps.upgrade(detached);
   console.log = oldConsoleLog;
@@ -60,7 +61,9 @@ const upgradeTimestampAttestation = async (tsAtt) => {
     throw new Error("timestamp could not be upgraded, probably too soon");
   }
 
+  // eslint-disable-next-line no-param-reassign
   tsAtt.proof = detached.serializeToBytes();
+  // eslint-disable-next-line no-param-reassign
   tsAtt.upgraded = true;
   return tsAtt;
 };

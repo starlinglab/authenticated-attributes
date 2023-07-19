@@ -63,14 +63,18 @@
           type="text"
           placeholder="ACME Corp News"
           bind:value={name}
-          on:input={() => (success = null)}
+          on:input={() => {
+            success = null;
+          }}
         />
         <input
           class="server"
           type="url"
           placeholder="https://example.com"
           bind:value={server}
-          on:input={() => (success = null)}
+          on:input={() => {
+            success = null;
+          }}
         />
       </div>
       <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -125,7 +129,7 @@
     }}>Back</Button
   >
   <div id="left-buttons">
-    {#if sourcesCopy.length == 0}
+    {#if sourcesCopy.length === 0}
       <div id="new-button">
         <Button
           border={true}
@@ -207,16 +211,5 @@
   }
   #version-info {
     margin-top: 3em;
-  }
-  hr {
-    margin: 2em auto;
-    background-color: var(--theme-border);
-    border: 0;
-    height: 2px;
-  }
-  .mini {
-    margin-top: -1em;
-    font-size: 0.8em;
-    padding-left: 0.2ch;
   }
 </style>

@@ -7,8 +7,8 @@ import { env } from "node:process";
 import bodyParser from "body-parser";
 import { expressjwt } from "express-jwt";
 
-import { dbAddRelation, dbPut, setSigningKey } from "./src/dbPut.mjs";
-import { keyFromPem } from "./src/signAttestation.mjs";
+import { dbPut, setSigningKey } from "./src/dbPut.js";
+import { keyFromPem } from "./src/signAttestation.js";
 
 // Last import
 import "dotenv/config";
@@ -35,7 +35,7 @@ const db = new Hyperbee(core, {
 // CORS
 app.use(
   cors({
-    origin: function (origin, callback) {
+    origin(origin, callback) {
       // Allow all origins because authentication is checked
       // This also allows non-browser clients that don't set the Origin header
       callback(null, true);
@@ -55,7 +55,7 @@ app.use(
   }).unless({ method: ["OPTIONS", "GET"] })
 );
 
-app.use(function (err, req, res, next) {
+app.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
     res.status(401).send("401 Unauthorized");
   } else {
@@ -66,7 +66,8 @@ app.use(function (err, req, res, next) {
 // Routes
 
 app.get("/:cid", async (req, res) => {
-  let metadata = {};
+  const metadata = {};
+  // eslint-disable-next-line no-restricted-syntax
   for await (const { key, value } of db.createReadStream({
     gte: req.params.cid,
     lt: `${req.params.cid}0`, // 0 is the symbol before / in binary, so the range of keys is the keys in the format <cid>/<any>

@@ -31,8 +31,8 @@ Vis docs:
 
   // Process data
 
-  let nodes = new vis.DataSet();
-  let edges = new vis.DataSet();
+  const nodes = new vis.DataSet();
+  const edges = new vis.DataSet();
 
   for (const [cid, relations] of Object.entries(data)) {
     // cid variable is a string, but all others are CID objects.
@@ -96,7 +96,8 @@ Vis docs:
   // Create a network
   let container; // div Element
   $: if (container) {
-    let network = new vis.Network(
+    // eslint-disable-next-line no-unused-vars
+    const network = new vis.Network(
       container,
       { nodes, edges },
       {
@@ -139,11 +140,11 @@ Vis docs:
 <div id="container">
   <p>
     Source colors:
-    {#each $hyperbeeSources as { name, server }, i}
+    {#each $hyperbeeSources as hb, i}
       <span
         class="legend"
         style:background-color={sourceColors[i]}
-        style:border-color={sourceColors[i]}>{name}</span
+        style:border-color={sourceColors[i]}>{hb.name}</span
       >&nbsp;
     {/each}
   </p>

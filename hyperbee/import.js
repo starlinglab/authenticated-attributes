@@ -8,11 +8,11 @@ import Hyperbee from "hyperbee";
 import AdmZip from "adm-zip";
 import { CID } from "multiformats";
 
-import { dbAddRelation, dbPut, setSigningKey } from "./src/dbPut.mjs";
-import { newKey } from "./src/encryptValue.mjs";
-import { keyFromPem } from "./src/signAttestation.mjs";
+import { dbAddRelation, dbPut, setSigningKey } from "./src/dbPut.js";
+import { newKey } from "./src/encryptValue.js";
+import { keyFromPem } from "./src/signAttestation.js";
 
-if (argv.length != 5) {
+if (argv.length !== 5) {
   throw new Error(
     "must specify hypercore for import and for key storage, as well as ZIP file"
   );
@@ -21,7 +21,7 @@ if (argv.length != 5) {
 const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigKey);
 
-// Element 0 and 1 are "node" and "import.mjs"
+// Element 0 and 1 are "node" and "import.js"
 const datacorePath = argv[2];
 const keycorePath = argv[3];
 const zipPath = argv[4];
@@ -58,11 +58,11 @@ if (zipEntries.length < 3) {
   throw new Error("ZIP file must have at least three files");
 }
 
-let metaContentEntry = false,
-  metaRecorderEntry = false,
-  contentEntry = false;
+let metaContentEntry = false;
+let metaRecorderEntry = false;
+let contentEntry = false;
 
-zipEntries.forEach(function (zipEntry) {
+zipEntries.forEach((zipEntry) => {
   if (zipEntry.entryName.endsWith("-meta-content.json")) {
     metaContentEntry = zipEntry;
   } else if (zipEntry.entryName.endsWith("-meta-recorder.json")) {
@@ -136,23 +136,39 @@ console.log(`Recorded zipcid in db: ${zipCID}`);
 const encKey = newKey();
 await dbPut(keydb, contentCID, "enckey", encKey);
 
-const metaContent = JSON.parse(metaContentEntry.getData())["contentMetadata"];
+const metaContent = JSON.parse(metaContentEntry.getData()).contentMetadata;
+// eslint-disable-next-line no-unused-vars
 const metaRecorder = JSON.parse(metaRecorderEntry.getData());
 
 // Add all keys, and go inside known object keys
 // dbPut functions are called asynchronously to speed things up
 
-for (var key in metaContent) {
+// eslint-disable-next-line no-restricted-syntax
+for (const key in metaContent) {
+  // https://eslint.org/docs/latest/rules/guard-for-in
+  if (!Object.hasOwn(metaContent, key)) {
+    // eslint-disable-next-line no-continue
+    continue;
+  }
+
   console.log(`Processing key: ${key}`);
 
   if (key === "extras") {
-    for (var extrasKey in metaContent[key]) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const extrasKey in metaContent[key]) {
+      // https://eslint.org/docs/latest/rules/guard-for-in
+      if (!Object.hasOwn(metaContent, key)) {
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
       if (extrasKey === "relatedAssetCid") {
         // Store this as parent<->child relationship
         // Use mapping file to turn this encrypted archive CID into a content CID,
         // then store it as an array
         const parentEncryptedArchiveCid = metaContent[key][extrasKey];
         const parentContentCid = cidMapping[parentEncryptedArchiveCid];
+        // eslint-disable-next-line no-await-in-loop
         await dbAddRelation(
           datadb,
           contentCID,
@@ -160,6 +176,7 @@ for (var key in metaContent) {
           "verified",
           CID.parse(parentContentCid)
         );
+        // eslint-disable-next-line no-await-in-loop
         await dbAddRelation(
           datadb,
           parentContentCid,
@@ -171,7 +188,14 @@ for (var key in metaContent) {
       dbPut(datadb, contentCID, extrasKey, metaContent[key][extrasKey]);
     }
   } else if (key === "private") {
-    for (var privateKey in metaContent[key]) {
+    // eslint-disable-next-line no-restricted-syntax
+    for (const privateKey in metaContent[key]) {
+      // https://eslint.org/docs/latest/rules/guard-for-in
+      if (!Object.hasOwn(metaContent, key)) {
+        // eslint-disable-next-line no-continue
+        continue;
+      }
+
       // Encrypt these ones
       dbPut(
         datadb,

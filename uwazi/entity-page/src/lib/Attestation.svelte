@@ -31,28 +31,28 @@
     return btoa(binaryString);
   }
 
-  function saveFile(filename, type, data) {
-    const blob = new Blob([data], { type: type });
+  function saveFile(filename, type, bytes) {
+    const blob = new Blob([bytes], { type });
     const elem = window.document.createElement("a");
     elem.href = window.URL.createObjectURL(blob);
     elem.download = filename;
     elem.style.display = "none";
     document.body.appendChild(elem);
     elem.click();
-    setTimeout(function () {
+    setTimeout(() => {
       window.URL.revokeObjectURL(elem.href);
       document.body.removeChild(elem);
     }, 0);
   }
 
   function iconClick() {
-    let rect = attrIcon.getBoundingClientRect();
+    const rect = attrIcon.getBoundingClientRect();
     attrModalPos.x = rect.left + 10;
     attrModalPos.y = rect.top + 10;
     showAttrModal = true;
   }
   function attrTitleClick() {
-    let rect = attrTitle.getBoundingClientRect();
+    const rect = attrTitle.getBoundingClientRect();
     altModalPos.x = rect.left + 10;
     altModalPos.y = rect.top + 10;
     showAltModal = true;
@@ -70,9 +70,9 @@
   }
 
   function trimLarge(value) {
-    let max = 100; // Long enough to be too wide and trigger CSS ellipsis
-    let string = JSON.stringify(value);
-    return string.length > max ? string.substring(0, max - 3) + "..." : string;
+    const max = 100; // Long enough to be too wide and trigger CSS ellipsis
+    const string = JSON.stringify(value);
+    return string.length > max ? `${string.substring(0, max - 3)}...` : string;
   }
 
   $: largeData = isLargeData(data.attestation.value);
@@ -167,7 +167,7 @@
     <Button
       on:click={() => {
         saveFile(
-          data.attestation.attribute + ".cbor",
+          `${data.attestation.attribute}.cbor`,
           "application/cbor",
           IpldDagCbor.encode(data)
         );

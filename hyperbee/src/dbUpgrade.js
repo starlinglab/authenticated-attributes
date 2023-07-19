@@ -1,7 +1,7 @@
-import { dbGet } from "./dbGet.mjs";
-import { upgradeTimestampAttestation } from "./timestamp.mjs";
-import { makeKey } from "./makeKey.mjs";
 import { encode } from "@ipld/dag-cbor";
+import { dbGet } from "./dbGet.js";
+import { upgradeTimestampAttestation } from "./timestamp.js";
+import { makeKey } from "./makeKey.js";
 
 /**
  * Upgrade the OTS timestamp of an attestation, then save that new timestamp.

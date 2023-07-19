@@ -2,7 +2,7 @@ import * as fs from "node:fs/promises";
 
 import * as ed from "@noble/ed25519";
 
-import { encodeAttestation } from "./encodeAttestation.mjs";
+import { encodeAttestation } from "./encodeAttestation.js";
 
 const signAttestation = async (privKey, rawAttestation) => {
   const pubKey = await ed.getPublicKeyAsync(privKey);

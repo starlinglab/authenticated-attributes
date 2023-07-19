@@ -7,13 +7,13 @@
     "sourceType": "module",
     "ecmaVersion": 2022
   },
-  "extends": [
-    "airbnb-base",
-    "prettier"
-  ],
+  "extends": ["airbnb-base", "prettier"],
   "rules": {
     "import/no-unresolved": "off",
-    "no-console": "off"
+    "no-console": "off",
+    "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
+    "import/extensions": "off",
+    "import/prefer-default-export": "off"
   },
   "overrides": [
     {

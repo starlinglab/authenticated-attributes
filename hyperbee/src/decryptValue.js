@@ -1,6 +1,7 @@
-import pkg from "tweetnacl";
-const { secretbox } = pkg;
 import { decode } from "@ipld/dag-cbor";
+import pkg from "tweetnacl";
+
+const { secretbox } = pkg;
 
 const decryptValue = (msgWithNonce, encryptionKey) => {
   // Adapted from https://github.com/dchest/tweetnacl-js/wiki/Examples#secretbox

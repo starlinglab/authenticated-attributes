@@ -2,6 +2,8 @@ import { vitePreprocess } from "@sveltejs/vite-plugin-svelte";
 
 /// From https://github.com/sveltejs/svelte/issues/7125#issuecomment-1528965643 ///
 
+/* eslint-disable */
+
 import MagicString, { Bundle } from "magic-string";
 import * as path from "path";
 import * as fs from "node:fs/promises";
@@ -66,6 +68,7 @@ function importCSSPreprocess() {
 }
 
 /// End of copied code ///
+/* eslint-enable */
 
 export default {
   // Consult https://svelte.dev/docs#compile-time-svelte-preprocess

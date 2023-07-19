@@ -23,7 +23,7 @@ Adapted from https://svelte.dev/examples/modal
     // Set dialog position without it going offscreen
     dialog.style.left = `${Math.round(pos.x)}px`;
     dialog.style.top = `${Math.round(pos.y + window.scrollY)}px`;
-    let rect = dialog.getBoundingClientRect();
+    const rect = dialog.getBoundingClientRect();
     if (rect.x + rect.width > window.innerWidth) {
       // Modal is too far left and would go offscreen
       dialog.style.left = `calc(${Math.round(pos.x - rect.width)}px - 2em)`;
@@ -43,7 +43,9 @@ Adapted from https://svelte.dev/examples/modal
 <!-- svelte-ignore a11y-click-events-have-key-events -->
 <dialog
   bind:this={dialog}
-  on:close={() => (showModal = false)}
+  on:close={() => {
+    showModal = false;
+  }}
   on:click|self={() => dialog.close()}
 >
   <div on:click|stopPropagation>

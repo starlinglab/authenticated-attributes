@@ -38,7 +38,7 @@
 
       const res = await fetch(
         new URL(
-          fileCid + "/" + data.attestation.attribute,
+          `${fileCid}/${data.attestation.attribute}`,
           formData.get("dl-servers")
         ),
         {
@@ -46,13 +46,13 @@
           credentials: "include",
           headers: {
             "Content-Type": "application/cbor",
-            Authorization: "Bearer " + $hyperbeeJWT,
+            Authorization: `Bearer ${$hyperbeeJWT}`,
           },
-          body: body,
+          body,
         }
       );
       if (!res.ok) {
-        throw new Error("Network response was not ok: " + res.status);
+        throw new Error(`Network response was not ok: ${res.status}`);
       }
     } catch (error) {
       console.error(error);

@@ -7,7 +7,7 @@ FILES=$(git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g')
 [ -z "$FILES" ] && exit 0
 
 # Prettify all selected files
-echo "$FILES" | npx --yes prettier@3.0.0 --ignore-unknown --write
+echo "$FILES" | xargs npx --yes prettier@2.8.8 --ignore-unknown --write
 
 # Now eslint
 # Some copied from https://gist.github.com/linhmtran168/2286aeafe747e78f53bf
@@ -17,10 +17,10 @@ PASS=true
 cd hyperbee || exit 1
 for file in $(git diff --cached --name-only --diff-filter=ACMR . | sed 's| |\\ |g')
 do
-    if npx --no eslint ../"$file"; then
-    printf "\t\033[32mESLint Passed: %s\033[0m" "$file"
+    if npx --no-install eslint --quiet ../"$file"; then
+    printf "\t\033[32mESLint Passed: %s\033[0m\n" "$file"
   else
-    printf "\t\033[41mESLint Failed: %s\033[0m" "$file"
+    printf "\t\033[41mESLint Failed: %s\033[0m\n" "$file"
     PASS=false
   fi
 done
@@ -28,10 +28,10 @@ done
 cd ../uwazi/entity-page || exit 1
 for file in $(git diff --cached --name-only --diff-filter=ACMR . | sed 's| |\\ |g')
 do
-    if npx --no eslint ../../"$file"; then
-    printf "\t\033[32mESLint Passed: %s\033[0m" "$file"
+    if npx --no-install eslint --quiet ../../"$file"; then
+    printf "\t\033[32mESLint Passed: %s\033[0m\n" "$file"
   else
-    printf "\t\033[41mESLint Failed: %s\033[0m" "$file"
+    printf "\t\033[41mESLint Failed: %s\033[0m\n" "$file"
     PASS=false
   fi
 done
@@ -40,6 +40,8 @@ done
 if ! $PASS; then
     exit 1
 fi
+
+cd ../.. || exit 1
 
 # Add back the modified/prettified files to staging
 echo "$FILES" | xargs git add

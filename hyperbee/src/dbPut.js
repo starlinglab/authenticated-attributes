@@ -2,11 +2,11 @@ import { encode } from "@ipld/dag-cbor";
 import { CID } from "multiformats";
 
 import * as ed from "@noble/ed25519";
-import { signAttestation } from "./signAttestation.mjs";
-import { encryptValue } from "./encryptValue.mjs";
-import { timestampAttestation } from "./timestamp.mjs";
-import { makeKey } from "./makeKey.mjs";
-import { dbGet } from "./dbGet.mjs";
+import { signAttestation } from "./signAttestation.js";
+import { encryptValue } from "./encryptValue.js";
+import { timestampAttestation } from "./timestamp.js";
+import { makeKey } from "./makeKey.js";
+import { dbGet } from "./dbGet.js";
 
 let sigKey = null;
 
@@ -51,7 +51,7 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
     encode({
       attestation,
       signature,
-      timestamp: timestamp,
+      timestamp,
     })
   );
 };
