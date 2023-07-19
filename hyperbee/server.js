@@ -12,6 +12,7 @@ import { keyFromPem } from "./src/signAttestation.js";
 
 // Last import
 import "dotenv/config";
+import assert from "node:assert";
 
 const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigKey);
@@ -90,6 +91,8 @@ app.post("/:cid/:attr", async (req, res, next) => {
   let data;
   try {
     data = decode(new Uint8Array(req.body));
+    assert.ok("value" in data);
+    assert.ok(data.encKey === false || data.encKey instanceof Uint8Array);
   } catch (e) {
     console.log(e);
     res.status(400).send();
