@@ -15,12 +15,10 @@
     downloadDialog.querySelector("#dl-server-form").style.display = "block";
     downloadDialog.querySelector("#dl-server-info").style.display = "none";
     // Disable default input focus which looks bad
-    downloadDialog.querySelector("#dl-server-0").blur();
+    downloadDialog.querySelector("#dl-server-button > button").blur();
   }
 
-  async function downloadFormSubmit(e) {
-    const formData = new FormData(e.target);
-
+  async function downloadFormSubmit() {
     // Show info text in dialog now
     downloadDialog.querySelector("#dl-server-form").style.display = "none";
     downloadDialog.querySelector("#dl-server-info").style.display = "block";
@@ -32,14 +30,10 @@
       encKey: false,
     });
     try {
-      if (!formData.get("dl-servers")) {
-        throw new Error("somehow no server was chosen");
-      }
-
       const res = await fetch(
         new URL(
           `${fileCid}/${data.attestation.attribute}`,
-          formData.get("dl-servers")
+          $hyperbeeSources[0].server
         ),
         {
           method: "POST",
@@ -71,18 +65,8 @@
     <div id="dl-server-title">Send data to</div>
     <form on:submit|preventDefault={downloadFormSubmit}>
       <div id="dl-server-sources">
-        {#each $hyperbeeSources as { name, server }, i}
-          <div style:width="max-content">
-            <input
-              type="radio"
-              id={`dl-server-${i}`}
-              name="dl-servers"
-              value={server}
-              checked={i === 0 || null}
-            />
-            <label for={`dl-server-${i}`}>{name} (<code>{server}</code>)</label>
-          </div>
-        {/each}
+        {$hyperbeeSources[0].name}<br /><code>{$hyperbeeSources[0].server}</code
+        >
       </div>
       <div id="dl-server-button">
         <Button type="submit">Submit</Button>

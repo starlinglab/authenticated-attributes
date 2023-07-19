@@ -6,13 +6,13 @@ import { encode, decode } from "@ipld/dag-cbor";
 import { env } from "node:process";
 import bodyParser from "body-parser";
 import { expressjwt } from "express-jwt";
+import assert from "node:assert";
 
 import { dbPut, setSigningKey } from "./src/dbPut.js";
 import { keyFromPem } from "./src/signAttestation.js";
 
 // Last import
 import "dotenv/config";
-import assert from "node:assert";
 
 const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigKey);

@@ -1,4 +1,4 @@
 {
   "root": true,
-  "ignorePatterns": ["**", "**/*.js", "**/*.svelte"]
+  "ignorePatterns": ["**/*.*", "!**/*.js", "!**/*.svelte", "**/node_modules"]
 }

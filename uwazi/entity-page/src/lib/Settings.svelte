@@ -95,7 +95,10 @@
   {/each}
 </div>
 <h2>Login</h2>
-<p>Enter JWT to allow for writing new data.</p>
+<p>
+  Enter JWT to allow for writing new data. This JWT will only be sent to your
+  first source in the list above.
+</p>
 <div class="section">
   <div class="input-style">
     <svg
