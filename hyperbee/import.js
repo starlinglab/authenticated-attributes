@@ -143,6 +143,8 @@ const metaRecorder = JSON.parse(metaRecorderEntry.getData());
 // Add all keys, and go inside known object keys
 // dbPut functions are called asynchronously to speed things up
 
+const promises = [];
+
 // eslint-disable-next-line no-restricted-syntax
 for (const key in metaContent) {
   // https://eslint.org/docs/latest/rules/guard-for-in
@@ -168,6 +170,10 @@ for (const key in metaContent) {
         // then store it as an array
         const parentEncryptedArchiveCid = metaContent[key][extrasKey];
         const parentContentCid = cidMapping[parentEncryptedArchiveCid];
+
+        // Using await here for consistency when adding relations (since batch is used)
+        // XXX this could be improved later
+
         // eslint-disable-next-line no-await-in-loop
         await dbAddRelation(
           datadb,
@@ -185,7 +191,9 @@ for (const key in metaContent) {
           CID.parse(contentCID)
         );
       }
-      dbPut(datadb, contentCID, extrasKey, metaContent[key][extrasKey]);
+      promises.push(
+        dbPut(datadb, contentCID, extrasKey, metaContent[key][extrasKey])
+      );
     }
   } else if (key === "private") {
     // eslint-disable-next-line no-restricted-syntax
@@ -197,17 +205,21 @@ for (const key in metaContent) {
       }
 
       // Encrypt these ones
-      dbPut(
-        datadb,
-        contentCID,
-        privateKey,
-        metaContent[key][privateKey],
-        encKey
+      promises.push(
+        dbPut(
+          datadb,
+          contentCID,
+          privateKey,
+          metaContent[key][privateKey],
+          encKey
+        )
       );
     }
   } else {
-    dbPut(datadb, contentCID, key, metaContent[key]);
+    promises.push(dbPut(datadb, contentCID, key, metaContent[key]));
   }
 }
 
 // XXX: skip metaRecorder for now
+
+await Promise.all(promises);
