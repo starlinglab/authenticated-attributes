@@ -1,10 +1,9 @@
-import pkg from "tweetnacl";
-const { secretbox, randomBytes } = pkg;
 import { encode } from "@ipld/dag-cbor";
+import pkg from "tweetnacl";
 
-const newKey = () => {
-  return randomBytes(secretbox.keyLength);
-};
+const { secretbox, randomBytes } = pkg;
+
+const newKey = () => randomBytes(secretbox.keyLength);
 
 const encryptValue = (obj, encryptionKey) => {
   // Adapted from https://github.com/dchest/tweetnacl-js/wiki/Examples#secretbox

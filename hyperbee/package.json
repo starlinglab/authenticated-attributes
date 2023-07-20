@@ -1,12 +1,17 @@
 {
   "name": "hyperbee-demo",
-  "version": "0.0.1",
-  "description": "Testing schema",
-  "main": "example.mjs",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
   "dependencies": {
     "@ipld/dag-cbor": "^9.0.0",
     "@noble/ed25519": "^2.0.0",
     "adm-zip": "^0.5.10",
+    "body-parser": "^1.20.2",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "express": "^4.18.2",
+    "express-jwt": "^8.4.1",
     "hyperbee": "^2.7.3",
     "hypercore": "^10.8.1",
     "multiformats": "^11.0.2",
@@ -19,6 +24,10 @@
   "author": "",
   "license": "MIT",
   "devDependencies": {
-    "prettier": "2.8.7"
+    "eslint": "^8.45.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-import": "^2.27.5",
+    "prettier": "^2.8.8"
   }
 }

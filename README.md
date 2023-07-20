@@ -8,21 +8,27 @@ This repo also contains a specific frontend for Authenticated Attributes, design
 
 ```
 authenticated-attributes
-├── hyperbee               // Hyperbee code
-│   ├── demo
-│   │   ├── demo-get.mjs   // Some demo scripts
-│   │   ├── demo.mjs
-│   │   ├── test-cbor.mjs
-│   │   └── src            // Code for using db
-│   │       └── ...
-│   └── server
-│       └── index.js       // Read-only webserver for db
-└── uwazi                  // Uwazi code
-    ├── add_cids.py        // Add CIDs to Uwazi uploads
+│
+├── hyperbee               // Backend code
+│   ├── demo-get.mjs       // Some demo scripts
+│   ├── demo.mjs
+│   ├── test-cbor.mjs
+│   ├── import.mjs         // ZIP import script
+│   ├── src                // Code for using db
+│   │   └── ...
+│   ├── server.mjs         // CRUD webserver for db
+│   └── example.env        // Example server config
+│
+└── uwazi                  // Frontend code
+    ├── add_cids.py        // Backend script to add CIDs to Uwazi uploads
     └── entity-page        // Custom UI for Uwazi files to see metadata
         ├── sw.js          // Service worker for WACZ embedding on Uwazi
         └── ...            // Svelte files
 ```
+
+## Development
+
+After cloning the repo, enter `hyperbee` and `uwazi/entity-page`, and run `npm install` in each to install dependencies. Enable pre-commit hooks with `git config core.hooksPath .githooks`. Now you should be ready to make code changes, and formatting and linting will happen automatically before committing.
 
 ## Keys
 
@@ -88,7 +94,7 @@ When the attestation is encrypted, the schema looks very similar to the above. T
 
 ## Timestamping
 
-Attestations are timestamped with [OpenTimestamps](https://opentimestamps.org/). This requires Internet access and takes about one second to finish. At first only the incomplete proof is stored (indicated by `timestamp.upgraded` being `false`), but the proof could be upgraded at a later date.
+Attestations are timestamped with [OpenTimestamps](https://opentimestamps.org/). This requires Internet access and takes about one second to finish. At first only the incomplete proof is stored (indicated by `timestamp.upgraded` being `false`), but the proof can be upgraded at a later date.
 
 The timestamp serves to prove that the attestation was not made after `timestamp.submitted`, within the several hours long error bars afforded by the system. In practice, this means `timestamp.submitted` is provably accurate to about a day interval.
 

@@ -1,0 +1,47 @@
+{
+  "env": {
+    "browser": true
+  },
+  "parserOptions": {
+    "ecmaVersion": 2020
+  },
+  "extends": [
+    "airbnb-base",
+    "prettier",
+    "plugin:svelte/recommended",
+    "plugin:svelte/prettier"
+  ],
+  "ignorePatterns": ["dist/*", "sw.js"],
+  "globals": {
+    "IpldDagCbor": "readonly",
+    "datasets": "readonly",
+    "vis": "readonly",
+    "__APP_VERSION__": "readonly"
+  },
+  "rules": {
+    "import/no-extraneous-dependencies": "off",
+    "import/no-unresolved": "off",
+    "import/extensions": "off",
+    "import/prefer-default-export": "off",
+    "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],
+    "no-continue": "off",
+    "no-restricted-syntax": [
+      "error",
+      // Redefine but don't include for-of loop restrictions that are unnecessary
+      {
+        "selector": "ForInStatement",
+        "message": "for..in loops iterate over the entire prototype chain, which is virtually never what you want. Use Object.{keys,values,entries}, and iterate over the resulting array."
+      },
+      {
+        "selector": "LabeledStatement",
+        "message": "Labels are a form of GOTO; using them makes code confusing and hard to maintain and understand."
+      },
+      {
+        "selector": "WithStatement",
+        "message": "`with` is disallowed in strict mode because it makes code impossible to predict and optimize."
+      }
+    ],
+    "no-console": ["error", { "allow": ["warn", "error"] }],
+    "import/no-mutable-exports": "off"
+  }
+}
