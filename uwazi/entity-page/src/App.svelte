@@ -18,6 +18,8 @@
   const replayWebURL = "https://cdn.jsdelivr.net/npm/replaywebpage@1.8.4/ui.js";
   const visURL =
     "https://cdn.jsdelivr.net/npm/vis-network@9.1.6/standalone/umd/vis-network.min.js";
+  const multiformatsURL =
+    "https://cdn.jsdelivr.net/npm/multiformats@12.0.1/dist/index.min.js";
 
   const DEBUG = import.meta.env.DEV;
   // eslint-disable-next-line no-console
@@ -294,6 +296,7 @@
     try {
       await loadScript(dagCborURL);
       await loadScript(visURL);
+      await loadScript(multiformatsURL);
       if (entityInfo.isWacz) {
         await loadScript(replayWebURL);
       }

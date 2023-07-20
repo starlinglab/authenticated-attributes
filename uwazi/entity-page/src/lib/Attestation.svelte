@@ -31,6 +31,35 @@
     return btoa(binaryString);
   }
 
+  function isCID(cid) {
+    // The proper way to know would be to import the CID library and use `instanceof`
+    // But that would bloat our deps, so instead I'm hacking around it by
+    // checking for the existence of a property other objects likely won't have
+    return (
+      typeof cid === "object" &&
+      "multihash" in cid &&
+      "/" in cid &&
+      "asCID" in cid &&
+      "toV0" in cid &&
+      typeof cid.toV0 === "function"
+    );
+  }
+
+  function isJsonCID(k, v) {
+    // CID object becomes something else when being prepared for JSON
+    // Example: {"/": "bafyreietqpflteqz6kj7lmdqz76kzkwdo65o4bhivxrmqvha7pdgixxos4"}
+
+    if (k !== "/") {
+      return false;
+    }
+    try {
+      const c = Multiformats.CID.parse(v);
+      return Boolean(c);
+    } catch {
+      return false;
+    }
+  }
+
   function saveFile(filename, type, bytes) {
     const blob = new Blob([bytes], { type });
     const elem = window.document.createElement("a");
@@ -43,6 +72,74 @@
       window.URL.revokeObjectURL(elem.href);
       document.body.removeChild(elem);
     }, 0);
+  }
+
+  function vcExport() {
+    const vc = {
+      "@context": [
+        "https://www.w3.org/2018/credentials/v1",
+        "urn:authattr:vc-schema:1",
+      ],
+      id: `urn:cid:${data.signature.signedMsg}`,
+      type: ["VerifiableCredential", "AuthAttrCredential"],
+      issuer: `urn:authattr:pubkey:${uint8ArrayToBase64(
+        data.signature.pubKey
+      )}`,
+      issuanceDate: data.timestamp.submitted,
+      credentialSubject: {
+        id: `urn:cid:${data.attestation.CID}`,
+        attribute: data.attestation.attribute,
+        value: data.attestation.value,
+        encrypted: data.attestation.encrypted,
+        binary: false,
+      },
+      proof: {
+        type: "authattr_ed25519_v1",
+        pubKey: uint8ArrayToBase64(data.signature.pubKey),
+        signature: uint8ArrayToBase64(data.signature.signature),
+      },
+    };
+
+    if (vc.credentialSubject.encrypted) {
+      // Encode value otherwise the default bytes->JSON conversion will be used
+      // which is terrible
+      vc.credentialSubject.value = uint8ArrayToBase64(data.attestation.value);
+      return JSON.stringify(vc);
+    }
+
+    // See if different encoding of value is required. If there are any bytes
+    // in data.attestation.value, the whole thing needs to be DAG-CBOR encoded
+    // to maintain integrity and allow for proper decoding.
+
+    let vcStr;
+    try {
+      vcStr = JSON.stringify(vc, (k, v) => {
+        if (
+          // Directly bytes
+          k instanceof Uint8Array ||
+          // Or it's a CID, which should be encoded properly so the sig is valid
+          isCID(k) ||
+          // Check values too
+          v instanceof Uint8Array ||
+          isCID(v) ||
+          // Finally check if it's a converted CID
+          isJsonCID(k, v)
+        ) {
+          throw new Error("binary");
+        }
+        return v;
+      });
+    } catch {
+      // Error occured, meaning there is binary data that must be encoded
+      vc.credentialSubject.value = uint8ArrayToBase64(
+        IpldDagCbor.encode(data.attestation.value)
+      );
+      vc.credentialSubject.binary = true;
+      return JSON.stringify(vc);
+    }
+
+    // No error, no binary data
+    return vcStr;
   }
 
   function iconClick() {
@@ -168,6 +265,7 @@
     </div>
   </div>
   <span slot="buttons">
+    <Button>View Timestamp</Button>
     <!-- svelte-ignore missing-declaration -->
     <Button
       on:click={() => {
@@ -176,9 +274,17 @@
           "application/cbor",
           IpldDagCbor.encode(data)
         );
-      }}>Export Attestation</Button
+      }}>CBOR Export</Button
     >
-    <Button>View Timestamp</Button>
+    <Button
+      on:click={() => {
+        saveFile(
+          `${data.attestation.attribute}.vc.json`,
+          "application/json",
+          vcExport()
+        );
+      }}>VC Export</Button
+    >
   </span>
 </Modal>
 
@@ -252,7 +358,7 @@
     cursor: pointer;
     width: fit-content;
   }
-  #icons > svg {
+  #icons > svg:not(.disabled) {
     cursor: pointer;
   }
   .value {
@@ -270,11 +376,13 @@
     display: inline-block;
     width: 100%;
   }
+
   /*
   Used by removed clone/copy/download feature
 
-  .disabled {
+  svg.disabled {
     opacity: 0.3;
+    cursor: default;
   }
   */
 
