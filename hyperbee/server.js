@@ -71,7 +71,7 @@ app.get("/:cid", async (req, res) => {
   // eslint-disable-next-line no-restricted-syntax
   for await (const { key, value } of db.createReadStream({
     gte: req.params.cid,
-    lt: `${req.params.cid}0`, // 0 is the symbol before / in binary, so the range of keys is the keys in the format <cid>/<any>
+    lt: `${req.params.cid}0`, // 0 is the symbol after / in binary, so the range of keys is the keys in the format <cid>/<any>
   })) {
     metadata[key.slice(req.params.cid.length + 1)] = decode(value);
   }
