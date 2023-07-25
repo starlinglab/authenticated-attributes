@@ -249,7 +249,7 @@
         </p>
         <p>
           <strong>Timestamp:</strong>
-          {data.timestamp.submitted}
+          {data.attestation.timestamp || "unsigned timestamp (old)"}
         </p>
         <p>
           <strong>Public Key:</strong>

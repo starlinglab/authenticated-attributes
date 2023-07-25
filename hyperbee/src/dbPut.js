@@ -23,6 +23,7 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
     attribute: attr,
     value,
     encrypted: Boolean(encryptionKey),
+    timestamp: new Date().toISOString(),
   };
   const signature = await signAttestation(sigKey, rawAttestation);
   const signedAttestation = {
@@ -30,17 +31,10 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
     signature,
   };
 
-  let attestation;
-
+  const attestation = rawAttestation;
   if (encryptionKey) {
-    attestation = {
-      CID: CID.parse(id),
-      attribute: attr,
-      value: encryptValue(value, encryptionKey),
-      encrypted: true,
-    };
-  } else {
-    attestation = rawAttestation;
+    attestation.value = encryptValue(value, encryptionKey);
+    attestation.encrypted = true;
   }
 
   const timestamp = await timestampAttestation(signedAttestation);

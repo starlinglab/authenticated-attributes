@@ -50,17 +50,30 @@
       }
     });
 
+  const setErrMsg = (msg) => {
+    errMsg = msg;
+  };
+  const setLoading = (b) => {
+    loading = b;
+  };
+
   const loadData = async (sources, cid) => {
     const datas = [];
+    const bufferPromises = [];
     for (let i = 0; i < sources.length; i++) {
-      // eslint-disable-next-line no-await-in-loop
-      const resp = await fetch(`${sources[i].server}/${cid}`);
-      if (!resp.ok) {
-        errMsg = `failed to load data: ${resp.statusText}`;
-        throw new Error("failed to load data");
-      }
-      // eslint-disable-next-line no-await-in-loop
-      datas.push(IpldDagCbor.decode(new Uint8Array(await resp.arrayBuffer())));
+      bufferPromises.push(
+        fetch(`${sources[i].server}/${cid}`).then((value) => {
+          if (!value.ok) {
+            setErrMsg(`failed to load data: ${value.statusText}`);
+            throw new Error("failed to load data");
+          }
+          return value.arrayBuffer();
+        })
+      );
+    }
+    const resps = await Promise.all(bufferPromises);
+    for (let i = 0; i < sources.length; i++) {
+      datas.push(IpldDagCbor.decode(new Uint8Array(resps[i])));
     }
     return datas;
   };
@@ -369,20 +382,26 @@
         graphData[fcid] = { parents: {}, children: {} };
       }
 
+      const bufferPromises = [];
+
       for (let i = 0; i < $hyperbeeSources.length; i++) {
         const hb = $hyperbeeSources[i];
-        // eslint-disable-next-line no-await-in-loop
-        const resp = await fetch(`${hb.server}/${fcid}`);
-        if (!resp.ok) {
-          errMsg = `failed to load data: ${resp.statusText}`;
-          loading = false;
-          throw new Error("failed to load data");
-        }
-        const attests = IpldDagCbor.decode(
-          // eslint-disable-next-line no-await-in-loop
-          new Uint8Array(await resp.arrayBuffer())
+        bufferPromises.push(
+          fetch(`${hb.server}/${fcid}`).then((value) => {
+            if (!value.ok) {
+              setErrMsg(`failed to load data: ${value.statusText}`);
+              setLoading(false);
+              throw new Error("failed to load data");
+            }
+            return value.arrayBuffer();
+          })
         );
+      }
 
+      const buffers = await Promise.all(bufferPromises);
+
+      for (let i = 0; i < $hyperbeeSources.length; i++) {
+        const attests = IpldDagCbor.decode(new Uint8Array(buffers[i]));
         graphData[fcid].parents[i] =
           (attests.parents && attests.parents.attestation.value) || [];
         graphData[fcid].children[i] =
@@ -396,6 +415,8 @@
 
     // Limit to depth of 3 (2 + 1 level already done)
     for (let i = 0; i < 2; i++) {
+      const updatePromises = [];
+
       for (const relations of Object.values(graphData)) {
         // Parents
         for (const sourceData of Object.values(relations.parents)) {
@@ -404,8 +425,7 @@
               parent = parent.toString();
               if (!graphData[parent]) {
                 // Not processed yet
-                // eslint-disable-next-line no-await-in-loop
-                await updateData(parent);
+                updatePromises.push(updateData(parent));
               }
             }
           }
@@ -417,13 +437,18 @@
               child = child.toString();
               if (!graphData[child]) {
                 // Not processed yet
-                // eslint-disable-next-line no-await-in-loop
-                await updateData(child);
+                updatePromises.push(updateData(child));
               }
             }
           }
         }
       }
+
+      // Wait for all updates to finish before running the loop again
+      // This way graphData will have the new CIDs to look at
+      //
+      // eslint-disable-next-line no-await-in-loop
+      await Promise.all(updatePromises);
     }
 
     loading = false;
