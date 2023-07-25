@@ -71,7 +71,6 @@ Database entries are stored as binary data, encoded with [DAG-CBOR](https://ipld
   timestamp: {
     proof: Uint8Array(503),
     upgraded: false,
-    submitted: '2023-05-29T19:03:28.601Z',
     // CID of "signature" object inserted as a key of "attestation"
     timestampedValue: CID(bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m)
   },
@@ -80,10 +79,12 @@ Database entries are stored as binary data, encoded with [DAG-CBOR](https://ipld
     CID: CID(bafkreif7gtpfl7dwi5nflge2rsfp6vq6q5kkwfm7uvxyyezxhsnde5ly3y),
     value: 'Web archive foo bar',
     attribute: 'description',
-    encrypted: false
+    encrypted: false,
+    timestamp: '2023-05-29T19:03:28.601Z'
   }
 }
 ```
+
 The binary data of `timestamp.proof` does not have a specified size, the size mentioned above is just an example and may vary in some cases.
 
 When `CID(...)` is shown that represents a CID stored natively, not as text. Thanks to the DAG-CBOR encoding we are able to do this. We are also able to get the CID of non-files such as particular DAG-CBOR objects. This is what allows the usage of CIDs for `signedMsg` and `timestampedValue`.
@@ -96,6 +97,6 @@ When the attestation is encrypted, the schema looks very similar to the above. T
 
 Attestations are timestamped with [OpenTimestamps](https://opentimestamps.org/). This requires Internet access and takes about one second to finish. At first only the incomplete proof is stored (indicated by `timestamp.upgraded` being `false`), but the proof can be upgraded at a later date.
 
-The timestamp serves to prove that the attestation was not made after `timestamp.submitted`, within the several hours long error bars afforded by the system. In practice, this means `timestamp.submitted` is provably accurate to about a day interval.
+The timestamp serves to prove that the attestation was not made after `attestation.timestamp`, within the several hours long error bars afforded by the system. In practice, this means `attestation.timestamp` is provably accurate to about a day interval.
 
-If you trust the signer you can ignore the proof and rely on `timestamp.submitted` alone, making it accurate to about a second.
+If you trust the signer you can ignore the proof and rely on `attestation.timestamp` alone, making it accurate to about a second.

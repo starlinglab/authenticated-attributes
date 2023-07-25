@@ -21,7 +21,6 @@ const timestampAttestation = async (signedAttestation) => {
     proof: fileOts,
     upgraded: false,
     timestampedValue: signedAttCID,
-    submitted: new Date().toISOString(),
   };
 };
 

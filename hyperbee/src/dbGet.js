@@ -40,7 +40,7 @@ const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
   if (reduced) {
     return {
       value: resultObj.attestation.value,
-      timestamp: resultObj.timestamp.submitted,
+      timestamp: resultObj.attestation.timestamp,
     };
   }
   return resultObj;
