@@ -85,7 +85,7 @@
       issuer: `urn:authattr:pubkey:${uint8ArrayToBase64(
         data.signature.pubKey
       )}`,
-      issuanceDate: data.timestamp.submitted,
+      issuanceDate: data.attestation.timestamp,
       credentialSubject: {
         id: `urn:cid:${data.attestation.CID}`,
         attribute: data.attestation.attribute,
