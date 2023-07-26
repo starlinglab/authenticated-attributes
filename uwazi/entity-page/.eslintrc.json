@@ -16,6 +16,7 @@
     "IpldDagCbor": "readonly",
     "datasets": "readonly",
     "vis": "readonly",
+    "Multiformats": "readonly",
     "__APP_VERSION__": "readonly"
   },
   "rules": {

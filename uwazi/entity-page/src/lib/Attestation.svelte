@@ -5,6 +5,9 @@
   import Modal from "./Modal.svelte";
   import DownloadDialog from "./DownloadDialog.svelte";
 
+  import { uint8ArrayToBase64 } from "./shared.js";
+  import { vcExport } from "./vc.js";
+
   export let data;
   export let customTitle = "";
   export let signer = "";
@@ -22,14 +25,6 @@
   let attrTitle; // Element
 
   let downloadDialog; // Element
-
-  function uint8ArrayToBase64(uint8Array) {
-    let binaryString = "";
-    uint8Array.forEach((byte) => {
-      binaryString += String.fromCharCode(byte);
-    });
-    return btoa(binaryString);
-  }
 
   function saveFile(filename, type, bytes) {
     const blob = new Blob([bytes], { type });
@@ -168,6 +163,7 @@
     </div>
   </div>
   <span slot="buttons">
+    <Button>View Timestamp</Button>
     <!-- svelte-ignore missing-declaration -->
     <Button
       on:click={() => {
@@ -176,9 +172,17 @@
           "application/cbor",
           IpldDagCbor.encode(data)
         );
-      }}>Export Attestation</Button
+      }}>CBOR Export</Button
     >
-    <Button>View Timestamp</Button>
+    <Button
+      on:click={() => {
+        saveFile(
+          `${data.attestation.attribute}.vc.json`,
+          "application/json",
+          vcExport(data)
+        );
+      }}>VC Export</Button
+    >
   </span>
 </Modal>
 
@@ -252,7 +256,7 @@
     cursor: pointer;
     width: fit-content;
   }
-  #icons > svg {
+  #icons > svg:not(.disabled) {
     cursor: pointer;
   }
   .value {
@@ -270,11 +274,13 @@
     display: inline-block;
     width: 100%;
   }
+
   /*
   Used by removed clone/copy/download feature
 
-  .disabled {
+  svg.disabled {
     opacity: 0.3;
+    cursor: default;
   }
   */
 
