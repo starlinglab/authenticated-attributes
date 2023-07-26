@@ -90,8 +90,7 @@
         id: `urn:cid:${data.attestation.CID}`,
         attribute: data.attestation.attribute,
         value: data.attestation.value,
-        encrypted: data.attestation.encrypted,
-        binary: false,
+        encoding: "json",
       },
       proof: {
         type: "authattr_ed25519_v1",
@@ -104,6 +103,7 @@
       // Encode value otherwise the default bytes->JSON conversion will be used
       // which is terrible
       vc.credentialSubject.value = uint8ArrayToBase64(data.attestation.value);
+      vc.credentialSubject.encoding = "base64_encrypted_dag-cbor";
       return JSON.stringify(vc);
     }
 
@@ -134,7 +134,7 @@
       vc.credentialSubject.value = uint8ArrayToBase64(
         IpldDagCbor.encode(data.attestation.value)
       );
-      vc.credentialSubject.binary = true;
+      vc.credentialSubject.encoding = "base64_dag-cbor";
       return JSON.stringify(vc);
     }
 

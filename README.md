@@ -125,12 +125,8 @@ It is possible to export attestations as [Verifiable Credentials](https://en.wik
     // Fields copied from attestation schema:
     "attribute": "description",
     "value": "Web archive foo bar",
-    "encrypted": false,
-    // Set to true when "value" is base64-encoded DAG-CBOR bytes instead of a
-    // regular JSON value. If "encrypted" is set to true then this field is
-    // irrelevant as "value" is always base64-encoded as the *encrypted*
-    // DAG-CBOR bytes.
-    "binary": false
+    // Explains the how to decode what has been stored at "value"
+    "encoding": "json", // "json", "base64_dag-cbor", "base64_encrypted_dag-cbor"
   },
   "proof": {
     "type": "authattr_ed25519_v1", // Something unique
