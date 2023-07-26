@@ -36,6 +36,9 @@ if ! $PASS; then
     exit 1
 fi
 
+# Still inside entity-page dir
+npx vitest run || exit 1
+
 cd ../.. || exit 1
 
 # Add back the modified/prettified files to staging
