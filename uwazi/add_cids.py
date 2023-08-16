@@ -2,6 +2,7 @@ import os
 import requests
 import json
 import subprocess
+import time
 
 from dotenv import load_dotenv
 
@@ -77,10 +78,21 @@ def login():
         f"{SERVER}/api/login",
         headers={"Accept": "application/json"},
         json={"username": USERNAME, "password": PASSWORD},
+        timeout=10,
     )
     r.raise_for_status()
 
     # Now login cookie is stored in session
+
+
+def login_if_needed():
+    r = session.get(
+        f"{SERVER}/api/search", headers={"Accept": "application/json"}, timeout=10
+    )
+    if r.status_code == 401:
+        login()
+    elif r.status_code != 200:
+        r.raise_for_status()
 
 
 def entities_without_cid():
@@ -108,10 +120,9 @@ def entities_without_cid():
             and len(item["metadata"][CID_METADATA_NAME][0]["value"]) > 0
         ):
             # Has CID
-            print("Has CID, skipping")
             continue
         if len(item["documents"]) + len(item["attachments"]) != 1:
-            print("Multi-file or no files, skipping")
+            # Multi-file or no files
             continue
 
         yield Entity(item)
@@ -119,8 +130,14 @@ def entities_without_cid():
 
 def main():
     login()
-    for entity in entities_without_cid():
-        entity.set_cid()
+
+    while True:
+        for entity in entities_without_cid():
+            entity.set_cid()
+
+        time.sleep(5)
+        login_if_needed()
+        # With login ensured, move on to the next CID check
 
 
 if __name__ == "__main__":
