@@ -3,12 +3,16 @@ import requests
 import json
 import subprocess
 
-UWAZI_ROOT = "/home/makeworld/uwazi"
-CID_METADATA_NAME = "sha256cid"
-USERNAME = "admin"
-PASSWORD = "change this password now"
+from dotenv import load_dotenv
 
-SERVER = "http://localhost:3000"
+load_dotenv()
+
+UWAZI_ROOT = os.environ["UWAZI_ROOT"]
+CID_METADATA_NAME = os.getenv("CID_METADATA_NAME", "sha256cid")
+USERNAME = os.environ["USERNAME"]
+PASSWORD = os.environ["PASSWORD"]
+
+SERVER = os.environ["SERVER"]
 
 session = requests.Session()
 

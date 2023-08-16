@@ -15,7 +15,7 @@
 
   const dagCborURL =
     "https://cdn.jsdelivr.net/npm/@ipld/dag-cbor@9.0.3/dist/index.min.js";
-  const replayWebURL = "https://cdn.jsdelivr.net/npm/replaywebpage@1.8.4/ui.js";
+  const replayWebURL = "https://cdn.jsdelivr.net/npm/replaywebpage@1.8.7/ui.js";
   const visURL =
     "https://cdn.jsdelivr.net/npm/vis-network@9.1.6/standalone/umd/vis-network.min.js";
   const multiformatsURL =
@@ -137,7 +137,8 @@
         fileSize: !entityHasAttachment || entity.attachments[0].size,
         fileUrl:
           !entityHasAttachment ||
-          `/api/files/${entity.attachments[0].filename}`,
+          // Use custom fileserver path we created
+          `/authattr/files/${entity.attachments[0].filename}`,
         isWacz,
       };
     }
@@ -163,7 +164,8 @@
           fileName: !entityHasAttachment || ent.attachments[0].originalname,
           fileSize: !entityHasAttachment || ent.attachments[0].size,
           fileUrl:
-            !entityHasAttachment || `/api/files/${ent.attachments[0].filename}`,
+            !entityHasAttachment ||
+            `/authattr/files/${ent.attachments[0].filename}`,
           isWacz,
         };
       }
@@ -551,8 +553,8 @@
               <div id="embed-container">
                 {#if entityInfo.isWacz}
                   <replay-web-page
-                    source={`https://wacz.hyperbee.dev.starlinglab.org/${entityInfo.cid}`}
-                    replayBase="/api/files/"
+                    source={entityInfo.fileUrl}
+                    replayBase="/authattr/replay/"
                     swName={REPLAYWEB_SW_FILENAME}
                   />
                 {:else}

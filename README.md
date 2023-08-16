@@ -1,6 +1,6 @@
 # Authenticated Attributes
 
-This repo contains the initial implementation of the Authenticated Attributes project from The Starling Lab. It is built on top of the [HyperBee](https://docs.holepunch.to/building-blocks/hyperbee) key-value store.
+This repo contains the initial implementation of the Authenticated Attributes project from The Starling Lab. It is built on top of the [Hyperbee](https://docs.holepunch.to/building-blocks/hyperbee) key-value store.
 
 This repo also contains a specific frontend for Authenticated Attributes, designed to work within the asset management system [Uwazi](https://uwazi.io/).
 
@@ -9,21 +9,22 @@ This repo also contains a specific frontend for Authenticated Attributes, design
 ```
 authenticated-attributes
 │
-├── hyperbee               // Backend code
-│   ├── demo-get.mjs       // Some demo scripts
-│   ├── demo.mjs
-│   ├── test-cbor.mjs
-│   ├── import.mjs         // ZIP import script
-│   ├── src                // Code for using db
+├── hyperbee          // Backend code
+│   ├── demo-get.js   // Some demo scripts
+│   ├── demo.js
+│   ├── test-cbor.js
+│   ├── import.js     // ZIP import script
+│   ├── src           // Code for using db
 │   │   └── ...
-│   ├── server.mjs         // CRUD webserver for db
-│   └── example.env        // Example server config
+│   ├── server.js     // CRUD webserver for db
+│   └── example.env   // Example server config
 │
-└── uwazi                  // Frontend code
-    ├── add_cids.py        // Backend script to add CIDs to Uwazi uploads
-    └── entity-page        // Custom UI for Uwazi files to see metadata
-        ├── sw.js          // Service worker for WACZ embedding on Uwazi
-        └── ...            // Svelte files
+└── uwazi             // Frontend code
+    ├── add_cids.py   // Backend script to add CIDs to Uwazi uploads
+    ├── example.env   // Example config for add_cids.py
+    └── entity-page   // Custom UI for Uwazi files to see metadata
+        ├── sw.js     // Service worker for WACZ embedding on Uwazi
+        └── ...       // Svelte files
 ```
 
 ## Development
