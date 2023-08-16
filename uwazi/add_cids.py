@@ -87,12 +87,12 @@ def login():
 
 def login_if_needed():
     r = session.get(
-        f"{SERVER}/api/search", headers={"Accept": "application/json"}, timeout=10
+        f"{SERVER}/api/",
+        headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
+        timeout=10,
     )
     if r.status_code == 401:
         login()
-    elif r.status_code != 200:
-        r.raise_for_status()
 
 
 def entities_without_cid():
@@ -136,6 +136,8 @@ def main():
             entity.set_cid()
 
         time.sleep(5)
+        # Prevents error: requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
+        session.close()
         login_if_needed()
         # With login ensured, move on to the next CID check
 
