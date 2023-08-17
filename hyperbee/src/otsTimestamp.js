@@ -20,7 +20,7 @@ const timestampAttestation = async (signedAttestation) => {
   return {
     proof: fileOts,
     upgraded: false,
-    timestampedValue: signedAttCID,
+    msg: signedAttCID,
   };
 };
 

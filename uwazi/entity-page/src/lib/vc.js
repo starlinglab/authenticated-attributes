@@ -35,7 +35,7 @@ export function vcExport(data) {
       "https://www.w3.org/2018/credentials/v1",
       "urn:authattr:vc-schema:1",
     ],
-    id: `urn:cid:${data.signature.signedMsg}`,
+    id: `urn:cid:${data.signature.msg}`,
     type: ["VerifiableCredential", "AuthAttrCredential"],
     issuer: `urn:authattr:pubkey:${uint8ArrayToBase64(data.signature.pubKey)}`,
     issuanceDate: data.attestation.timestamp,
@@ -48,7 +48,7 @@ export function vcExport(data) {
     proof: {
       type: "authattr_ed25519_v1",
       pubKey: uint8ArrayToBase64(data.signature.pubKey),
-      signature: uint8ArrayToBase64(data.signature.signature),
+      sig: uint8ArrayToBase64(data.signature.sig),
     },
   };
 

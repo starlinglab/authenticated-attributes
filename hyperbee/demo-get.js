@@ -3,7 +3,7 @@ import Hyperbee from "hyperbee";
 import { getPublicKeyAsync } from "@noble/ed25519";
 
 import { keyFromPem } from "./src/signAttestation.js";
-import { getInfo } from "./src/timestamp.js";
+import { getInfo } from "./src/otsTimestamp.js";
 import { dbGet, dbIsEncrypted, dbRawValue } from "./src/dbGet.js";
 
 // Set up Hypercore and Hyperbee

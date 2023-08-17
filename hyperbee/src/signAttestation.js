@@ -8,7 +8,7 @@ const signAttestation = async (privKey, rawAttestation) => {
   const pubKey = await getPublicKeyAsync(privKey);
   const rawAttCID = await encodeAttestation(rawAttestation);
   const signature = await signAsync(rawAttCID, privKey);
-  return { signature, signedMsg: rawAttCID, pubKey };
+  return { sig: signature, msg: rawAttCID, pubKey };
 };
 
 /**
