@@ -974,7 +974,4 @@
   a {
     border-bottom: 0 !important;
   }
-  p {
-    margin: revert !important;
-  }
 </style>
