@@ -19,12 +19,12 @@ authenticated-attributes
 │   ├── server.js     // CRUD webserver for db
 │   └── example.env   // Example server config
 │
-└── uwazi             // Frontend code
-    ├── add_cids.py   // Backend script to add CIDs to Uwazi uploads
-    ├── example.env   // Example config for add_cids.py
-    └── entity-page   // Custom UI for Uwazi files to see metadata
-        ├── sw.js     // Service worker for WACZ embedding on Uwazi
-        └── ...       // Svelte files
+└── uwazi                 // Frontend code
+    ├── metadata-manager  // Backend script for managing Uwazi metadata
+    │   └── ...
+    └── entity-page       // Custom UI for Uwazi files to see metadata
+        ├── sw.js         // Service worker for WACZ embedding on Uwazi
+        └── ...           // Svelte files
 ```
 
 ## Development

@@ -56,6 +56,7 @@ app.use(
   }).unless({ method: ["OPTIONS", "GET"] })
 );
 
+// Make 401 error visible to user
 app.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
     res.status(401).send("401 Unauthorized");
@@ -64,8 +65,9 @@ app.use((err, req, res, next) => {
   }
 });
 
-// Routes
+/// Routes ///
 
+// Get all attestations for CID
 app.get("/:cid", async (req, res) => {
   const metadata = {};
   // eslint-disable-next-line no-restricted-syntax
@@ -79,6 +81,7 @@ app.get("/:cid", async (req, res) => {
   res.send(Buffer.from(encode(metadata)));
 });
 
+// Set a single attestation for a CID
 app.post("/:cid/:attr", async (req, res, next) => {
   // Expected body from client is dag-cbor encoded
   // Two attrs in map:
@@ -108,6 +111,43 @@ app.post("/:cid/:attr", async (req, res, next) => {
 
   res.status(200).send();
 });
+
+// Set multiple attestations for a CID
+app.post("/:cid", async (req, res, next) => {
+  // Expected body from client is dag-cbor encoded
+  // Map of attribute names to values
+  // {
+  //   caption: "blah blah",
+  //   rating: 3.5
+  // }
+
+  let data;
+  try {
+    data = decode(new Uint8Array(req.body));
+    assert.equal(typeof data, "object");
+  } catch (e) {
+    console.log(e);
+    res.status(400).send();
+    return;
+  }
+  try {
+    const batch = db.batch();
+    const putPromises = [];
+    for (const [key, value] of Object.entries(data)) {
+      putPromises.push(dbPut(batch, req.params.cid, key, value));
+    }
+    await Promise.all(putPromises);
+    await batch.flush();
+  } catch (e) {
+    next(e);
+    res.status(500).send();
+    return;
+  }
+
+  res.status(200).send();
+});
+
+/// End of routes ///
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);
