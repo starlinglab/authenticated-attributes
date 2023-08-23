@@ -11,7 +11,7 @@ const core = new Hypercore("./demo.hypercore");
 await core.ready();
 
 const db = new Hyperbee(core, {
-  keyEncoding: "utf-8",
+  keyEncoding: "utf-8", // for demo
   valueEncoding: "binary",
 });
 

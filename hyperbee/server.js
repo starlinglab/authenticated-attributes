@@ -29,7 +29,7 @@ const corePath = env.UWAZI_HYPERCORE ?? "server.hypercore";
 const core = new Hypercore(corePath);
 await core.ready();
 const db = new Hyperbee(core, {
-  keyEncoding: "utf-8",
+  keyEncoding: "binary",
   valueEncoding: "binary",
 });
 
@@ -70,7 +70,6 @@ app.use((err, req, res, next) => {
 // Get all attestations for CID
 app.get("/:cid", async (req, res) => {
   const metadata = {};
-  // eslint-disable-next-line no-restricted-syntax
   for await (const { key, value } of db.createReadStream({
     gte: req.params.cid,
     lt: `${req.params.cid}0`, // 0 is the symbol after / in binary, so the range of keys is the keys in the format <cid>/<any>

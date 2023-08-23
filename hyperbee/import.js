@@ -36,7 +36,7 @@ const cidMapping = JSON.parse(
 const datacore = new Hypercore(datacorePath);
 await datacore.ready();
 const datadb = new Hyperbee(datacore, {
-  keyEncoding: "utf-8",
+  keyEncoding: "binary",
   valueEncoding: "binary",
 });
 
@@ -45,7 +45,7 @@ const keycore = new Hypercore(keycorePath, undefined, {
 });
 await keycore.ready();
 const keydb = new Hyperbee(keycore, {
-  keyEncoding: "utf-8",
+  keyEncoding: "binary",
   valueEncoding: "binary",
 });
 
