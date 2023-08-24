@@ -10,6 +10,7 @@ import assert from "node:assert";
 
 import { dbPut, setSigningKey } from "./src/dbPut.js";
 import { keyFromPem } from "./src/signAttestation.js";
+import { encodeFromType, indexFindMatches, indexPut } from "./src/index.js";
 
 // Last import
 import "dotenv/config";
@@ -114,11 +115,19 @@ app.post("/:cid/:attr", async (req, res, next) => {
 // Set multiple attestations for a CID
 app.post("/:cid", async (req, res, next) => {
   // Expected body from client is dag-cbor encoded
-  // Map of attribute names to values
-  // {
-  //   caption: "blah blah",
-  //   rating: 3.5
-  // }
+  // Example:
+  //
+  // [
+  //   {"key": "caption", "value": "foo", "type": "str"}
+  //   {"key": "rating", "value": 3.5, "type": "float64"}
+  // ]
+  //
+  // "type" is one of int32|unix|uint32|str|float64
+  // where "unix" means Unix time in milliseconds stored as an int64.
+  // If "type" is not included or null the field will never be indexed.
+  //
+  // If query param "index" is set to "1" (like: ?index=1)
+  // then indexing will be done for each attribute (except as described above).
 
   let data;
   try {
@@ -132,8 +141,18 @@ app.post("/:cid", async (req, res, next) => {
   try {
     const batch = db.batch();
     const putPromises = [];
-    for (const [key, value] of Object.entries(data)) {
+    for (const { key, value, type } of data) {
       putPromises.push(dbPut(batch, req.params.cid, key, value));
+      if (req.query.index === "1" && type != null) {
+        let encodedValue;
+        try {
+          encodedValue = encodeFromType(value, type);
+        } catch (e) {
+          res.status(400).send(e.message);
+          return;
+        }
+        putPromises.push(indexPut(batch, key, encodedValue, req.params.cid));
+      }
     }
     await Promise.all(putPromises);
     await batch.flush();
@@ -144,6 +163,40 @@ app.post("/:cid", async (req, res, next) => {
   }
 
   res.status(200).send();
+});
+
+// Search index (data in query params)
+// CIDs are returned as DAG-CBOR list
+app.get("/i", async (req, res) => {
+  // Currently for search only exact matches are supported
+  //
+  // Data is sent through query params
+  // Example query params (decoded into an object):
+  //
+  // {
+  //   query: "match",
+  //   key: <str>,
+  //   val: <int|float|str>
+  //   type: "int32|unix|uint32|str|float64"
+  // }
+  //
+  // "unix" means Unix time in milliseconds stored as an int64.
+
+  if (req.query.query !== "match") {
+    res.status(400).send("only match queries are supported");
+    return;
+  }
+  let encodedValue;
+  try {
+    encodedValue = encodeFromType(req.query.val, req.query.type);
+  } catch (e) {
+    res.status(400).send(e.message);
+    return;
+  }
+
+  const cids = await indexFindMatches(db, req.query.key, encodedValue);
+  res.type("application/cbor");
+  res.send(Buffer.from(encode(cids)));
 });
 
 /// End of routes ///

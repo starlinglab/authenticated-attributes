@@ -42,7 +42,7 @@ class Entity:
         self.cid = self._get_cid()
 
     def __repr__(self) -> str:
-        return f"Entity(filename={self.filename})"
+        return f"Entity(title={self.data.get('title')})"
 
     def _get_filename(self) -> str:
         if len(self.data["documents"]) == 0:
@@ -51,27 +51,52 @@ class Entity:
         # Document (PDF)
         return self.data["documents"][0]["filename"]
 
-    def get_metadata(self) -> dict:
+    def _get_authattr_metadata(self) -> dict:
         """
-        Returns the entity's metadata as a simple dictionary.
+        Returns the entity's metadata as a format an Authenticated Attributes server will accept.
 
         The CID metadata field is not included.
+
+        Metadata with multiple values are skipped as they can't be indexed.
+        Multi-value metadata types can't be identified ahead of time so this can
+        result in metadata for a multi-value type being returned when it only has
+        one value set so far.
+
+        Metadata with more than just a "value" key are also skipped. This is for
+        types like Select, or relationships.
         """
 
         # "metadata" field in self.data contains what we need
         # metadata': {'test_metadata': [{'value': 'foo'}], 'sha256cid': [{'value': 'bafkreicq4s4oweux2bkwsuktmjyl4gagx3englpwd7fa6uvsv3mvokzgzy'}]}
 
-        ret = {}
+        # See the POST to /:cid function in server.js for an example of what format
+        # is being conformed to here.
+        ret = []
+
         for field, values in self.data["metadata"].items():
             if field == CID_METADATA_NAME:
                 continue
-            if len(values) == 0 or "value" not in values[0]:
+            if len(values) != 1 or "value" not in values[0] or len(values[0]) != 1:
                 continue
-            ret[field] = values[0]["value"]
+
+            # TODO: detect dates somehow? Right now they are encoded as float64
+
+            real_val = values[0]["value"]
+            if type(real_val) in (int, float):
+                # Uwazi doesn't have separate int or float metadata types
+                # So float64 is used as a catch-all
+                index_type = "float64"
+            elif type(real_val) is str:
+                index_type = "str"
+            else:
+                # Can't be indexed
+                index_type = None
+
+            ret.append({"key": field, "value": real_val, "type": index_type})
 
         return ret
 
-    def metadata_hyperbee_sync(self):
+    def metadata_hyperbee_sync(self, indexing=True):
         """
         Upload metadata to hyperbee database.
 
@@ -80,9 +105,10 @@ class Entity:
         Metadata is not actually sent if it matches what was sent last time.
         """
 
-        metadata = self.get_metadata()
+        metadata = self._get_authattr_metadata()
         if not metadata:
             # Empty, skip
+            logging.debug("no sync due to empty metadata for %s", self)
             return
 
         encoded_metadata = dag_cbor.encode(metadata)
@@ -93,10 +119,12 @@ class Entity:
             return
 
         # Don't share session with Uwazi server
+        params = {"index": "1"} if indexing else {}
         r = requests.post(
             f"{AUTHATTR_SERVER}/{self.cid}",
             headers={"Authorization": "Bearer " + AUTHATTR_JWT},
             data=encoded_metadata,
+            params=params,
             timeout=10,
         )
         if r.status_code != 200:
@@ -107,7 +135,7 @@ class Entity:
 
         # Success, record it
         entity_metadata[self.cid] = meta_hash
-        logging.debug("successful metadata upload for %s", self)
+        logging.info("successful metadata upload for %s", self)
 
     def _calc_cid(self) -> str:
         proc = subprocess.run(
@@ -151,12 +179,21 @@ class Entity:
             files={"entity": ("", json.dumps(self.data))},
             timeout=10,
         )
+        if r.status_code == 422:
+            # "Unprocessable Entity" error
+            # Means that the CID field is not supported for this entity, it's not in the template
+            # Further work is needed, see https://github.com/starlinglab/authenticated-attributes/issues/44
+            logging.warning("setting CID not supported by template: %s", self)
+            return
         if not r.ok:
             logging.error(
-                "failed to set CID for entity '%s': error %d",
-                self.filename,
+                "failed to set CID for %s: error %d",
+                self,
                 r.status_code,
             )
+            return
+
+        logging.info("set CID for %s", self)
 
 
 def login():
@@ -231,10 +268,8 @@ def main():
         for entity in entities_with_file():
             if not entity.cid:
                 entity.set_cid()
-                logging.info("set CID for %s", entity)
 
             entity.metadata_hyperbee_sync()
-            logging.info("synced metadata to hyperbee for %s", entity)
 
         time.sleep(5)
         # Prevents error: requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
