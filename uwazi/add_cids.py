@@ -70,6 +70,9 @@ class Entity:
             files={"entity": ("", json.dumps(self.data))},
             timeout=10,
         )
+        if r.status_code == 422:
+            # No CID field in this entity's template
+            return
         r.raise_for_status()
 
 
@@ -121,8 +124,21 @@ def entities_without_cid():
         ):
             # Has CID
             continue
-        if len(item["documents"]) + len(item["attachments"]) != 1:
-            # Multi-file or no files
+        if len(item["attachments"]) == 0:
+            # No files
+            continue
+
+        # Check that there is only one attached file, minus preview files
+        # https://github.com/starlinglab/authenticated-attributes/issues/43
+        num_attachments = len(item["attachments"])
+        for attachment in item["attachments"]:
+            if attachment["originalname"] == "preview" or attachment[
+                "originalname"
+            ].startswith("preview."):
+                num_attachments -= 1
+
+        if num_attachments != 1:
+            # There is more than one non-preview attachment
             continue
 
         yield Entity(item)

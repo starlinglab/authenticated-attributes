@@ -119,7 +119,13 @@
   const getEntityInfo = (cid) => {
     if (cid === false || cid === ogEntityCid) {
       // Original page
-      const entityHasAttachment = entity.attachments.length === 1;
+
+      // Don't care about multiple attachments because the CID script only sets
+      // a CID if there is one non-preview attachment.
+      // The real attachment should be the first one and that is assumed.
+      // TODO: don't assume that
+      const entityHasAttachment = entity.attachments.length > 0;
+
       const isWacz =
         !entityHasAttachment ||
         entity.attachments[0].originalname.endsWith(".wacz");
