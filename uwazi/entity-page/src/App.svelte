@@ -116,29 +116,65 @@
     return ret;
   };
 
+  /**
+   * Checks if the provided entity metadata has a valid attachment.
+   *
+   * It returns the index of the attachment, or -1 if no valid one was found.
+   */
+  const entityHasAttachment = (entity) => {
+    // Check that there is only one attached file, minus preview files
+    // https://github.com/starlinglab/authenticated-attributes/issues/43
+
+    let numAttachments = entity.attachments.length;
+    if (numAttachments === 0) {
+      return -1;
+    }
+
+    let an = -1; // Attachment number/index
+
+    for (let i = 0; i < entity.attachments.length; i++) {
+      const attachment = entity.attachments[i];
+      if (
+        attachment.originalname === "preview" ||
+        attachment.originalname.startsWith("preview.")
+      ) {
+        numAttachments -= 1;
+      } else {
+        // Could be the single non-preview attachment
+        an = i;
+      }
+    }
+    if (numAttachments !== 1) {
+      // There is no single non-preview attachment
+      return -1;
+    }
+
+    return an;
+  };
+
   const getEntityInfo = (cid) => {
     if (cid === false || cid === ogEntityCid) {
       // Original page
-      const entityHasAttachment = entity.attachments.length === 1;
+      const an = entityHasAttachment(entity); // attachment number
+      const hasAttachment = an > -1;
       const isWacz =
-        !entityHasAttachment ||
-        entity.attachments[0].originalname.endsWith(".wacz");
+        !hasAttachment || entity.attachments[an].originalname.endsWith(".wacz");
       return {
         title: entity.title,
-        hasAttachment: entityHasAttachment,
+        hasAttachment,
         cid:
-          !entityHasAttachment ||
+          !hasAttachment ||
           (entity.metadata.sha256cid && entity.metadata.sha256cid.value) ||
           null,
         fileType:
-          !entityHasAttachment ||
-          (isWacz ? "application/wacz" : entity.attachments[0].mimetype),
-        fileName: !entityHasAttachment || entity.attachments[0].originalname,
-        fileSize: !entityHasAttachment || entity.attachments[0].size,
+          !hasAttachment ||
+          (isWacz ? "application/wacz" : entity.attachments[an].mimetype),
+        fileName: !hasAttachment || entity.attachments[an].originalname,
+        fileSize: !hasAttachment || entity.attachments[an].size,
         fileUrl:
-          !entityHasAttachment ||
+          !hasAttachment ||
           // Use custom fileserver path we created
-          `/authattr/files/${entity.attachments[0].filename}`,
+          `/authattr/files/${entity.attachments[an].filename}`,
         isWacz,
       };
     }
@@ -150,22 +186,21 @@
         continue;
       }
       if (ent.metadata.sha256cid[0].value === cid) {
-        const entityHasAttachment = ent.attachments.length === 1;
+        const an = entityHasAttachment(ent);
+        const hasAttachment = an > -1;
         const isWacz =
-          !entityHasAttachment ||
-          ent.attachments[0].originalname.endsWith(".wacz");
+          !hasAttachment || ent.attachments[an].originalname.endsWith(".wacz");
         return {
           title: ent.title,
-          hasAttachment: entityHasAttachment,
+          hasAttachment,
           cid,
           fileType:
-            !entityHasAttachment ||
-            (isWacz ? "application/wacz" : ent.attachments[0].mimetype),
-          fileName: !entityHasAttachment || ent.attachments[0].originalname,
-          fileSize: !entityHasAttachment || ent.attachments[0].size,
+            !hasAttachment ||
+            (isWacz ? "application/wacz" : ent.attachments[an].mimetype),
+          fileName: !hasAttachment || ent.attachments[an].originalname,
+          fileSize: !hasAttachment || ent.attachments[an].size,
           fileUrl:
-            !entityHasAttachment ||
-            `/authattr/files/${ent.attachments[0].filename}`,
+            !hasAttachment || `/authattr/files/${ent.attachments[an].filename}`,
           isWacz,
         };
       }

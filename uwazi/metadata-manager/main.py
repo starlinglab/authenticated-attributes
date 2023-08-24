@@ -34,9 +34,17 @@ session = requests.Session()
 entity_metadata = {}
 
 
+class EntityError(Exception):
+    pass
+
+
 class Entity:
     def __init__(self, data: dict) -> None:
         self.data = data
+
+        if not self._has_valid_files():
+            raise EntityError("invalid files")
+
         self.filename = self._get_filename()
         self.filepath = os.path.join(UWAZI_ROOT, "uploaded_documents", self.filename)
         self.cid = self._get_cid()
@@ -44,12 +52,42 @@ class Entity:
     def __repr__(self) -> str:
         return f"Entity(title={self.data.get('title')})"
 
+    def _has_valid_files(self) -> bool:
+        """
+        Valid files for creating a CID and displaying the AA UI.
+        """
+
+        if len(self.data["documents"]) > 0:
+            return False
+
+        # Check that there is only one attached file, minus preview files
+        # https://github.com/starlinglab/authenticated-attributes/issues/43
+
+        num_attachments = len(self.data["attachments"])
+
+        if num_attachments == 0:
+            # Fast path for no attachments
+            return False
+
+        for attachment in self.data["attachments"]:
+            if attachment["originalname"] == "preview" or attachment[
+                "originalname"
+            ].startswith("preview."):
+                num_attachments -= 1
+
+        if num_attachments != 1:
+            # There is no single non-preview attachment
+            return False
+
+        return True
+
     def _get_filename(self) -> str:
-        if len(self.data["documents"]) == 0:
-            # Must have an attachment instead
-            return self.data["attachments"][0]["filename"]
-        # Document (PDF)
-        return self.data["documents"][0]["filename"]
+        # Find the one attachment that's not a preview file
+        for attachment in self.data["attachments"]:
+            if attachment["originalname"] != "preview" and not attachment[
+                "originalname"
+            ].startswith("preview."):
+                return attachment["filename"]
 
     def _get_authattr_metadata(self) -> dict:
         """
@@ -246,18 +284,19 @@ def entities_with_file():
         )
         return
 
-    for item in r.json()["rows"]:
-        # if (
-        #     len(item["metadata"].get(CID_METADATA_NAME, [])) > 0
-        #     and len(item["metadata"][CID_METADATA_NAME][0]["value"]) > 0
-        # ):
-        #     # Has CID
-        #     continue
-        if len(item["documents"]) + len(item["attachments"]) != 1:
-            # Multi-file or no files
-            continue
+    items = r.json()["rows"]
+    logging.debug("search retrieved %d entities", len(items))
 
-        yield Entity(item)
+    for item in items:
+        try:
+            ent = Entity(item)
+        except EntityError:
+            logging.debug(
+                "skipping due to invalid files: entity with title: %s",
+                item.get("title"),
+            )
+            continue
+        yield ent
 
 
 def main():
@@ -266,6 +305,8 @@ def main():
 
     while True:
         for entity in entities_with_file():
+            logging.debug("starting on %s", entity)
+
             if not entity.cid:
                 entity.set_cid()
 
