@@ -104,7 +104,6 @@
       if (Object.keys(datas[i]).length === 0) {
         continue;
       }
-      // eslint-disable-next-line no-restricted-syntax
       for (const [attr, data] of Object.entries(datas[i])) {
         if (attr in usedAttrs) {
           // Add as alternate data
@@ -518,8 +517,7 @@
     const buffers = await Promise.all(bufferPromises);
     const results = {};
     for (let i = 0; i < $hyperbeeSources.length; i++) {
-      const hb = $hyperbeeSources[i];
-      results[hb.name] = IpldDagCbor.decode(new Uint8Array(buffers[i]));
+      results[i] = IpldDagCbor.decode(new Uint8Array(buffers[i]));
     }
 
     relatedProps.results = results;

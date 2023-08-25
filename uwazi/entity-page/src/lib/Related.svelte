@@ -1,10 +1,7 @@
 <!-- Content for the "related" page -->
 
 <script>
-  // TODO: link CIDs
-
   import { createEventDispatcher } from "svelte";
-
   import { hyperbeeSources } from "./store.js";
 
   export let att;
@@ -15,7 +12,7 @@
   Example format:
 
   {
-    "<source 1 name>": [
+    "<source number>": [
       {"name": "<name of asset>", "cid": "<cid of asset>"},
       ...
     ],
@@ -36,10 +33,10 @@
     Showing all assets that have: <code>{att.attribute}</code> =
     <code>{att.value}</code>
   </p>
-  {#each $hyperbeeSources as { name }}
+  {#each $hyperbeeSources as { name }, i}
     <h2>{name}</h2>
     <ul>
-      {#each results[name] as item}
+      {#each results[i] as item}
         <li>
           {item.name}
           <!-- svelte-ignore a11y-click-events-have-key-events -->
