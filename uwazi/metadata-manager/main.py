@@ -95,6 +95,9 @@ class Entity:
 
         The CID metadata field is not included.
 
+        The title of the Uwazi entity is included under the name "title", despite
+        being outside the "metadata" field.
+
         Metadata with multiple values are skipped as they can't be indexed.
         Multi-value metadata types can't be identified ahead of time so this can
         result in metadata for a multi-value type being returned when it only has
@@ -114,6 +117,9 @@ class Entity:
         for field, values in self.data["metadata"].items():
             if field == CID_METADATA_NAME:
                 continue
+            if field == "title":
+                # This will be replaced by the Uwazi entity title
+                continue
             if len(values) != 1 or "value" not in values[0] or len(values[0]) != 1:
                 continue
 
@@ -124,6 +130,8 @@ class Entity:
                 # Uwazi doesn't have separate int or float metadata types
                 # So float64 is used as a catch-all
                 index_type = "float64"
+                # Convert int to float so it's encoded properly in DAG-CBOR
+                real_val = float(real_val)
             elif type(real_val) is str:
                 index_type = "str"
             else:
@@ -131,6 +139,9 @@ class Entity:
                 index_type = None
 
             ret.append({"key": field, "value": real_val, "type": index_type})
+
+        # Add Uwazi entity title
+        ret.append({"key": "title", "value": self.data["title"], "type": "str"})
 
         return ret
 
