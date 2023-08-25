@@ -14,6 +14,7 @@ import { encodeFromType, indexFindMatches, indexPut } from "./src/index.js";
 
 // Last import
 import "dotenv/config";
+import { dbRawValue } from "./src/dbGet.js";
 
 const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigKey);
@@ -67,6 +68,66 @@ app.use((err, req, res, next) => {
 });
 
 /// Routes ///
+
+// Search index (data in query params)
+// CIDs are returned
+app.get("/i", async (req, res) => {
+  // Currently for search only exact matches are supported
+  //
+  // Data is sent through query params
+  // Example query params (decoded into an object):
+  //
+  // {
+  //   query: "match",
+  //   key: <str>,
+  //   val: <int|float|str>
+  //   type: "int32|unix|uint32|str|float64"
+  // }
+  //
+  // "unix" means Unix time in milliseconds stored as an int64.
+  //
+  // An additional key is available: {names: "1"}. This enables setting the
+  // names of the assets. The output is no longer an array of CIDs but instead
+  // an array of objects: {"name": "<name of asset>", "cid": "<cid of asset>"}.
+  // The names of the asset are pulled from the `title` or `name` attestation,
+  // in that order.
+
+  if (req.query.query !== "match") {
+    res.status(400).send("only match queries are supported");
+    return;
+  }
+  let encodedValue;
+  try {
+    encodedValue = encodeFromType(req.query.val, req.query.type);
+  } catch (e) {
+    res.status(400).send(e.message);
+    return;
+  }
+
+  const cids = await indexFindMatches(db, req.query.key, encodedValue);
+  if (req.query.names !== "1") {
+    res.type("application/cbor");
+    res.send(Buffer.from(encode(cids)));
+    return;
+  }
+
+  const ret = [];
+  for (const cid of cids) {
+    // eslint-disable-next-line no-await-in-loop
+    let name = await dbRawValue(db, cid, "title");
+    if (!name || typeof name !== "string") {
+      // eslint-disable-next-line no-await-in-loop
+      name = await dbRawValue(db, cid, "name");
+    }
+    if (!name || typeof name !== "string") {
+      name = "";
+    }
+    ret.push({ name, cid });
+  }
+
+  res.type("application/cbor");
+  res.send(Buffer.from(encode(ret)));
+});
 
 // Get all attestations for CID
 app.get("/:cid", async (req, res) => {
@@ -163,40 +224,6 @@ app.post("/:cid", async (req, res, next) => {
   }
 
   res.status(200).send();
-});
-
-// Search index (data in query params)
-// CIDs are returned as DAG-CBOR list
-app.get("/i", async (req, res) => {
-  // Currently for search only exact matches are supported
-  //
-  // Data is sent through query params
-  // Example query params (decoded into an object):
-  //
-  // {
-  //   query: "match",
-  //   key: <str>,
-  //   val: <int|float|str>
-  //   type: "int32|unix|uint32|str|float64"
-  // }
-  //
-  // "unix" means Unix time in milliseconds stored as an int64.
-
-  if (req.query.query !== "match") {
-    res.status(400).send("only match queries are supported");
-    return;
-  }
-  let encodedValue;
-  try {
-    encodedValue = encodeFromType(req.query.val, req.query.type);
-  } catch (e) {
-    res.status(400).send(e.message);
-    return;
-  }
-
-  const cids = await indexFindMatches(db, req.query.key, encodedValue);
-  res.type("application/cbor");
-  res.send(Buffer.from(encode(cids)));
 });
 
 /// End of routes ///

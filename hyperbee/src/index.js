@@ -128,7 +128,7 @@ const indexPut = async (db, prop, value, cid) => {
   const bufSize = `i/${prop}/`.length + value.length + `/${cid}`.length;
   const buf = Buffer.alloc(bufSize);
   let offset = buf.write(`i/${prop}/`);
-  offset = buf.write(value, offset);
+  offset += buf.write(value, offset);
   buf.write(`/${cid}`, offset);
   // Store key with null value
   await db.put(buf);
@@ -143,7 +143,7 @@ const indexDel = async (db, prop, value, cid) => {
   const bufSize = `i/${prop}/`.length + value.length + `/${cid}`.length;
   const buf = Buffer.alloc(bufSize);
   let offset = buf.write(`i/${prop}/`);
-  offset = buf.write(value, offset);
+  offset += buf.write(value, offset);
   buf.write(`/${cid}`, offset);
   await db.del(buf);
 };
@@ -184,7 +184,7 @@ const indexFindMatches = async (db, prop, value) => {
   const bufSize = `i/${prop}/`.length + value.length + 1;
   const startKey = Buffer.alloc(bufSize);
   let offset = startKey.write(`i/${prop}/`);
-  offset = startKey.write(value, offset);
+  offset += startKey.write(value, offset);
   startKey.write(`/`, offset);
   const endKey = Buffer.from(startKey);
   endKey.write(`0`, offset);

@@ -50,9 +50,14 @@ const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
  * Returns if the attribute is listed as encrypted.
  *
  * No signatures are validated.
+ *
+ * null is returned if the key doesn't exist in the database.
  */
 const dbIsEncrypted = async (db, id, attr) => {
   const result = await db.get(makeKey(id, attr));
+  if (result === null) {
+    return null;
+  }
   const resultObj = decode(result.value);
   return resultObj.attestation.encrypted;
 };
@@ -62,9 +67,14 @@ const dbIsEncrypted = async (db, id, attr) => {
  * No signatures are validated!
  *
  * Specifically the attestation value is returned.
+ *
+ * null is returned if the key doesn't exist in the database.
  */
 const dbRawValue = async (db, id, attr) => {
   const result = await db.get(makeKey(id, attr));
+  if (result === null) {
+    return null;
+  }
   const resultObj = decode(result.value);
   return resultObj.attestation.value;
 };

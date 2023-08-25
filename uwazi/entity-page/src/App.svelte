@@ -6,6 +6,8 @@
   import Settings from "./lib/Settings.svelte";
   import { hyperbeeJWT, hyperbeeSources } from "./lib/store.js";
   import NewAttestation from "./lib/NewAttestation.svelte";
+  import Related from "./lib/Related.svelte";
+  import { getIndexType } from "./lib/shared.js";
 
   /// Props ///
 
@@ -304,7 +306,7 @@
   }
 
   // Names for different "pages" that can be viewed
-  // Current avail. pages: entity, sources, cid, graph, edit
+  // Current avail. pages: entity, sources, cid, graph, edit, related
   let curPage = "entity";
   let prevPage = null;
 
@@ -317,6 +319,8 @@
   let sourcesListSuccess = null; // null means sources haven't been tested yet
 
   let newAttestation; // <NewAttestation> svelte component
+
+  let relatedProps; // props for Related component, set dynamically
 
   /// Main function ///
 
@@ -480,6 +484,47 @@
     loading = false;
   };
 
+  /**
+   * Loads data for the "related" page and sets the result in relatedProps.
+   */
+  const loadRelatedData = async (key, val) => {
+    errMsg = "";
+    loading = true;
+
+    const bufferPromises = [];
+    for (let i = 0; i < $hyperbeeSources.length; i++) {
+      const hb = $hyperbeeSources[i];
+      bufferPromises.push(
+        fetch(
+          `${hb.server}/i?${new URLSearchParams({
+            query: "match",
+            key,
+            val,
+            type: getIndexType(val),
+            names: "1", // asset names along with CIDs
+          })}`
+        ).then((value) => {
+          if (!value.ok) {
+            setErrMsg(`failed to load data: ${value.statusText}`);
+            setLoading(false);
+            throw new Error("failed to load data");
+          }
+          return value.arrayBuffer();
+        })
+      );
+    }
+
+    const buffers = await Promise.all(bufferPromises);
+    const results = {};
+    for (let i = 0; i < $hyperbeeSources.length; i++) {
+      const hb = $hyperbeeSources[i];
+      results[hb.name] = IpldDagCbor.decode(new Uint8Array(buffers[i]));
+    }
+
+    relatedProps.results = results;
+    loading = false;
+  };
+
   function humanFileSize(size) {
     // https://stackoverflow.com/a/20732091
     const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
@@ -514,6 +559,13 @@
       // Async function, but running it in the background is fine since it
       // properly sets the loading variable and everything
       loadGraphData($hyperbeeSources, fileCid);
+    } else if (event.detail.page === "related") {
+      relatedProps = { att: event.detail.attestation };
+      // Async is okay, same as above
+      loadRelatedData(
+        event.detail.attestation.attribute,
+        event.detail.attestation.value
+      );
     }
 
     prevPage = curPage;
@@ -603,7 +655,7 @@
             {/if}
             <p><strong>CID</strong> <code>{fileCid}</code></p>
           </div>
-          <div id="bottom-buttons">
+          <div class="bottom-buttons">
             {#if !noSources}
               <Button
                 border={true}
@@ -810,7 +862,7 @@
           <p class="error">No attestations found</p>
         {/if}
       </div>
-      <div id="edit-buttons">
+      <div class="bottom-buttons">
         <Button border={true} on:click={handlePrevPageMsg}>Back</Button>
         <Button
           border={true}
@@ -828,6 +880,16 @@
         >
       </div>
       <NewAttestation bind:this={newAttestation} {fileCid} />
+    {:else if curPage === "related"}
+      <div id="title-bar">
+        <h1>Related Assets</h1>
+      </div>
+      <div id="related-content">
+        <Related {...relatedProps} on:changePage={handleChangePageMsg} />
+      </div>
+      <div class="bottom-buttons">
+        <Button border={true} on:click={handlePrevPageMsg}>Back</Button>
+      </div>
     {/if}
   {/if}
 </div>
@@ -930,7 +992,7 @@
     top: 1em;
     left: 1em;
   }
-  #bottom-buttons {
+  .bottom-buttons {
     margin-bottom: 1em;
     padding-left: 1em;
     border-top: 2px solid var(--theme-border);
@@ -996,13 +1058,11 @@
     flex-grow: 1;
     min-width: 30em;
   }
-  #edit-buttons {
-    margin-bottom: 1em;
-    padding-left: 1em;
-    border-top: 2px solid var(--theme-border);
-    padding-top: 1em;
-    display: flex;
-    gap: 1em;
+
+  #related-content {
+    overflow: auto;
+    margin-left: 2em;
+    padding-right: 2em;
   }
 
   /* Undo Uwazi styling */
