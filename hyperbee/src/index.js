@@ -9,7 +9,7 @@ const encodeUint32 = (uint) => {
   const arr = new ArrayBuffer(4); // 32 bits is 4 bytes
   const view = new DataView(arr);
   view.setUint32(0, uint, false);
-  return new Uint8Array(arr);
+  return Buffer.from(arr);
 };
 
 /* eslint-disable no-bitwise */
@@ -51,7 +51,7 @@ const encodeInt64 = (i) => {
   const arr = new ArrayBuffer(8); // 64 bits is 8 bytes
   const view = new DataView(arr);
   view.setBigInt64(0, BigInt(i), false);
-  return fixSignedBytes(new Uint8Array(arr));
+  return fixSignedBytes(Buffer.from(arr));
 };
 
 /**
@@ -70,7 +70,7 @@ const encodeFloat64 = (float) => {
   const arr = new ArrayBuffer(8); // 64 bits is 8 bytes
   const view = new DataView(arr);
   view.setFloat64(0, float, false);
-  return fixSignedBytes(new Uint8Array(arr));
+  return fixSignedBytes(Buffer.from(arr));
 };
 
 const encodeInt32 = (int) => {
@@ -85,10 +85,10 @@ const encodeInt32 = (int) => {
   const arr = new ArrayBuffer(4);
   const view = new DataView(arr);
   view.setInt32(0, int, false);
-  return fixSignedBytes(new Uint8Array(arr));
+  return fixSignedBytes(Buffer.from(arr));
 };
 
-const encodeString = (str) => str.toLowerCase().trim();
+const encodeString = (str) => Buffer.from(str.toLowerCase().trim());
 
 /**
  * Uses the correct encoding function for the given params
@@ -122,13 +122,13 @@ const encodeFromType = (val, type) => {
 /**
  * Make an entry in the index.
  *
- * values must be encoded before being passed in, so they must always be Uint8Array.
+ * values must be encoded before being passed in, so they must always be Buffer.
  */
 const indexPut = async (db, prop, value, cid) => {
   const bufSize = `i/${prop}/`.length + value.length + `/${cid}`.length;
   const buf = Buffer.alloc(bufSize);
   let offset = buf.write(`i/${prop}/`);
-  offset += buf.write(value, offset);
+  offset += value.copy(buf, offset);
   buf.write(`/${cid}`, offset);
   // Store key with null value
   await db.put(buf);
@@ -137,13 +137,13 @@ const indexPut = async (db, prop, value, cid) => {
 /**
  * Remove an entry in the index.
  *
- * values must be encoded before being passed in, so they must always be Uint8Array.
+ * values must be encoded before being passed in, so they must always be Buffer.
  */
 const indexDel = async (db, prop, value, cid) => {
   const bufSize = `i/${prop}/`.length + value.length + `/${cid}`.length;
   const buf = Buffer.alloc(bufSize);
   let offset = buf.write(`i/${prop}/`);
-  offset += buf.write(value, offset);
+  offset += value.copy(buf, offset);
   buf.write(`/${cid}`, offset);
   await db.del(buf);
 };
@@ -172,7 +172,7 @@ const indexClear = async (db, prop) => {
 /**
  * Find all exact matches for a property value.
  *
- * values must be encoded before being passed in, so they must always be Uint8Array.
+ * values must be encoded before being passed in, so they must always be Buffer.
  *
  * This only works if the db was properly opened with a binary key encoding (the default).
  *
@@ -184,7 +184,7 @@ const indexFindMatches = async (db, prop, value) => {
   const bufSize = `i/${prop}/`.length + value.length + 1;
   const startKey = Buffer.alloc(bufSize);
   let offset = startKey.write(`i/${prop}/`);
-  offset += startKey.write(value, offset);
+  offset += value.copy(startKey, offset);
   startKey.write(`/`, offset);
   const endKey = Buffer.from(startKey);
   endKey.write(`0`, offset);

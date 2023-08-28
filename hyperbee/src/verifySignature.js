@@ -1,6 +1,12 @@
+import { webcrypto } from "node:crypto";
+
 import { verifyAsync } from "@noble/ed25519";
 
 import { encodeAttestation } from "./encodeAttestation.js";
+
+// Support Node.js 18 (LTS)
+// https://github.com/paulmillr/noble-ed25519#usage
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const verifyAttSignature = async (attestationObj, givenPubKey) => {
   // check that the signedMsg is the CID for the rawAttestation

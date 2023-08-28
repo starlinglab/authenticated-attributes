@@ -21,6 +21,10 @@ AUTHATTR_SERVER = os.environ["AUTHATTR_SERVER"]
 AUTHATTR_JWT = os.environ["AUTHATTR_JWT"]
 LOGLEVEL = os.getenv("LOGLEVEL", "INFO")
 
+# Seconds to delay in loops
+LOOP_DELAY = 5
+ERROR_DELAY = 30
+
 
 logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=LOGLEVEL)
 # Prevent requests debug logging
@@ -323,7 +327,7 @@ def main():
 
             entity.metadata_hyperbee_sync()
 
-        time.sleep(5)
+        time.sleep(LOOP_DELAY)
         # Prevents error: requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
         session.close()
         login_if_needed()
@@ -339,4 +343,4 @@ if __name__ == "__main__":
                 "unexpected exception was raised, waiting 30 secs then restarting"
             )
 
-        time.sleep(30)
+        time.sleep(ERROR_DELAY)
