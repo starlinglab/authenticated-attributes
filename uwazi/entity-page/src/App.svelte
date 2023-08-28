@@ -87,31 +87,30 @@
    * Returns an Array of the following:
    *
    *     {
-   *       source: <hyperbee name>,
    *       attr: <attribute name>,
-   *       data: <attestation data>,
-   *       alts: [ // What other hyperbees have to say about this attr
-   *         {source, data}
-   *       ]
+   *       data: [<value from source 1>, <value from source 2>, ...]
    *     }
+   *
+   * If a source doesn't have data on the attribute, null will be inserted instead.
    */
   const getDbEntries = (sources, datas) => {
     // Store already seen attribute names in a hashmap for O(1) checking
     const usedAttrs = {};
     const ret = [];
     for (let i = 0; i < sources.length; i++) {
-      const hb = sources[i];
       if (Object.keys(datas[i]).length === 0) {
         continue;
       }
       for (const [attr, data] of Object.entries(datas[i])) {
         if (attr in usedAttrs) {
-          // Add as alternate data
-          ret[usedAttrs[attr]].alts.push({ source: hb.name, data });
+          // Attr already added, just set the data field
+          ret[usedAttrs[attr]].data[i] = data;
         } else {
           // Store the index of the attribute in usedAttrs
-          usedAttrs[attr] =
-            ret.push({ source: hb.name, attr, data, alts: [] }) - 1;
+          usedAttrs[attr] = ret.push({ attr }) - 1;
+          // Create the data array and add this source's data
+          ret[usedAttrs[attr]].data = new Array(sources.length).fill(null);
+          ret[usedAttrs[attr]].data[i] = data;
         }
       }
     }
@@ -315,6 +314,7 @@
   let fileObject; // <object> element
 
   let dbEntries;
+  let curSource = 0; // Num. of source being viewed
 
   let sourcesListSuccess = null; // null means sources haven't been tested yet
 
@@ -741,19 +741,31 @@
           </div>
         </div>
         <div id="attestation-sidebar">
+          <div id="source-select">
+            <select
+              name="sources"
+              on:change={(e) => {
+                curSource = Number(e.target.value);
+              }}
+            >
+              {#each $hyperbeeSources as { name, server }, i}
+                <option value={i}>{name} ({server})</option>
+              {/each}
+            </select>
+          </div>
+
           {#if dbEntries.length > 0}
-            {#each dbEntries as { source, attr, data, alts }}
-              {#if attr === "parents" && !data.attestation.encrypted}
+            {#each dbEntries as { attr, data }}
+              {#if attr === "parents" && !data[curSource].attestation.encrypted}
                 <Attestation
-                  {data}
-                  {alts}
+                  allData={data}
                   {fileCid}
-                  signer={source}
+                  {curSource}
                   customTitle="Parents"
                   on:changePage={handleChangePageMsg}
                 >
                   <div slot="value">
-                    {#each Object.entries(data.attestation.value) as [parentType, cids]}
+                    {#each Object.entries(data[curSource].attestation.value) as [parentType, cids]}
                       <span class="cid-type">{parentType}</span>
                       {#each cids as cid}
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -769,17 +781,16 @@
                     {/each}
                   </div>
                 </Attestation>
-              {:else if attr === "children" && !data.attestation.encrypted}
+              {:else if attr === "children" && !data[curSource].attestation.encrypted}
                 <Attestation
-                  {data}
-                  {alts}
+                  allData={data}
                   {fileCid}
-                  signer={source}
+                  {curSource}
                   customTitle="Children"
                   on:changePage={handleChangePageMsg}
                 >
                   <div slot="value">
-                    {#each Object.entries(data.attestation.value) as [childType, cids]}
+                    {#each Object.entries(data[curSource].attestation.value) as [childType, cids]}
                       <span class="cid-type">{childType}</span>
                       {#each cids as cid}
                         <!-- svelte-ignore a11y-click-events-have-key-events -->
@@ -797,10 +808,9 @@
                 </Attestation>
               {:else}
                 <Attestation
-                  {data}
-                  {alts}
+                  allData={data}
                   {fileCid}
-                  signer={source}
+                  {curSource}
                   on:changePage={handleChangePageMsg}
                 />
               {/if}
@@ -1067,6 +1077,20 @@
     overflow: auto;
     margin-left: 2em;
     padding-right: 2em;
+  }
+
+  #source-select {
+    text-align: center;
+  }
+  #source-select > select {
+    margin-top: 1em;
+    font-size: 1em;
+    background-color: transparent;
+    border: 2px solid var(--theme-border);
+    border-radius: 0.3em;
+    padding: 0.5em;
+    font-weight: bold;
+    width: 35ch;
   }
 
   /* Undo Uwazi styling */

@@ -42,6 +42,7 @@
           <!-- svelte-ignore a11y-click-events-have-key-events -->
           (<span
             class="cid"
+            title={item.cid}
             on:click={() => {
               dispatch("changePage", { page: "cid", cid: item.cid.toString() });
             }}>{shortenCid(item.cid)}</span

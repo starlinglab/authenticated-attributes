@@ -7,12 +7,12 @@
 
   import { getIndexType, uint8ArrayToBase64 } from "./shared.js";
   import { vcExport } from "./vc.js";
+  import { hyperbeeSources } from "./store";
 
-  export let data;
+  export let allData;
   export let customTitle = "";
-  export let signer = "";
-  export let alts; // [{source, data}, ...]
   export let fileCid;
+  export let curSource;
 
   const dispatch = createEventDispatcher();
 
@@ -25,6 +25,15 @@
   let attrTitle; // Element
 
   let downloadDialog; // Element
+
+  function isLargeData(value) {
+    return value.toString() === "[object Object]";
+  }
+
+  $: data = allData[curSource];
+  $: signer = $hyperbeeSources[curSource].name;
+  $: largeData = isLargeData(data.attestation.value);
+  $: indexType = getIndexType(data.attestation.value);
 
   function saveFile(filename, type, bytes) {
     const blob = new Blob([bytes], { type });
@@ -62,15 +71,10 @@
   }
 
   function relatedClick() {
-    // eslint-disable-next-line no-use-before-define
     if (data.attestation.encrypted || indexType === null) {
       return;
     }
     dispatch("changePage", { page: "related", attestation: data.attestation });
-  }
-
-  function isLargeData(value) {
-    return value.toString() === "[object Object]";
   }
 
   function trimLarge(value) {
@@ -78,9 +82,6 @@
     const string = JSON.stringify(value);
     return string.length > max ? `${string.substring(0, max - 3)}...` : string;
   }
-
-  $: largeData = isLargeData(data.attestation.value);
-  $: indexType = getIndexType(data.attestation.value);
 </script>
 
 <div id="container">
@@ -224,17 +225,19 @@
         {data.attestation.value}
       {/if}
     </p>
-    {#each alts as alt}
-      <p class="alt-signer-name">{alt.source}</p>
-      <p class="alt-value">
-        {#if alt.data.attestation.encrypted}
-          <span class="encrypted">encrypted</span>
-        {:else if isLargeData(alt.data.attestation.value)}
-          <span class="large">{trimLarge(alt.data.attestation.value)}</span>
-        {:else}
-          {alt.data.attestation.value}
-        {/if}
-      </p>
+    {#each allData as alt, i}
+      {#if i !== curSource}
+        <p class="alt-signer-name">{$hyperbeeSources[i].name}</p>
+        <p class="alt-value">
+          {#if alt.attestation.encrypted}
+            <span class="encrypted">encrypted</span>
+          {:else if isLargeData(alt.attestation.value)}
+            <span class="large">{trimLarge(alt.attestation.value)}</span>
+          {:else}
+            {alt.attestation.value}
+          {/if}
+        </p>
+      {/if}
     {/each}
   </div>
   <span slot="buttons">
