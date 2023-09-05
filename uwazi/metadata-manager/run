@@ -1,0 +1,3 @@
+#!/usr/bin/env bash
+
+poetry run python3 -m metadata_manager

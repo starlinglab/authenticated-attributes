@@ -2,36 +2,19 @@ import os
 import requests
 import json
 import subprocess
-import time
 import logging
 from typing import Optional
 from hashlib import sha256
 
 import dag_cbor
-from dotenv import load_dotenv
 
-load_dotenv()
-
-UWAZI_ROOT = os.environ["UWAZI_ROOT"]
-CID_METADATA_NAME = os.getenv("CID_METADATA_NAME", "sha256cid")
-USERNAME = os.environ["USERNAME"]
-PASSWORD = os.environ["PASSWORD"]
-UWAZI_SERVER = os.environ["UWAZI_SERVER"]
-AUTHATTR_SERVER = os.environ["AUTHATTR_SERVER"]
-AUTHATTR_JWT = os.environ["AUTHATTR_JWT"]
-LOGLEVEL = os.getenv("LOGLEVEL", "INFO")
-
-# Seconds to delay in loops
-LOOP_DELAY = 5
-ERROR_DELAY = 30
-
-
-logging.basicConfig(format="%(asctime)s - %(levelname)s - %(message)s", level=LOGLEVEL)
-# Prevent requests debug logging
-logging.getLogger("requests").setLevel(logging.WARNING)
-logging.getLogger("urllib3").setLevel(logging.WARNING)
-
-session = requests.Session()
+from .config import (
+    UWAZI_ROOT,
+    CID_METADATA_NAME,
+    AUTHATTR_SERVER,
+    AUTHATTR_JWT,
+    UWAZI_SERVER,
+)
 
 # Track what metadata was last sent to the hyperbee server, to prevent needless writes
 # Maps entity CID to SHA-256 hash of DAG-CBOR metadata sent to hyperbee server
@@ -43,8 +26,11 @@ class EntityError(Exception):
 
 
 class Entity:
-    def __init__(self, data: dict) -> None:
+    def __init__(self, data: dict, session=None) -> None:
         self.data = data
+        self.session = session
+        if not self.session:
+            self.session = requests.Session()
 
         if not self._has_valid_files():
             raise EntityError("invalid files")
@@ -223,7 +209,7 @@ class Entity:
 
     def set_cid(self) -> None:
         self.data["metadata"][CID_METADATA_NAME] = [{"value": self._calc_cid()}]
-        r = session.post(
+        r = self.session.post(
             f"{UWAZI_SERVER}/api/entities",
             headers={
                 "Accept": "application/json",
@@ -247,100 +233,3 @@ class Entity:
             return
 
         logging.info("set CID for %s", self)
-
-
-def login():
-    r = session.post(
-        f"{UWAZI_SERVER}/api/login",
-        headers={"Accept": "application/json"},
-        json={"username": USERNAME, "password": PASSWORD},
-        timeout=10,
-    )
-    if not r.ok:
-        logging.error(
-            "failed to login to Uwazi: error %d",
-            r.status_code,
-        )
-
-    # Now login cookie is stored in session
-
-
-def login_if_needed():
-    r = session.get(
-        f"{UWAZI_SERVER}/api/",
-        headers={"Accept": "application/json", "X-Requested-With": "XMLHttpRequest"},
-        timeout=10,
-    )
-    if r.status_code == 401:
-        login()
-
-
-def entities_with_file():
-    r = session.get(
-        f"{UWAZI_SERVER}/api/search",
-        params={
-            "includeUnpublished": "true",
-            "order": "desc",
-            "sort": "creationDate",
-            "aggregatePublishingStatus": "true",
-            "aggregatePermissionsByUsers": "true",
-            "include": '["permissions"]',
-        },
-        headers={
-            "Accept": "application/json",
-            "X-Requested-With": "XMLHttpRequest",
-        },
-        timeout=10,
-    )
-    if not r.ok:
-        logging.error(
-            "failed to get entities: error %d",
-            r.status_code,
-        )
-        return
-
-    items = r.json()["rows"]
-    logging.debug("search retrieved %d entities", len(items))
-
-    for item in items:
-        try:
-            ent = Entity(item)
-        except EntityError:
-            logging.debug(
-                "skipping due to invalid files: entity with title: %s",
-                item.get("title"),
-            )
-            continue
-        yield ent
-
-
-def main():
-    login()
-    logging.info("started and logged in to Uwazi")
-
-    while True:
-        for entity in entities_with_file():
-            logging.debug("starting on %s", entity)
-
-            if not entity.cid:
-                entity.set_cid()
-
-            entity.metadata_hyperbee_sync()
-
-        time.sleep(LOOP_DELAY)
-        # Prevents error: requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
-        session.close()
-        login_if_needed()
-        # With login ensured, move on to the next CID check
-
-
-if __name__ == "__main__":
-    while True:
-        try:
-            main()
-        except Exception:  # pylint: disable=broad-exception-caught
-            logging.exception(
-                "unexpected exception was raised, waiting 30 secs then restarting"
-            )
-
-        time.sleep(ERROR_DELAY)
