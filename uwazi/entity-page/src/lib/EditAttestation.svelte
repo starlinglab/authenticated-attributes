@@ -5,6 +5,7 @@
 
   export let data;
   export let fileCid;
+  export let curSource;
 
   let textarea;
   let downloadDialog;
@@ -110,7 +111,7 @@
   </div>
 </div>
 
-<DownloadDialog bind:this={downloadDialog} {data} {fileCid} />
+<DownloadDialog bind:this={downloadDialog} {data} {fileCid} {curSource} />
 
 <style>
   #container {

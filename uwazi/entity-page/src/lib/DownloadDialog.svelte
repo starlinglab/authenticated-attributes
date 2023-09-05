@@ -6,6 +6,7 @@
 
   export let data;
   export let fileCid;
+  export let curSource;
 
   let downloadDialog; // Element
 
@@ -25,16 +26,16 @@
     const text = downloadDialog.querySelector("#dl-server-info-text");
     text.innerText = "Loading...";
 
-    const body = IpldDagCbor.encode({
-      value: data.attestation.value,
-      encKey: false,
-    });
+    const body = IpldDagCbor.encode([
+      {
+        key: data.attestation.attribute,
+        value: data.attestation.value,
+        type: "str",
+      },
+    ]);
     try {
       const res = await fetch(
-        new URL(
-          `${fileCid}/${data.attestation.attribute}`,
-          $hyperbeeSources[0].server
-        ),
+        new URL(`${fileCid}?index=1`, $hyperbeeSources[curSource].server),
         {
           method: "POST",
           credentials: "include",

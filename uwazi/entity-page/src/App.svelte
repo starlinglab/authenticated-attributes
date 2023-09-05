@@ -749,7 +749,9 @@
               }}
             >
               {#each $hyperbeeSources as { name, server }, i}
-                <option value={i}>{name} ({server})</option>
+                <option value={i} selected={i === curSource || null}
+                  >{name} ({server})</option
+                >
               {/each}
             </select>
           </div>
@@ -875,8 +877,14 @@
       </div>
       <div id="attestations-edit-box">
         {#if dbEntries.length > 0}
-          {#each dbEntries as dbEntry}
-            <EditAttestation data={structuredClone(dbEntry.data)} {fileCid} />
+          {#each dbEntries as { data }}
+            {#if data[curSource] != null}
+              <EditAttestation
+                data={structuredClone(data[curSource])}
+                {fileCid}
+                {curSource}
+              />
+            {/if}
           {/each}
         {:else}
           <p class="error">No attestations found</p>
@@ -899,7 +907,7 @@
           > New</Button
         >
       </div>
-      <NewAttestation bind:this={newAttestation} {fileCid} />
+      <NewAttestation bind:this={newAttestation} {fileCid} {curSource} />
     {:else if curPage === "related"}
       <div id="title-bar">
         <h1>Related Assets</h1>
