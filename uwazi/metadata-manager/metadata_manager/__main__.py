@@ -5,6 +5,7 @@ import logging
 
 from .entity import Entity, EntityError
 from .config import LOGLEVEL, UWAZI_SERVER, USERNAME, PASSWORD
+from .template import Template
 
 # Seconds to delay in loops
 LOOP_DELAY = 5
@@ -17,6 +18,9 @@ logging.getLogger("requests").setLevel(logging.WARNING)
 logging.getLogger("urllib3").setLevel(logging.WARNING)
 
 session = requests.Session()
+
+# Map of template IDs to Template instances
+templates = {}
 
 
 def login():
@@ -45,7 +49,30 @@ def login_if_needed():
         login()
 
 
-def entities_with_file():
+def load_templates():
+    r = session.get(
+        f"{UWAZI_SERVER}/api/templates",
+        headers={
+            "Accept": "application/json",
+            "X-Requested-With": "XMLHttpRequest",
+        },
+        timeout=10,
+    )
+    if not r.ok:
+        logging.error(
+            "failed to get templates: error %d",
+            r.status_code,
+        )
+        return
+
+    items = r.json()["rows"]
+    logging.debug("search retrieved %d templates", len(items))
+
+    for item in items:
+        templates[item["_id"]] = Template(item)
+
+
+def valid_entities():
     r = session.get(
         f"{UWAZI_SERVER}/api/search",
         params={
@@ -74,12 +101,9 @@ def entities_with_file():
 
     for item in items:
         try:
-            ent = Entity(item, session)
-        except EntityError:
-            logging.debug(
-                "skipping due to invalid files: entity with title: %s",
-                item.get("title"),
-            )
+            ent = Entity(item, templates, session)
+        except EntityError as err:
+            logging.debug('skipping due to error with "%s": %s', item.get("title"), err)
             continue
         yield ent
 
@@ -87,9 +111,11 @@ def entities_with_file():
 def main():
     login()
     logging.info("started and logged in to Uwazi")
+    load_templates()
+    logging.info("loaded templates")
 
     while True:
-        for entity in entities_with_file():
+        for entity in valid_entities():
             logging.debug("starting on %s", entity)
 
             if not entity.cid:

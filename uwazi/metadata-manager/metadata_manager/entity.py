@@ -15,6 +15,7 @@ from .config import (
     AUTHATTR_JWT,
     UWAZI_SERVER,
 )
+from .template import Template
 
 # Track what metadata was last sent to the hyperbee server, to prevent needless writes
 # Maps entity CID to SHA-256 hash of DAG-CBOR metadata sent to hyperbee server
@@ -26,7 +27,11 @@ class EntityError(Exception):
 
 
 class Entity:
-    def __init__(self, data: dict, session=None) -> None:
+    """Uwazi Entity"""
+
+    def __init__(
+        self, data: dict, templates: dict[str, Template], session=None
+    ) -> None:
         self.data = data
         self.session = session
         if not self.session:
@@ -38,6 +43,13 @@ class Entity:
         self.filename = self._get_filename()
         self.filepath = os.path.join(UWAZI_ROOT, "uploaded_documents", self.filename)
         self.cid = self._get_cid()
+
+        if self.data["template"] not in templates:
+            raise EntityError("missing template")
+        self.template = templates[self.data["template"]]
+
+        if not self.template.has(CID_METADATA_NAME):
+            raise EntityError("doesn't support CID")
 
     def __repr__(self) -> str:
         return f"Entity(title={self.data.get('title')})"
@@ -79,7 +91,7 @@ class Entity:
             ].startswith("preview."):
                 return attachment["filename"]
 
-    def _get_authattr_metadata(self) -> dict:
+    def _get_authattr_metadata(self) -> list:
         """
         Returns the entity's metadata as a format an Authenticated Attributes server will accept.
 
@@ -93,8 +105,7 @@ class Entity:
         result in metadata for a multi-value type being returned when it only has
         one value set so far.
 
-        Metadata with more than just a "value" key are also skipped. This is for
-        types like Select, or relationships.
+        Relationships are not supported.
         """
 
         # "metadata" field in self.data contains what we need
@@ -110,25 +121,10 @@ class Entity:
             if field == "title":
                 # This will be replaced by the Uwazi entity title
                 continue
-            if len(values) != 1 or "value" not in values[0] or len(values[0]) != 1:
-                continue
 
-            # TODO: detect dates somehow? Right now they are encoded as float64
-
-            real_val = values[0]["value"]
-            if type(real_val) in (int, float):
-                # Uwazi doesn't have separate int or float metadata types
-                # So float64 is used as a catch-all
-                index_type = "float64"
-                # Convert int to float so it's encoded properly in DAG-CBOR
-                real_val = float(real_val)
-            elif type(real_val) is str:
-                index_type = "str"
-            else:
-                # Can't be indexed
-                index_type = None
-
-            ret.append({"key": field, "value": real_val, "type": index_type})
+            entry = self.template.encode_authattr(field, values)
+            if entry is not None:
+                ret.append(entry)
 
         # Add Uwazi entity title
         ret.append({"key": "title", "value": self.data["title"], "type": "str"})
