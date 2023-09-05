@@ -226,7 +226,7 @@
       {/if}
     </p>
     {#each allData as alt, i}
-      {#if i !== curSource}
+      {#if i !== curSource && alt != null}
         <p class="alt-signer-name">{$hyperbeeSources[i].name}</p>
         <p class="alt-value">
           {#if alt.attestation.encrypted}

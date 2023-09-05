@@ -756,63 +756,65 @@
 
           {#if dbEntries.length > 0}
             {#each dbEntries as { attr, data }}
-              {#if attr === "parents" && !data[curSource].attestation.encrypted}
-                <Attestation
-                  allData={data}
-                  {fileCid}
-                  {curSource}
-                  customTitle="Parents"
-                  on:changePage={handleChangePageMsg}
-                >
-                  <div slot="value">
-                    {#each Object.entries(data[curSource].attestation.value) as [parentType, cids]}
-                      <span class="cid-type">{parentType}</span>
-                      {#each cids as cid}
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <span
-                          class="cid"
-                          on:click={() => {
-                            handleChangePageMsg({
-                              detail: { page: "cid", cid: cid.toString() },
-                            });
-                          }}>{cid}</span
-                        ><br />
+              {#if data[curSource] != null}
+                {#if attr === "parents" && !data[curSource].attestation.encrypted}
+                  <Attestation
+                    allData={data}
+                    {fileCid}
+                    {curSource}
+                    customTitle="Parents"
+                    on:changePage={handleChangePageMsg}
+                  >
+                    <div slot="value">
+                      {#each Object.entries(data[curSource].attestation.value) as [parentType, cids]}
+                        <span class="cid-type">{parentType}</span>
+                        {#each cids as cid}
+                          <!-- svelte-ignore a11y-click-events-have-key-events -->
+                          <span
+                            class="cid"
+                            on:click={() => {
+                              handleChangePageMsg({
+                                detail: { page: "cid", cid: cid.toString() },
+                              });
+                            }}>{cid}</span
+                          ><br />
+                        {/each}
                       {/each}
-                    {/each}
-                  </div>
-                </Attestation>
-              {:else if attr === "children" && !data[curSource].attestation.encrypted}
-                <Attestation
-                  allData={data}
-                  {fileCid}
-                  {curSource}
-                  customTitle="Children"
-                  on:changePage={handleChangePageMsg}
-                >
-                  <div slot="value">
-                    {#each Object.entries(data[curSource].attestation.value) as [childType, cids]}
-                      <span class="cid-type">{childType}</span>
-                      {#each cids as cid}
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <span
-                          class="cid"
-                          on:click={() => {
-                            handleChangePageMsg({
-                              detail: { page: "cid", cid: cid.toString() },
-                            });
-                          }}>{cid}</span
-                        ><br />
+                    </div>
+                  </Attestation>
+                {:else if attr === "children" && !data[curSource].attestation.encrypted}
+                  <Attestation
+                    allData={data}
+                    {fileCid}
+                    {curSource}
+                    customTitle="Children"
+                    on:changePage={handleChangePageMsg}
+                  >
+                    <div slot="value">
+                      {#each Object.entries(data[curSource].attestation.value) as [childType, cids]}
+                        <span class="cid-type">{childType}</span>
+                        {#each cids as cid}
+                          <!-- svelte-ignore a11y-click-events-have-key-events -->
+                          <span
+                            class="cid"
+                            on:click={() => {
+                              handleChangePageMsg({
+                                detail: { page: "cid", cid: cid.toString() },
+                              });
+                            }}>{cid}</span
+                          ><br />
+                        {/each}
                       {/each}
-                    {/each}
-                  </div>
-                </Attestation>
-              {:else}
-                <Attestation
-                  allData={data}
-                  {fileCid}
-                  {curSource}
-                  on:changePage={handleChangePageMsg}
-                />
+                    </div>
+                  </Attestation>
+                {:else}
+                  <Attestation
+                    allData={data}
+                    {fileCid}
+                    {curSource}
+                    on:changePage={handleChangePageMsg}
+                  />
+                {/if}
               {/if}
             {/each}
           {:else if noSources}
