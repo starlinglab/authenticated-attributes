@@ -99,6 +99,10 @@
         <span class="value encrypted">encrypted</span>
       {:else if largeData}
         <span class="value large">{trimLarge(data.attestation.value)}</span>
+      {:else if data.attestation.attribute === "date"}
+        <span class="value"
+          >{new Date(data.attestation.value).toDateString()}</span
+        >
       {:else}
         <span class="value">{data.attestation.value}</span>
       {/if}
@@ -248,7 +252,7 @@
 </Modal>
 
 <!-- Download attestation to personal hyperbee modal -->
-<DownloadDialog bind:this={downloadDialog} {data} {fileCid} />
+<DownloadDialog bind:this={downloadDialog} {data} {fileCid} {curSource} />
 
 {#if import.meta.env.PROD}
   <style>

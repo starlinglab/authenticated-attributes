@@ -50,6 +50,8 @@ def login_if_needed():
 
 
 def load_templates():
+    global templates
+
     r = session.get(
         f"{UWAZI_SERVER}/api/templates",
         headers={
@@ -68,6 +70,7 @@ def load_templates():
     items = r.json()["rows"]
     logging.debug("search retrieved %d templates", len(items))
 
+    templates = {}
     for item in items:
         templates[item["_id"]] = Template(item)
 
@@ -111,10 +114,11 @@ def valid_entities():
 def main():
     login()
     logging.info("started and logged in to Uwazi")
-    load_templates()
-    logging.info("loaded templates")
 
     while True:
+        load_templates()
+        logging.debug("loaded templates")
+
         for entity in valid_entities():
             logging.debug("starting on %s", entity)
 

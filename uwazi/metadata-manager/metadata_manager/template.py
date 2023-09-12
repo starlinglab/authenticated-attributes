@@ -80,7 +80,12 @@ class Template:
             }
         if prop["type"] == "link":
             # Example: [{"value":{"label":"","url":"https://example.com"}}]
-            return {"key": prop["name"], "value": values[0]["value"], "type": None}
+            return {
+                "key": prop["name"],
+                # Extract URL, discard label
+                "value": values[0]["value"]["url"],
+                "type": "str",
+            }
         if prop["type"] in ("image", "preview", "media"):
             # Just a slash URL for the file upload, not useful
             # Example:[{"value":"/api/files/1693944174842cwky5ffakek.png"}]

@@ -66,7 +66,8 @@
     <div id="dl-server-title">Send data to</div>
     <form on:submit|preventDefault={downloadFormSubmit}>
       <div id="dl-server-sources">
-        {$hyperbeeSources[0].name}<br /><code>{$hyperbeeSources[0].server}</code
+        {$hyperbeeSources[curSource].name}<br /><code
+          >{$hyperbeeSources[curSource].server}</code
         >
       </div>
       <div id="dl-server-button">
