@@ -491,6 +491,9 @@
     errMsg = "";
     loading = true;
 
+    // Custom index type handling for demo2
+    const indexType = key === "date" ? "unix" : getIndexType(val);
+
     const bufferPromises = [];
     for (let i = 0; i < $hyperbeeSources.length; i++) {
       const hb = $hyperbeeSources[i];
@@ -500,7 +503,7 @@
             query: "match",
             key,
             val,
-            type: getIndexType(val),
+            type: indexType,
             names: "1", // asset names along with CIDs
           })}`
         ).then((value) => {
