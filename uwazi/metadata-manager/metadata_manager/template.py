@@ -64,8 +64,15 @@ class Template:
         if prop["type"] == "select":
             return {
                 "key": prop["name"],
-                "value": str(values[0]["label"]),  # str() just in case
+                "value": values[0]["label"],
                 "type": "str",
+            }
+        if prop["type"] == "multiselect":
+            # Like select but with multiple values
+            return {
+                "key": prop["name"],
+                "value": [x["label"] for x in values],
+                "type": None,
             }
         if prop["type"] == "relationship":
             # TODO: support this
