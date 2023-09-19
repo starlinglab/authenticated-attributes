@@ -70,10 +70,12 @@ app.get("/:cid", async (req, res) => {
   const metadata = {};
   // eslint-disable-next-line no-restricted-syntax
   for await (const { key, value } of db.createReadStream({
-    gte: req.params.cid,
-    lt: `${req.params.cid}0`, // 0 is the symbol after / in binary, so the range of keys is the keys in the format <cid>/<any>
+    gte: `att/${req.params.cid}`,
+    lt: `att/${req.params.cid}0`, // 0 is the symbol after / in binary, so the range of keys is the keys in the format <cid>/<any>
   })) {
-    metadata[key.slice(req.params.cid.length + 1)] = decode(value);
+    // Key of map is database key but with prefix (att), CID, and slash separators removed
+    // Prefix + CID-ending slash is 5 chars
+    metadata[key.slice(req.params.cid.length + 5)] = decode(value);
   }
   res.type("application/cbor");
   res.send(Buffer.from(encode(metadata)));

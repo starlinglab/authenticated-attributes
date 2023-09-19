@@ -47,10 +47,10 @@ The NaCl API is used, so the specific encryption algorithm is xsalsa20-poly1305.
 
 ## Database
 
-Hyperbee is a key-value database. For this codebase, the key is the CID of the asset, followed by a slash, followed by the name of the attestation. For example:
+Hyperbee is a key-value database. For this codebase, the key is the CID of the asset, followed by a slash, followed by the name of the attestation. All keys are prefixed by a type. An example for an attestation is:
 
 ```
-bafkreif7gtpfl7dwi5nflge2rsfp6vq6q5kkwfm7uvxyyezxhsnde5ly3y/description
+att/bafkreif7gtpfl7dwi5nflge2rsfp6vq6q5kkwfm7uvxyyezxhsnde5ly3y/description
 ```
 
 The value is described below.
