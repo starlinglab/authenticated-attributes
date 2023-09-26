@@ -32,7 +32,7 @@
     try {
       const res = await fetch(
         new URL(
-          `${fileCid}/${data.attestation.attribute}`,
+          `c/${fileCid}/${data.attestation.attribute}`,
           $hyperbeeSources[0].server
         ),
         {

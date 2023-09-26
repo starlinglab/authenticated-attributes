@@ -66,7 +66,7 @@ app.use((err, req, res, next) => {
 
 // Routes
 
-app.get("/:cid", async (req, res) => {
+app.get("/c/:cid", async (req, res) => {
   const metadata = {};
   // eslint-disable-next-line no-restricted-syntax
   for await (const { key, value } of db.createReadStream({
@@ -81,7 +81,7 @@ app.get("/:cid", async (req, res) => {
   res.send(Buffer.from(encode(metadata)));
 });
 
-app.post("/:cid/:attr", async (req, res, next) => {
+app.post("/c/:cid/:attr", async (req, res, next) => {
   // Expected body from client is dag-cbor encoded
   // Two attrs in map:
   //
