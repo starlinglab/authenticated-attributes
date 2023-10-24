@@ -100,12 +100,7 @@ class Entity:
         The title of the Uwazi entity is included under the name "title", despite
         being outside the "metadata" field.
 
-        Metadata with multiple values are skipped as they can't be indexed.
-        Multi-value metadata types can't be identified ahead of time so this can
-        result in metadata for a multi-value type being returned when it only has
-        one value set so far.
-
-        Relationships are not supported.
+        Relationships are not supported, everything else should be.
         """
 
         # "metadata" field in self.data contains what we need
@@ -217,7 +212,7 @@ class Entity:
         if r.status_code == 422:
             # "Unprocessable Entity" error
             # Means that the CID field is not supported for this entity, it's not in the template
-            # Further work is needed, see https://github.com/starlinglab/authenticated-attributes/issues/44
+            # This shouldn't happen normally, as the template is checked in the constructor
             logging.warning("setting CID not supported by template: %s", self)
             return
         if not r.ok:

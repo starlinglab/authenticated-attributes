@@ -32,10 +32,7 @@ class Template:
 
         None is returned if the given prop and value can't be encoded.
 
-        Metadata with multiple values are skipped as they can't be indexed.
-        Multi-value metadata types can't be identified ahead of time so this can
-        result in metadata for a multi-value type being returned when it only has
-        one value set so far.
+        Relationships are currently unsupported, everything else should be.
         """
 
         if len(values) != 1 or "value" not in values[0]:

@@ -16,7 +16,6 @@ import { CID } from "multiformats";
 import { dbAddRelation, dbPut, setSigningKey } from "./src/dbPut.js";
 import { newKey } from "./src/encryptValue.js";
 import { keyFromPem } from "./src/signAttestation.js";
-import { indexPut } from "./src/index.js";
 
 if (argv.length !== 5) {
   throw new Error(
@@ -223,11 +222,6 @@ for (const key in metaContent) {
     }
   } else {
     promises.push(dbPut(datadb, contentCID, key, metaContent[key]));
-    // TODO: remove this
-    // Test index
-    if (key === "mime") {
-      promises.push(indexPut(datadb, key, metaContent[key], contentCID));
-    }
   }
 }
 
