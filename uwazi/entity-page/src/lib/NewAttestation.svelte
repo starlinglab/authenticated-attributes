@@ -3,6 +3,7 @@
   import DownloadDialog from "./DownloadDialog.svelte";
 
   export let fileCid;
+  export let curSource;
 
   // Elements
   let dialog;
@@ -73,6 +74,7 @@
   bind:this={downloadDialog}
   data={{ attestation: { attribute: aattr, value: avalue } }}
   {fileCid}
+  {curSource}
 />
 
 <style>

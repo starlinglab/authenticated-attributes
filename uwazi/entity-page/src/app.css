@@ -37,3 +37,6 @@ code {
 #hyperbee-entity-page-app {
   line-height: initial;
 }
+#hyperbee-entity-page-app p {
+  margin: revert !important;
+}

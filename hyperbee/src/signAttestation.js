@@ -1,8 +1,13 @@
 import { readFile } from "node:fs/promises";
+import { webcrypto } from "node:crypto";
 
 import { getPublicKeyAsync, signAsync } from "@noble/ed25519";
 
 import { encodeAttestation } from "./encodeAttestation.js";
+
+// Support Node.js 18 (LTS)
+// https://github.com/paulmillr/noble-ed25519#usage
+if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const signAttestation = async (privKey, rawAttestation) => {
   const pubKey = await getPublicKeyAsync(privKey);

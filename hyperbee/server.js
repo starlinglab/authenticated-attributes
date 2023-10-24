@@ -10,9 +10,11 @@ import assert from "node:assert";
 
 import { dbPut, setSigningKey } from "./src/dbPut.js";
 import { keyFromPem } from "./src/signAttestation.js";
+import { encodeFromType, indexFindMatches, indexPut } from "./src/index.js";
 
 // Last import
 import "dotenv/config";
+import { dbRawValue } from "./src/dbGet.js";
 
 const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigKey);
@@ -29,7 +31,7 @@ const corePath = env.UWAZI_HYPERCORE ?? "server.hypercore";
 const core = new Hypercore(corePath);
 await core.ready();
 const db = new Hyperbee(core, {
-  keyEncoding: "utf-8",
+  keyEncoding: "binary",
   valueEncoding: "binary",
 });
 
@@ -56,6 +58,7 @@ app.use(
   }).unless({ method: ["OPTIONS", "GET"] })
 );
 
+// Make 401 error visible to user
 app.use((err, req, res, next) => {
   if (err.name === "UnauthorizedError") {
     res.status(401).send("401 Unauthorized");
@@ -64,11 +67,71 @@ app.use((err, req, res, next) => {
   }
 });
 
-// Routes
+/// Routes ///
 
+// Search index (data in query params)
+// CIDs are returned
+app.get("/i", async (req, res) => {
+  // Currently for search only exact matches are supported
+  //
+  // Data is sent through query params
+  // Example query params (decoded into an object):
+  //
+  // {
+  //   query: "match",
+  //   key: <str>,
+  //   val: <int|float|str>
+  //   type: "int32|unix|uint32|str|float64"
+  // }
+  //
+  // "unix" means Unix time in milliseconds stored as an int64.
+  //
+  // An additional key is available: {names: "1"}. This enables setting the
+  // names of the assets. The output is no longer an array of CIDs but instead
+  // an array of objects: {"name": "<name of asset>", "cid": "<cid of asset>"}.
+  // The names of the asset are pulled from the `title` or `name` attestation,
+  // in that order.
+
+  if (req.query.query !== "match") {
+    res.status(400).send("only match queries are supported");
+    return;
+  }
+  let encodedValue;
+  try {
+    encodedValue = encodeFromType(req.query.val, req.query.type);
+  } catch (e) {
+    res.status(400).send(e.message);
+    return;
+  }
+
+  const cids = await indexFindMatches(db, req.query.key, encodedValue);
+  if (req.query.names !== "1") {
+    res.type("application/cbor");
+    res.send(Buffer.from(encode(cids)));
+    return;
+  }
+
+  const ret = [];
+  for (const cid of cids) {
+    // eslint-disable-next-line no-await-in-loop
+    let name = await dbRawValue(db, cid, "title");
+    if (!name || typeof name !== "string") {
+      // eslint-disable-next-line no-await-in-loop
+      name = await dbRawValue(db, cid, "name");
+    }
+    if (!name || typeof name !== "string") {
+      name = "";
+    }
+    ret.push({ name, cid });
+  }
+
+  res.type("application/cbor");
+  res.send(Buffer.from(encode(ret)));
+});
+
+// Get all attestations for CID
 app.get("/c/:cid", async (req, res) => {
   const metadata = {};
-  // eslint-disable-next-line no-restricted-syntax
   for await (const { key, value } of db.createReadStream({
     gte: `att/${req.params.cid}`,
     lt: `att/${req.params.cid}0`, // 0 is the symbol after / in binary, so the range of keys is the keys in the format <cid>/<any>
@@ -81,6 +144,7 @@ app.get("/c/:cid", async (req, res) => {
   res.send(Buffer.from(encode(metadata)));
 });
 
+// Set a single attestation for a CID
 app.post("/c/:cid/:attr", async (req, res, next) => {
   // Expected body from client is dag-cbor encoded
   // Two attrs in map:
@@ -110,6 +174,61 @@ app.post("/c/:cid/:attr", async (req, res, next) => {
 
   res.status(200).send();
 });
+
+// Set multiple attestations for a CID
+app.post("/:cid", async (req, res, next) => {
+  // Expected body from client is dag-cbor encoded
+  // Example:
+  //
+  // [
+  //   {"key": "caption", "value": "foo", "type": "str"}
+  //   {"key": "rating", "value": 3.5, "type": "float64"}
+  // ]
+  //
+  // "type" is one of int32|unix|uint32|str|float64
+  // where "unix" means Unix time in milliseconds stored as an int64.
+  // If "type" is not included or null the field will never be indexed.
+  //
+  // If query param "index" is set to "1" (like: ?index=1)
+  // then indexing will be done for each attribute (except as described above).
+
+  let data;
+  try {
+    data = decode(new Uint8Array(req.body));
+    assert.equal(typeof data, "object");
+  } catch (e) {
+    console.log(e);
+    res.status(400).send();
+    return;
+  }
+  try {
+    const batch = db.batch();
+    const putPromises = [];
+    for (const { key, value, type } of data) {
+      putPromises.push(dbPut(batch, req.params.cid, key, value));
+      if (req.query.index === "1" && type != null) {
+        let encodedValue;
+        try {
+          encodedValue = encodeFromType(value, type);
+        } catch (e) {
+          res.status(400).send(e.message);
+          return;
+        }
+        putPromises.push(indexPut(batch, key, encodedValue, req.params.cid));
+      }
+    }
+    await Promise.all(putPromises);
+    await batch.flush();
+  } catch (e) {
+    next(e);
+    res.status(500).send();
+    return;
+  }
+
+  res.status(200).send();
+});
+
+/// End of routes ///
 
 app.listen(port, () => {
   console.log(`Listening on port ${port}`);

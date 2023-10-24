@@ -1,3 +1,8 @@
+/*
+Import script for taking in Starling integrity pipeline ZIP files and turning
+them into Authenticated Attributes databases.
+*/
+
 import { argv, env } from "node:process";
 import { spawnSync } from "node:child_process";
 import path from "node:path";
@@ -36,7 +41,7 @@ const cidMapping = JSON.parse(
 const datacore = new Hypercore(datacorePath);
 await datacore.ready();
 const datadb = new Hyperbee(datacore, {
-  keyEncoding: "utf-8",
+  keyEncoding: "binary",
   valueEncoding: "binary",
 });
 
@@ -45,7 +50,7 @@ const keycore = new Hypercore(keycorePath, undefined, {
 });
 await keycore.ready();
 const keydb = new Hyperbee(keycore, {
-  keyEncoding: "utf-8",
+  keyEncoding: "binary",
   valueEncoding: "binary",
 });
 
