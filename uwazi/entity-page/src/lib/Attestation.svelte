@@ -5,14 +5,14 @@
   import Modal from "./Modal.svelte";
   import DownloadDialog from "./DownloadDialog.svelte";
 
-  import { uint8ArrayToBase64 } from "./shared.js";
+  import { getIndexType, uint8ArrayToBase64 } from "./shared.js";
   import { vcExport } from "./vc.js";
+  import { hyperbeeSources } from "./store";
 
-  export let data;
+  export let allData;
   export let customTitle = "";
-  export let signer = "";
-  export let alts; // [{source, data}, ...]
   export let fileCid;
+  export let curSource;
 
   const dispatch = createEventDispatcher();
 
@@ -25,6 +25,15 @@
   let attrTitle; // Element
 
   let downloadDialog; // Element
+
+  function isLargeData(value) {
+    return value.toString() === "[object Object]";
+  }
+
+  $: data = allData[curSource];
+  $: signer = $hyperbeeSources[curSource].name;
+  $: largeData = isLargeData(data.attestation.value);
+  $: indexType = getIndexType(data.attestation.value);
 
   function saveFile(filename, type, bytes) {
     const blob = new Blob([bytes], { type });
@@ -61,8 +70,11 @@
     downloadDialog.showModal();
   }
 
-  function isLargeData(value) {
-    return value.toString() === "[object Object]";
+  function relatedClick() {
+    if (data.attestation.encrypted || indexType === null) {
+      return;
+    }
+    dispatch("changePage", { page: "related", attestation: data.attestation });
   }
 
   function trimLarge(value) {
@@ -70,8 +82,6 @@
     const string = JSON.stringify(value);
     return string.length > max ? `${string.substring(0, max - 3)}...` : string;
   }
-
-  $: largeData = isLargeData(data.attestation.value);
 </script>
 
 <div id="container">
@@ -89,6 +99,10 @@
         <span class="value encrypted">encrypted</span>
       {:else if largeData}
         <span class="value large">{trimLarge(data.attestation.value)}</span>
+      {:else if data.attestation.attribute === "date"}
+        <span class="value"
+          >{new Date(data.attestation.value).toDateString()}</span
+        >
       {:else}
         <span class="value">{data.attestation.value}</span>
       {/if}
@@ -122,6 +136,18 @@
       /></svg
     >
     -->
+
+    <svg
+      class="icon"
+      class:disabled={data.attestation.encrypted || indexType === null}
+      on:click={relatedClick}
+      on:keydown={relatedClick}
+      xmlns="http://www.w3.org/2000/svg"
+      viewBox="0 0 640 512"
+      ><!--! Font Awesome Free 6.4.2 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+        d="M256 64H384v64H256V64zM240 0c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48h48v32H32c-17.7 0-32 14.3-32 32s14.3 32 32 32h96v32H80c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48H240c26.5 0 48-21.5 48-48V368c0-26.5-21.5-48-48-48H192V288H448v32H400c-26.5 0-48 21.5-48 48v96c0 26.5 21.5 48 48 48H560c26.5 0 48-21.5 48-48V368c0-26.5-21.5-48-48-48H512V288h96c17.7 0 32-14.3 32-32s-14.3-32-32-32H352V192h48c26.5 0 48-21.5 48-48V48c0-26.5-21.5-48-48-48H240zM96 448V384H224v64H96zm320-64H544v64H416V384z"
+      /></svg
+    >
   </div>
 </div>
 
@@ -203,17 +229,19 @@
         {data.attestation.value}
       {/if}
     </p>
-    {#each alts as alt}
-      <p class="alt-signer-name">{alt.source}</p>
-      <p class="alt-value">
-        {#if alt.data.attestation.encrypted}
-          <span class="encrypted">encrypted</span>
-        {:else if isLargeData(alt.data.attestation.value)}
-          <span class="large">{trimLarge(alt.data.attestation.value)}</span>
-        {:else}
-          {alt.data.attestation.value}
-        {/if}
-      </p>
+    {#each allData as alt, i}
+      {#if i !== curSource && alt != null}
+        <p class="alt-signer-name">{$hyperbeeSources[i].name}</p>
+        <p class="alt-value">
+          {#if alt.attestation.encrypted}
+            <span class="encrypted">encrypted</span>
+          {:else if isLargeData(alt.attestation.value)}
+            <span class="large">{trimLarge(alt.attestation.value)}</span>
+          {:else}
+            {alt.attestation.value}
+          {/if}
+        </p>
+      {/if}
     {/each}
   </div>
   <span slot="buttons">
@@ -224,7 +252,7 @@
 </Modal>
 
 <!-- Download attestation to personal hyperbee modal -->
-<DownloadDialog bind:this={downloadDialog} {data} {fileCid} />
+<DownloadDialog bind:this={downloadDialog} {data} {fileCid} {curSource} />
 
 {#if import.meta.env.PROD}
   <style>
@@ -275,14 +303,10 @@
     width: 100%;
   }
 
-  /*
-  Used by removed clone/copy/download feature
-
   svg.disabled {
     opacity: 0.3;
     cursor: default;
   }
-  */
 
   #attr-modal-content {
     word-break: break-all;

@@ -6,10 +6,13 @@
   import Settings from "./lib/Settings.svelte";
   import { hyperbeeJWT, hyperbeeSources } from "./lib/store.js";
   import NewAttestation from "./lib/NewAttestation.svelte";
+  import Related from "./lib/Related.svelte";
+  import { getIndexType } from "./lib/shared.js";
 
   /// Props ///
 
-  export const REPLAYWEB_SW_FILENAME = "sw.js";
+  export let REPLAYWEB_SW_FILENAME = "sw.js";
+  export let NO_EDIT_BUTTON_IN_PROD = true;
 
   /// Consts ///
 
@@ -78,73 +81,113 @@
     return datas;
   };
 
+  const checkPublicLink = (datas) => {
+    for (let i = 0; i < datas.length; i++) {
+      if (
+        "public_link" in datas[i] &&
+        Boolean(datas[i].public_link.attestation.value) !== false
+      ) {
+        return true;
+      }
+    }
+    return false;
+  };
+
   /**
    * Walks through output of loadData, amalgamating entries from all sources.
    *
    * Returns an Array of the following:
    *
    *     {
-   *       source: <hyperbee name>,
    *       attr: <attribute name>,
-   *       data: <attestation data>,
-   *       alts: [ // What other hyperbees have to say about this attr
-   *         {source, data}
-   *       ]
+   *       data: [<value from source 1>, <value from source 2>, ...]
    *     }
+   *
+   * If a source doesn't have data on the attribute, null will be inserted instead.
    */
   const getDbEntries = (sources, datas) => {
     // Store already seen attribute names in a hashmap for O(1) checking
     const usedAttrs = {};
     const ret = [];
     for (let i = 0; i < sources.length; i++) {
-      const hb = sources[i];
       if (Object.keys(datas[i]).length === 0) {
         continue;
       }
-      // eslint-disable-next-line no-restricted-syntax
       for (const [attr, data] of Object.entries(datas[i])) {
         if (attr in usedAttrs) {
-          // Add as alternate data
-          ret[usedAttrs[attr]].alts.push({ source: hb.name, data });
+          // Attr already added, just set the data field
+          ret[usedAttrs[attr]].data[i] = data;
         } else {
           // Store the index of the attribute in usedAttrs
-          usedAttrs[attr] =
-            ret.push({ source: hb.name, attr, data, alts: [] }) - 1;
+          usedAttrs[attr] = ret.push({ attr }) - 1;
+          // Create the data array and add this source's data
+          ret[usedAttrs[attr]].data = new Array(sources.length).fill(null);
+          ret[usedAttrs[attr]].data[i] = data;
         }
       }
     }
     return ret;
   };
 
+  /**
+   * Checks if the provided entity metadata has a valid attachment.
+   *
+   * It returns the index of the attachment, or -1 if no valid one was found.
+   */
+  const entityHasAttachment = (entity) => {
+    // Check that there is only one attached file, minus preview files
+    // https://github.com/starlinglab/authenticated-attributes/issues/43
+
+    let numAttachments = entity.attachments.length;
+    if (numAttachments === 0) {
+      return -1;
+    }
+
+    let an = -1; // Attachment number/index
+
+    for (let i = 0; i < entity.attachments.length; i++) {
+      const attachment = entity.attachments[i];
+      if (
+        attachment.originalname === "preview" ||
+        attachment.originalname.startsWith("preview.")
+      ) {
+        numAttachments -= 1;
+      } else {
+        // Could be the single non-preview attachment
+        an = i;
+      }
+    }
+    if (numAttachments !== 1) {
+      // There is no single non-preview attachment
+      return -1;
+    }
+
+    return an;
+  };
+
   const getEntityInfo = (cid) => {
     if (cid === false || cid === ogEntityCid) {
       // Original page
-
-      // Don't care about multiple attachments because the CID script only sets
-      // a CID if there is one non-preview attachment.
-      // The real attachment should be the first one and that is assumed.
-      // TODO: don't assume that
-      const entityHasAttachment = entity.attachments.length > 0;
-
+      const an = entityHasAttachment(entity); // attachment number
+      const hasAttachment = an > -1;
       const isWacz =
-        !entityHasAttachment ||
-        entity.attachments[0].originalname.endsWith(".wacz");
+        !hasAttachment || entity.attachments[an].originalname.endsWith(".wacz");
       return {
         title: entity.title,
-        hasAttachment: entityHasAttachment,
+        hasAttachment,
         cid:
-          !entityHasAttachment ||
+          !hasAttachment ||
           (entity.metadata.sha256cid && entity.metadata.sha256cid.value) ||
           null,
         fileType:
-          !entityHasAttachment ||
-          (isWacz ? "application/wacz" : entity.attachments[0].mimetype),
-        fileName: !entityHasAttachment || entity.attachments[0].originalname,
-        fileSize: !entityHasAttachment || entity.attachments[0].size,
+          !hasAttachment ||
+          (isWacz ? "application/wacz" : entity.attachments[an].mimetype),
+        fileName: !hasAttachment || entity.attachments[an].originalname,
+        fileSize: !hasAttachment || entity.attachments[an].size,
         fileUrl:
-          !entityHasAttachment ||
+          !hasAttachment ||
           // Use custom fileserver path we created
-          `/authattr/files/${entity.attachments[0].filename}`,
+          `/authattr/files/${entity.attachments[an].filename}`,
         isWacz,
       };
     }
@@ -156,22 +199,21 @@
         continue;
       }
       if (ent.metadata.sha256cid[0].value === cid) {
-        const entityHasAttachment = ent.attachments.length === 1;
+        const an = entityHasAttachment(ent);
+        const hasAttachment = an > -1;
         const isWacz =
-          !entityHasAttachment ||
-          ent.attachments[0].originalname.endsWith(".wacz");
+          !hasAttachment || ent.attachments[an].originalname.endsWith(".wacz");
         return {
           title: ent.title,
-          hasAttachment: entityHasAttachment,
+          hasAttachment,
           cid,
           fileType:
-            !entityHasAttachment ||
-            (isWacz ? "application/wacz" : ent.attachments[0].mimetype),
-          fileName: !entityHasAttachment || ent.attachments[0].originalname,
-          fileSize: !entityHasAttachment || ent.attachments[0].size,
+            !hasAttachment ||
+            (isWacz ? "application/wacz" : ent.attachments[an].mimetype),
+          fileName: !hasAttachment || ent.attachments[an].originalname,
+          fileSize: !hasAttachment || ent.attachments[an].size,
           fileUrl:
-            !entityHasAttachment ||
-            `/authattr/files/${ent.attachments[0].filename}`,
+            !hasAttachment || `/authattr/files/${ent.attachments[an].filename}`,
           isWacz,
         };
       }
@@ -191,6 +233,7 @@
       const datas = await loadData(sources, cid);
       dbEntries = getDbEntries(sources, datas);
       entityInfo = getEntityInfo(cid);
+      publicLink = checkPublicLink(datas);
     } catch (e) {
       errMsg = e.toString();
       console.error(e);
@@ -275,7 +318,7 @@
   }
 
   // Names for different "pages" that can be viewed
-  // Current avail. pages: entity, sources, cid, graph, edit
+  // Current avail. pages: entity, sources, cid, graph, edit, related
   let curPage = "entity";
   let prevPage = null;
 
@@ -284,10 +327,15 @@
   let fileObject; // <object> element
 
   let dbEntries;
+  let curSource = 0; // Num. of source being viewed
 
   let sourcesListSuccess = null; // null means sources haven't been tested yet
 
   let newAttestation; // <NewAttestation> svelte component
+
+  let relatedProps; // props for Related component, set dynamically
+
+  let publicLink = false; // Any source has a public_link attestation
 
   /// Main function ///
 
@@ -451,6 +499,49 @@
     loading = false;
   };
 
+  /**
+   * Loads data for the "related" page and sets the result in relatedProps.
+   */
+  const loadRelatedData = async (key, val) => {
+    errMsg = "";
+    loading = true;
+
+    // Custom index type handling for demo2
+    const indexType = key === "date" ? "unix" : getIndexType(val);
+
+    const bufferPromises = [];
+    for (let i = 0; i < $hyperbeeSources.length; i++) {
+      const hb = $hyperbeeSources[i];
+      bufferPromises.push(
+        fetch(
+          `${hb.server}/i?${new URLSearchParams({
+            query: "match",
+            key,
+            val,
+            type: indexType,
+            names: "1", // asset names along with CIDs
+          })}`
+        ).then((value) => {
+          if (!value.ok) {
+            setErrMsg(`failed to load data: ${value.statusText}`);
+            setLoading(false);
+            throw new Error("failed to load data");
+          }
+          return value.arrayBuffer();
+        })
+      );
+    }
+
+    const buffers = await Promise.all(bufferPromises);
+    const results = {};
+    for (let i = 0; i < $hyperbeeSources.length; i++) {
+      results[i] = IpldDagCbor.decode(new Uint8Array(buffers[i]));
+    }
+
+    relatedProps.results = results;
+    loading = false;
+  };
+
   function humanFileSize(size) {
     // https://stackoverflow.com/a/20732091
     const i = size === 0 ? 0 : Math.floor(Math.log(size) / Math.log(1024));
@@ -485,6 +576,13 @@
       // Async function, but running it in the background is fine since it
       // properly sets the loading variable and everything
       loadGraphData($hyperbeeSources, fileCid);
+    } else if (event.detail.page === "related") {
+      relatedProps = { att: event.detail.attestation };
+      // Async is okay, same as above
+      loadRelatedData(
+        event.detail.attestation.attribute,
+        event.detail.attestation.value
+      );
     }
 
     prevPage = curPage;
@@ -572,37 +670,62 @@
             {:else}
               <p>No file information is available for this CID.</p>
             {/if}
-            <p><strong>CID</strong> <code>{fileCid}</code></p>
-          </div>
-          <div id="bottom-buttons">
-            {#if !noSources}
-              <Button
-                border={true}
-                on:click={() => {
-                  handleChangePageMsg({ detail: { page: "edit" } });
-                }}
-              >
-                <svg
-                  class="icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 512 512"
-                  ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
-                    d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"
-                  /></svg
+            <p>
+              <strong>CID</strong> <code>{fileCid}</code>
+              {#if publicLink}
+                <a
+                  href="https://ipfs.hypha.coop/ipfs/{fileCid}"
+                  target="_blank"
                 >
-                Edit</Button
-              >
+                  <svg
+                    style="color: var(--theme1);"
+                    class="icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                    ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+                      d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32h82.7L201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3V192c0 17.7 14.3 32 32 32s32-14.3 32-32V32c0-17.7-14.3-32-32-32H320zM80 32C35.8 32 0 67.8 0 112V432c0 44.2 35.8 80 80 80H400c44.2 0 80-35.8 80-80V320c0-17.7-14.3-32-32-32s-32 14.3-32 32V432c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V112c0-8.8 7.2-16 16-16H192c17.7 0 32-14.3 32-32s-14.3-32-32-32H80z"
+                    /></svg
+                  >
+                </a>
+              {/if}
+            </p>
+          </div>
+          <div class="bottom-buttons">
+            {#if !noSources}
+              {#if !NO_EDIT_BUTTON_IN_PROD || import.meta.env.DEV}
+                <Button
+                  border={true}
+                  on:click={() => {
+                    handleChangePageMsg({ detail: { page: "edit" } });
+                  }}
+                >
+                  <svg
+                    class="icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                    ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+                      d="M410.3 231l11.3-11.3-33.9-33.9-62.1-62.1L291.7 89.8l-11.3 11.3-22.6 22.6L58.6 322.9c-10.4 10.4-18 23.3-22.2 37.4L1 480.7c-2.5 8.4-.2 17.5 6.1 23.7s15.3 8.5 23.7 6.1l120.3-35.4c14.1-4.2 27-11.8 37.4-22.2L387.7 253.7 410.3 231zM160 399.4l-9.1 22.7c-4 3.1-8.5 5.4-13.3 6.9L59.4 452l23-78.1c1.4-4.9 3.8-9.4 6.9-13.3l22.7-9.1v32c0 8.8 7.2 16 16 16h32zM362.7 18.7L348.3 33.2 325.7 55.8 314.3 67.1l33.9 33.9 62.1 62.1 33.9 33.9 11.3-11.3 22.6-22.6 14.5-14.5c25-25 25-65.5 0-90.5L453.3 18.7c-25-25-65.5-25-90.5 0zm-47.4 168l-144 144c-6.2 6.2-16.4 6.2-22.6 0s-6.2-16.4 0-22.6l144-144c6.2-6.2 16.4-6.2 22.6 0s6.2 16.4 0 22.6z"
+                    /></svg
+                  >
+                  Edit</Button
+                >
+              {/if}
+              <!--
+              Hidden because it has no function currently.
+              Icon is from fontawesome.com
+
               <Button border={true}>
                 <svg
                   class="icon"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 576 512"
-                  ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+                  ><path
                     d="M288 32c-80.8 0-145.5 36.8-192.6 80.6C48.6 156 17.3 208 2.5 243.7c-3.3 7.9-3.3 16.7 0 24.6C17.3 304 48.6 356 95.4 399.4C142.5 443.2 207.2 480 288 480s145.5-36.8 192.6-80.6c46.8-43.5 78.1-95.4 93-131.1c3.3-7.9 3.3-16.7 0-24.6c-14.9-35.7-46.2-87.7-93-131.1C433.5 68.8 368.8 32 288 32zM144 256a144 144 0 1 1 288 0 144 144 0 1 1 -288 0zm144-64c0 35.3-28.7 64-64 64c-7.1 0-13.9-1.2-20.3-3.3c-5.5-1.8-11.9 1.6-11.7 7.4c.3 6.9 1.3 13.8 3.2 20.7c13.7 51.2 66.4 81.6 117.6 67.9s81.6-66.4 67.9-117.6c-11.1-41.5-47.8-69.4-88.6-71.1c-5.8-.2-9.2 6.1-7.4 11.7c2.1 6.4 3.3 13.2 3.3 20.3z"
                   /></svg
                 >
                 View Additional Metadata</Button
               >
+              -->
               <Button
                 border={true}
                 on:click={() => {
@@ -619,101 +742,117 @@
                 >
                 Graph</Button
               >
+              <!--
+              Hidden because it has no function currently.
+              Icon is from fontawesome.com
               <Button border={true}>
                 <svg
                   class="icon"
                   xmlns="http://www.w3.org/2000/svg"
                   viewBox="0 0 448 512"
-                  ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+                  ><path
                     d="M135.2 17.7C140.6 6.8 151.7 0 163.8 0H284.2c12.1 0 23.2 6.8 28.6 17.7L320 32h96c17.7 0 32 14.3 32 32s-14.3 32-32 32H32C14.3 96 0 81.7 0 64S14.3 32 32 32h96l7.2-14.3zM32 128H416V448c0 35.3-28.7 64-64 64H96c-35.3 0-64-28.7-64-64V128zm96 64c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16zm96 0c-8.8 0-16 7.2-16 16V432c0 8.8 7.2 16 16 16s16-7.2 16-16V208c0-8.8-7.2-16-16-16z"
                   /></svg
                 >
                 Delete</Button
               >
+              -->
             {/if}
-            <div id="right-button">
-              <Button
-                border={true}
-                on:click={() => {
-                  handleChangePageMsg({ detail: { page: "sources" } });
-                }}
-              >
-                <svg
-                  class="icon"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 512 512"
-                  ><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
-                    d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"
-                  />
-                </svg>
-                Settings</Button
-              >
-            </div>
+            <Button
+              border={true}
+              on:click={() => {
+                handleChangePageMsg({ detail: { page: "sources" } });
+              }}
+            >
+              <svg
+                class="icon"
+                xmlns="http://www.w3.org/2000/svg"
+                viewBox="0 0 512 512"
+                ><!--! Font Awesome Free 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+                  d="M495.9 166.6c3.2 8.7 .5 18.4-6.4 24.6l-43.3 39.4c1.1 8.3 1.7 16.8 1.7 25.4s-.6 17.1-1.7 25.4l43.3 39.4c6.9 6.2 9.6 15.9 6.4 24.6c-4.4 11.9-9.7 23.3-15.8 34.3l-4.7 8.1c-6.6 11-14 21.4-22.1 31.2c-5.9 7.2-15.7 9.6-24.5 6.8l-55.7-17.7c-13.4 10.3-28.2 18.9-44 25.4l-12.5 57.1c-2 9.1-9 16.3-18.2 17.8c-13.8 2.3-28 3.5-42.5 3.5s-28.7-1.2-42.5-3.5c-9.2-1.5-16.2-8.7-18.2-17.8l-12.5-57.1c-15.8-6.5-30.6-15.1-44-25.4L83.1 425.9c-8.8 2.8-18.6 .3-24.5-6.8c-8.1-9.8-15.5-20.2-22.1-31.2l-4.7-8.1c-6.1-11-11.4-22.4-15.8-34.3c-3.2-8.7-.5-18.4 6.4-24.6l43.3-39.4C64.6 273.1 64 264.6 64 256s.6-17.1 1.7-25.4L22.4 191.2c-6.9-6.2-9.6-15.9-6.4-24.6c4.4-11.9 9.7-23.3 15.8-34.3l4.7-8.1c6.6-11 14-21.4 22.1-31.2c5.9-7.2 15.7-9.6 24.5-6.8l55.7 17.7c13.4-10.3 28.2-18.9 44-25.4l12.5-57.1c2-9.1 9-16.3 18.2-17.8C227.3 1.2 241.5 0 256 0s28.7 1.2 42.5 3.5c9.2 1.5 16.2 8.7 18.2 17.8l12.5 57.1c15.8 6.5 30.6 15.1 44 25.4l55.7-17.7c8.8-2.8 18.6-.3 24.5 6.8c8.1 9.8 15.5 20.2 22.1 31.2l4.7 8.1c6.1 11 11.4 22.4 15.8 34.3zM256 336a80 80 0 1 0 0-160 80 80 0 1 0 0 160z"
+                />
+              </svg>
+              Settings</Button
+            >
           </div>
         </div>
         <div id="attestation-sidebar">
+          <div id="source-select">
+            <select
+              name="sources"
+              on:change={(e) => {
+                curSource = Number(e.target.value);
+              }}
+            >
+              {#each $hyperbeeSources as { name, server }, i}
+                <option value={i} selected={i === curSource || null}
+                  >{name} ({server})</option
+                >
+              {/each}
+            </select>
+          </div>
+
           {#if dbEntries.length > 0}
-            {#each dbEntries as { source, attr, data, alts }}
-              {#if attr === "parents" && !data.attestation.encrypted}
-                <Attestation
-                  {data}
-                  {alts}
-                  {fileCid}
-                  signer={source}
-                  customTitle="Parents"
-                  on:changePage={handleChangePageMsg}
-                >
-                  <div slot="value">
-                    {#each Object.entries(data.attestation.value) as [parentType, cids]}
-                      <span class="cid-type">{parentType}</span>
-                      {#each cids as cid}
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <span
-                          class="cid"
-                          on:click={() => {
-                            handleChangePageMsg({
-                              detail: { page: "cid", cid: cid.toString() },
-                            });
-                          }}>{cid}</span
-                        ><br />
+            {#each dbEntries as { attr, data }}
+              {#if data[curSource] != null}
+                {#if attr === "parents" && !data[curSource].attestation.encrypted}
+                  <Attestation
+                    allData={data}
+                    {fileCid}
+                    {curSource}
+                    customTitle="Parents"
+                    on:changePage={handleChangePageMsg}
+                  >
+                    <div slot="value">
+                      {#each Object.entries(data[curSource].attestation.value) as [parentType, cids]}
+                        <span class="cid-type">{parentType}</span>
+                        {#each cids as cid}
+                          <!-- svelte-ignore a11y-click-events-have-key-events -->
+                          <span
+                            class="cid"
+                            on:click={() => {
+                              handleChangePageMsg({
+                                detail: { page: "cid", cid: cid.toString() },
+                              });
+                            }}>{cid}</span
+                          ><br />
+                        {/each}
                       {/each}
-                    {/each}
-                  </div>
-                </Attestation>
-              {:else if attr === "children" && !data.attestation.encrypted}
-                <Attestation
-                  {data}
-                  {alts}
-                  {fileCid}
-                  signer={source}
-                  customTitle="Children"
-                  on:changePage={handleChangePageMsg}
-                >
-                  <div slot="value">
-                    {#each Object.entries(data.attestation.value) as [childType, cids]}
-                      <span class="cid-type">{childType}</span>
-                      {#each cids as cid}
-                        <!-- svelte-ignore a11y-click-events-have-key-events -->
-                        <span
-                          class="cid"
-                          on:click={() => {
-                            handleChangePageMsg({
-                              detail: { page: "cid", cid: cid.toString() },
-                            });
-                          }}>{cid}</span
-                        ><br />
+                    </div>
+                  </Attestation>
+                {:else if attr === "children" && !data[curSource].attestation.encrypted}
+                  <Attestation
+                    allData={data}
+                    {fileCid}
+                    {curSource}
+                    customTitle="Children"
+                    on:changePage={handleChangePageMsg}
+                  >
+                    <div slot="value">
+                      {#each Object.entries(data[curSource].attestation.value) as [childType, cids]}
+                        <span class="cid-type">{childType}</span>
+                        {#each cids as cid}
+                          <!-- svelte-ignore a11y-click-events-have-key-events -->
+                          <span
+                            class="cid"
+                            on:click={() => {
+                              handleChangePageMsg({
+                                detail: { page: "cid", cid: cid.toString() },
+                              });
+                            }}>{cid}</span
+                          ><br />
+                        {/each}
                       {/each}
-                    {/each}
-                  </div>
-                </Attestation>
-              {:else}
-                <Attestation
-                  {data}
-                  {alts}
-                  {fileCid}
-                  signer={source}
-                  on:changePage={handleChangePageMsg}
-                />
+                    </div>
+                  </Attestation>
+                {:else}
+                  <Attestation
+                    allData={data}
+                    {fileCid}
+                    {curSource}
+                    on:changePage={handleChangePageMsg}
+                  />
+                {/if}
               {/if}
             {/each}
           {:else if noSources}
@@ -774,14 +913,20 @@
       </div>
       <div id="attestations-edit-box">
         {#if dbEntries.length > 0}
-          {#each dbEntries as dbEntry}
-            <EditAttestation data={structuredClone(dbEntry.data)} {fileCid} />
+          {#each dbEntries as { data }}
+            {#if data[curSource] != null}
+              <EditAttestation
+                data={structuredClone(data[curSource])}
+                {fileCid}
+                {curSource}
+              />
+            {/if}
           {/each}
         {:else}
           <p class="error">No attestations found</p>
         {/if}
       </div>
-      <div id="edit-buttons">
+      <div class="bottom-buttons">
         <Button border={true} on:click={handlePrevPageMsg}>Back</Button>
         <Button
           border={true}
@@ -798,7 +943,17 @@
           > New</Button
         >
       </div>
-      <NewAttestation bind:this={newAttestation} {fileCid} />
+      <NewAttestation bind:this={newAttestation} {fileCid} {curSource} />
+    {:else if curPage === "related"}
+      <div id="title-bar">
+        <h1>Related Assets</h1>
+      </div>
+      <div id="related-content">
+        <Related {...relatedProps} on:changePage={handleChangePageMsg} />
+      </div>
+      <div class="bottom-buttons">
+        <Button border={true} on:click={handlePrevPageMsg}>Back</Button>
+      </div>
     {/if}
   {/if}
 </div>
@@ -901,17 +1056,13 @@
     top: 1em;
     left: 1em;
   }
-  #bottom-buttons {
+  .bottom-buttons {
     margin-bottom: 1em;
     padding-left: 1em;
     border-top: 2px solid var(--theme-border);
     padding-top: 1em;
     display: flex;
     gap: 1em;
-  }
-  #right-button {
-    margin-left: auto;
-    margin-right: 1em;
   }
 
   #sources-list-container {
@@ -967,13 +1118,25 @@
     flex-grow: 1;
     min-width: 30em;
   }
-  #edit-buttons {
-    margin-bottom: 1em;
-    padding-left: 1em;
-    border-top: 2px solid var(--theme-border);
-    padding-top: 1em;
-    display: flex;
-    gap: 1em;
+
+  #related-content {
+    overflow: auto;
+    margin-left: 2em;
+    padding-right: 2em;
+  }
+
+  #source-select {
+    text-align: center;
+  }
+  #source-select > select {
+    margin-top: 1em;
+    font-size: 1em;
+    background-color: transparent;
+    border: 2px solid var(--theme-border);
+    border-radius: 0.3em;
+    padding: 0.5em;
+    font-weight: bold;
+    width: 35ch;
   }
 
   /* Undo Uwazi styling */

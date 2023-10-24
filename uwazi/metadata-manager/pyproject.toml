@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "metadata-manager"
+version = "0.0.0"
+license = "MIT"
+description = ""
+authors = [""]
+
+[tool.poetry.dependencies]
+python = "^3.9"
+python-dotenv = "^1.0.0"
+requests = "^2.31.0"
+dag-cbor = "^0.3.2"
+
+# https://github.com/hashberg-io/dag-cbor/issues/12
+# This issue occurs in production, likely related to Python 3.9 being used
+typing-extensions = "<4.6.0"
+
+[tool.poetry.group.dev.dependencies]
+pylint = "^2.17.5"
+black = "^23.7.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
