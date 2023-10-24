@@ -176,7 +176,7 @@ app.post("/c/:cid/:attr", async (req, res, next) => {
 });
 
 // Set multiple attestations for a CID
-app.post("/:cid", async (req, res, next) => {
+app.post("/c/:cid", async (req, res, next) => {
   // Expected body from client is dag-cbor encoded
   // Example:
   //

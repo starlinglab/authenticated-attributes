@@ -9,7 +9,7 @@ import { encodeAttestation } from "./encodeAttestation.js";
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const verifyAttSignature = async (attestationObj, givenPubKey) => {
-  // check that the signedMsg is the CID for the rawAttestation
+  // check that the signed message is the CID for the rawAttestation
   const rawAttestationCID = await encodeAttestation(attestationObj.attestation);
   if (!rawAttestationCID.equals(attestationObj.signature.msg)) {
     throw new Error(

@@ -28,12 +28,12 @@ console.log(result);
 // console.log('timestamp verified?', verifyTimestamp(resultObj));
 
 console.log("\nExtra timestamp info:");
-getInfo(result.timestamp.proof);
+getInfo(result.timestamp.ots.proof);
 
 // Upgrade and check
 // console.log("Upgrading...");
 // await dbUpgrade(db, waczCID, attribute, sigPubKey);
-// getInfo(result.timestamp.proof);
+// getInfo(result.timestamp.ots.proof);
 
 // Encrypted value
 //
