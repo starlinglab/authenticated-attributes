@@ -4,7 +4,7 @@ import { CID } from "multiformats";
 import { getPublicKeyAsync } from "@noble/ed25519";
 import { signAttestation } from "./signAttestation.js";
 import { encryptValue } from "./encryptValue.js";
-import { timestampAttestation } from "./timestamp.js";
+import { timestampAttestation } from "./otsTimestamp.js";
 import { makeKey } from "./makeKey.js";
 import { dbGet } from "./dbGet.js";
 
@@ -27,7 +27,7 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
   };
   const signature = await signAttestation(sigKey, rawAttestation);
   const signedAttestation = {
-    ...rawAttestation,
+    attestation: rawAttestation,
     signature,
   };
 
@@ -37,7 +37,7 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
     attestation.encrypted = true;
   }
 
-  const timestamp = await timestampAttestation(signedAttestation);
+  const otsTimestamp = await timestampAttestation(signedAttestation);
 
   const key = makeKey(id, attr);
   return db.put(
@@ -45,7 +45,9 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
     encode({
       attestation,
       signature,
-      timestamp,
+      timestamp: {
+        ots: otsTimestamp,
+      },
     })
   );
 };

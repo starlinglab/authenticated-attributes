@@ -47,10 +47,10 @@ The NaCl API is used, so the specific encryption algorithm is xsalsa20-poly1305.
 
 ## Database
 
-Hyperbee is a key-value database. For this codebase, the key is the CID of the asset, followed by a slash, followed by the name of the attestation. For example:
+Hyperbee is a key-value database. For this codebase, the key is the CID of the asset, followed by a slash, followed by the name of the attestation. All keys are prefixed by a type. An example for an attestation is:
 
 ```
-bafkreif7gtpfl7dwi5nflge2rsfp6vq6q5kkwfm7uvxyyezxhsnde5ly3y/description
+att/bafkreif7gtpfl7dwi5nflge2rsfp6vq6q5kkwfm7uvxyyezxhsnde5ly3y/description
 ```
 
 The value is described below.
@@ -65,15 +65,19 @@ Database entries are stored as binary data, encoded with [DAG-CBOR](https://ipld
 {
   signature: {
     pubKey: Uint8Array(32),
-    signature: Uint8Array(64),
+    sig: Uint8Array(64),
     // CID of "attestation" object
-    signedMsg: CID(bafyreietqpflteqz6kj7lmdqz76kzkwdo65o4bhivxrmqvha7pdgixxos4)
+    msg: CID(bafyreietqpflteqz6kj7lmdqz76kzkwdo65o4bhivxrmqvha7pdgixxos4)
   },
   timestamp: {
-    proof: Uint8Array(503),
-    upgraded: false,
-    // CID of "signature" object inserted as a key of "attestation"
-    timestampedValue: CID(bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m)
+    ots: { // OpenTimestamps
+        proof: Uint8Array(503),
+        upgraded: false,
+        // CID of signature and attestation objects together in a map:
+        // {signature, attestation}
+        msg: CID(bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m)
+    }
+    // Possible other timestamp formats in the future
   },
   attestation: {
     // CID of asset file, same CID as in the database key
@@ -86,9 +90,9 @@ Database entries are stored as binary data, encoded with [DAG-CBOR](https://ipld
 }
 ```
 
-The binary data of `timestamp.proof` does not have a specified size, the size mentioned above is just an example and may vary in some cases.
+The binary data of `timestamp.ots.proof` does not have a specified size, the size mentioned above is just an example and may vary in some cases.
 
-When `CID(...)` is shown that represents a CID stored natively, not as text. Thanks to the DAG-CBOR encoding we are able to do this. We are also able to get the CID of non-files such as particular DAG-CBOR objects. This is what allows the usage of CIDs for `signedMsg` and `timestampedValue`.
+When `CID(...)` is shown that represents a CID stored natively, not as text. Thanks to the DAG-CBOR encoding we are able to do this. We are also able to get the CID of non-files such as particular DAG-CBOR objects. This is what allows the usage of CIDs for `signature.msg` and `timestamp.ots.msg`.
 
 Some information already in the database key is repeated in the `attestation`, such as `CID` and `attribute`. This allows for export of the whole object for external verification and use elsewhere.
 
@@ -96,7 +100,7 @@ When the attestation is encrypted, the schema looks very similar to the above. T
 
 ## Timestamping
 
-Attestations are timestamped with [OpenTimestamps](https://opentimestamps.org/). This requires Internet access and takes about one second to finish. At first only the incomplete proof is stored (indicated by `timestamp.upgraded` being `false`), but the proof can be upgraded at a later date.
+Attestations are timestamped with [OpenTimestamps](https://opentimestamps.org/). This requires Internet access and takes about one second to finish. At first only the incomplete proof is stored (indicated by `timestamp.ots.upgraded` being `false`), but the proof can be upgraded at a later date.
 
 The timestamp serves to prove that the attestation was not made after `attestation.timestamp`, within the several hours long error bars afforded by the system. In practice, this means `attestation.timestamp` is provably accurate to about a day interval.
 
@@ -139,7 +143,7 @@ It is possible to export attestations as [Verifiable Credentials](https://en.wik
   "proof": {
     "type": "authattr_ed25519_v1", // Something unique
     "pubKey": "<base64-encoded public key>",
-    "signature": "<base64-encoded signature>"
+    "sig": "<base64-encoded signature>"
   }
 }
 ```
@@ -161,4 +165,4 @@ The signature of the attestation can be verified from the VC alone, by reconstru
 | `credentialSubject.encoding`  | one of `json`, `base64_dag-cbor`, `base64_encrypted_dag-cbor` | Explains how to decode `value`. `json` means it is stored natively.                                                                        |
 | `proof.type`                  | string                                                        | Always `authattr_ed25519_v1`, except for version updates                                                                                   |
 | `proof.pubKey`                | string                                                        | Base64-encoded ed25519 public key                                                                                                          |
-| `proof.signature`             | string                                                        | Base64-encoded ed25519 signature                                                                                                           |
+| `proof.sig`                   | string                                                        | Base64-encoded ed25519 signature                                                                                                           |

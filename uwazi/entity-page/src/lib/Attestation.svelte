@@ -182,7 +182,7 @@
         <p><strong>Signature:</strong> ...</p>
         <p>
           <strong>Attestation CID:</strong>
-          <code>{data.signature.signedMsg}</code>
+          <code>{data.signature.msg}</code>
         </p>
         <p><strong>Timestamping Proof:</strong> ...</p>
       </div>

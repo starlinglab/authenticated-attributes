@@ -65,7 +65,7 @@
     const bufferPromises = [];
     for (let i = 0; i < sources.length; i++) {
       bufferPromises.push(
-        fetch(`${sources[i].server}/${cid}`).then((value) => {
+        fetch(`${sources[i].server}/c/${cid}`).then((value) => {
           if (!value.ok) {
             setErrMsg(`failed to load data: ${value.statusText}`);
             throw new Error("failed to load data");
@@ -432,7 +432,7 @@
       for (let i = 0; i < $hyperbeeSources.length; i++) {
         const hb = $hyperbeeSources[i];
         bufferPromises.push(
-          fetch(`${hb.server}/${fcid}`).then((value) => {
+          fetch(`${hb.server}/c/${fcid}`).then((value) => {
             if (!value.ok) {
               setErrMsg(`failed to load data: ${value.statusText}`);
               setLoading(false);

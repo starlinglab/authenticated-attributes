@@ -1,6 +1,6 @@
 import { encode } from "@ipld/dag-cbor";
 import { dbGet } from "./dbGet.js";
-import { upgradeTimestampAttestation } from "./timestamp.js";
+import { upgradeTimestampAttestation } from "./otsTimestamp.js";
 import { makeKey } from "./makeKey.js";
 
 /**

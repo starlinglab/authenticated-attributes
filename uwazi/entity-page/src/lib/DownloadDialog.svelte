@@ -35,7 +35,7 @@
     ]);
     try {
       const res = await fetch(
-        new URL(`${fileCid}?index=1`, $hyperbeeSources[curSource].server),
+        new URL(`c/${fileCid}?index=1`, $hyperbeeSources[curSource].server),
         {
           method: "POST",
           credentials: "include",

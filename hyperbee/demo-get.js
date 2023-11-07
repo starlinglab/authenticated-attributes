@@ -3,7 +3,7 @@ import Hyperbee from "hyperbee";
 import { getPublicKeyAsync } from "@noble/ed25519";
 
 import { keyFromPem } from "./src/signAttestation.js";
-import { getInfo } from "./src/timestamp.js";
+import { getInfo } from "./src/otsTimestamp.js";
 import { dbGet, dbIsEncrypted, dbRawValue } from "./src/dbGet.js";
 
 // Set up Hypercore and Hyperbee
@@ -28,12 +28,12 @@ console.log(result);
 // console.log('timestamp verified?', verifyTimestamp(resultObj));
 
 console.log("\nExtra timestamp info:");
-getInfo(result.timestamp.proof);
+getInfo(result.timestamp.ots.proof);
 
 // Upgrade and check
 // console.log("Upgrading...");
 // await dbUpgrade(db, waczCID, attribute, sigPubKey);
-// getInfo(result.timestamp.proof);
+// getInfo(result.timestamp.ots.proof);
 
 // Encrypted value
 //

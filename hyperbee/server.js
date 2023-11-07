@@ -130,20 +130,22 @@ app.get("/i", async (req, res) => {
 });
 
 // Get all attestations for CID
-app.get("/:cid", async (req, res) => {
+app.get("/c/:cid", async (req, res) => {
   const metadata = {};
   for await (const { key, value } of db.createReadStream({
-    gte: req.params.cid,
-    lt: `${req.params.cid}0`, // 0 is the symbol after / in binary, so the range of keys is the keys in the format <cid>/<any>
+    gte: `att/${req.params.cid}`,
+    lt: `att/${req.params.cid}0`, // 0 is the symbol after / in binary, so the range of keys is the keys in the format <cid>/<any>
   })) {
-    metadata[key.slice(req.params.cid.length + 1)] = decode(value);
+    // Key of map is database key but with prefix (att), CID, and slash separators removed
+    // Prefix + CID-ending slash is 5 chars
+    metadata[key.slice(req.params.cid.length + 5)] = decode(value);
   }
   res.type("application/cbor");
   res.send(Buffer.from(encode(metadata)));
 });
 
 // Set a single attestation for a CID
-app.post("/:cid/:attr", async (req, res, next) => {
+app.post("/c/:cid/:attr", async (req, res, next) => {
   // Expected body from client is dag-cbor encoded
   // Two attrs in map:
   //
@@ -174,7 +176,7 @@ app.post("/:cid/:attr", async (req, res, next) => {
 });
 
 // Set multiple attestations for a CID
-app.post("/:cid", async (req, res, next) => {
+app.post("/c/:cid", async (req, res, next) => {
   // Expected body from client is dag-cbor encoded
   // Example:
   //

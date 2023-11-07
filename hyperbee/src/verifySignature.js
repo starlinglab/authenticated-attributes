@@ -9,9 +9,9 @@ import { encodeAttestation } from "./encodeAttestation.js";
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 const verifyAttSignature = async (attestationObj, givenPubKey) => {
-  // check that the signedMsg is the CID for the rawAttestation
+  // check that the signed message is the CID for the rawAttestation
   const rawAttestationCID = await encodeAttestation(attestationObj.attestation);
-  if (!rawAttestationCID.equals(attestationObj.signature.signedMsg)) {
+  if (!rawAttestationCID.equals(attestationObj.signature.msg)) {
     throw new Error(
       "Could not verify signature due to the signed message not matching the raw attestation CID"
     );
@@ -19,7 +19,7 @@ const verifyAttSignature = async (attestationObj, givenPubKey) => {
 
   // verify the signature object
 
-  const { signature, signedMsg, pubKey } = attestationObj.signature;
+  const { sig, msg, pubKey } = attestationObj.signature;
 
   // Confirm public key matches expected one
   const areEqual =
@@ -31,7 +31,7 @@ const verifyAttSignature = async (attestationObj, givenPubKey) => {
     );
   }
 
-  const isValid = await verifyAsync(signature, signedMsg, givenPubKey);
+  const isValid = await verifyAsync(sig, msg, givenPubKey);
   if (!isValid) {
     throw new Error("signature could not be validated");
   }

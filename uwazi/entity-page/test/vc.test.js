@@ -47,7 +47,7 @@ async function verifyVC(vc) {
     hasher: sha256,
   });
   return verifyAsync(
-    base64ToUint8Array(vc.proof.signature),
+    base64ToUint8Array(vc.proof.sig),
     block.cid,
     base64ToUint8Array(vc.proof.pubKey)
   );
@@ -60,15 +60,15 @@ test("verify sig", async () => {
       pubKey: base64ToUint8Array(
         "67meek60cPVutfMasym54S0UOcceEtWrJbcgSp6QPDc="
       ),
-      signature: base64ToUint8Array(
+      sig: base64ToUint8Array(
         "xlSI5d4DisnP4NDgeqq+UYIoTauUy8ZgdczqJg/krZLfRuNvhgUIRaVEblZ5gjZ7QU9deZ/xcPZKG59aKy/lDg=="
       ),
       // CID of "attestation" object
-      signedMsg: CID.parse(
+      msg: CID.parse(
         "bafyreiadeqqwoqzxa6ckri3f6rhozd37p6crtbjo5ljemzt2sbf3uuyq7m"
       ),
     },
-    timestamp: {}, // ignored for VC
+    timestamp: { ots: {} }, // ignored for VC
     attestation: {
       // CID of asset file, same CID as in the database key
       CID: CID.parse(
@@ -89,7 +89,7 @@ test("verify sig", async () => {
       '"credentialSubject":{"id":"urn:cid:bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54",' +
       '"attribute":"mime","value":"application/wacz","encoding":"json"},' +
       '"proof":{"type":"authattr_ed25519_v1","pubKey":"67meek60cPVutfMasym54S0UOcceEtWrJbcgSp6QPDc=",' +
-      '"signature":"xlSI5d4DisnP4NDgeqq+UYIoTauUy8ZgdczqJg/krZLfRuNvhgUIRaVEblZ5gjZ7QU9deZ/xcPZKG59aKy/lDg=="}}'
+      '"sig":"xlSI5d4DisnP4NDgeqq+UYIoTauUy8ZgdczqJg/krZLfRuNvhgUIRaVEblZ5gjZ7QU9deZ/xcPZKG59aKy/lDg=="}}'
   );
   const vc = JSON.parse(vcStr);
   expect(await verifyVC(vc)).toBe(true);
@@ -104,13 +104,13 @@ test("verify float change", async () => {
   const vcStr = vcExport({
     signature: {
       pubKey: new Uint8Array(32).fill(1),
-      signature: new Uint8Array(64).fill(1),
+      sig: new Uint8Array(64).fill(1),
       // CID of "attestation" object
-      signedMsg: CID.parse(
+      msg: CID.parse(
         "bafyreietqpflteqz6kj7lmdqz76kzkwdo65o4bhivxrmqvha7pdgixxos4"
       ),
     },
-    timestamp: {},
+    timestamp: { ots: {} },
     attestation: {
       // CID of asset file, same CID as in the database key
       CID: CID.parse(
@@ -131,7 +131,7 @@ test("verify float change", async () => {
       '"credentialSubject":{"id":"urn:cid:bafkreif7gtpfl7dwi5nflge2rsfp6vq6q5kkwfm7uvxyyezxhsnde5ly3y",' +
       '"attribute":"test","value":5e-324,"encoding":"json"},' +
       '"proof":{"type":"authattr_ed25519_v1","pubKey":"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQE=",' +
-      '"signature":"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="}}'
+      '"sig":"AQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQEBAQ=="}}'
   );
   const vc = JSON.parse(vcStr);
   expect(dagCBOR.decode(dagCBOR.encode(vc.credentialSubject.value))).toBe(
