@@ -151,7 +151,7 @@ class Entity:
         # Don't share session with Uwazi server
         params = {"index": "1"} if indexing else {}
         r = requests.post(
-            f"{AUTHATTR_SERVER}/{self.cid}",
+            f"{AUTHATTR_SERVER}/c/{self.cid}",
             headers={"Authorization": "Bearer " + AUTHATTR_JWT},
             data=encoded_metadata,
             params=params,
