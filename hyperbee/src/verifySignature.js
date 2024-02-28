@@ -8,6 +8,13 @@ import { encodeAttestation } from "./encodeAttestation.js";
 // https://github.com/paulmillr/noble-ed25519#usage
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
+/**
+ * @ignore
+ * @throws if failed to verify
+ * @param {*} attestationObj
+ * @param {Uint8Array} givenPubKey
+ * @returns {true}
+ */
 const verifyAttSignature = async (attestationObj, givenPubKey) => {
   // check that the signed message is the CID for the rawAttestation
   const rawAttestationCID = await encodeAttestation(attestationObj.attestation);

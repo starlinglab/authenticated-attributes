@@ -13,16 +13,19 @@ import { makeKey } from "./makeKey.js";
  *
  * The "encrypted" boolean will not be changed.
  *
- * If "reduced" is set to true only the value and timestamp are returned,
- * not the whole object.
- *
  * Timestamping is currently not validated.
- *
- * sigKey is an ed25519 public key.
  *
  * null is returned if the key doesn't exist in the database.
  *
  * Providing a batch instead of a db is allowed.
+ *
+ * @param {*} db - Hyperbee or batch
+ * @param {string} id - CID
+ * @param {string} attr - attribute/key
+ * @param {Uint8Array} sigKey - ed25519 public key
+ * @param {Uint8Array} [encKey=false] - 32 byte key, if decryption is needed
+ * @param {boolean} [reduced=false] - if set to true only the value and timestamp are returned, not the whole object
+ * @returns {object|null} - see schema docs
  */
 const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
   const result = await db.get(makeKey(id, attr));
@@ -52,6 +55,11 @@ const dbGet = async (db, id, attr, sigKey, encKey = false, reduced = false) => {
  * No signatures are validated.
  *
  * null is returned if the key doesn't exist in the database.
+ *
+ * @param {*} db - Hyperbee or batch
+ * @param {string} id - CID
+ * @param {string} attr - attribute/key
+ * @returns {boolean|null}
  */
 const dbIsEncrypted = async (db, id, attr) => {
   const result = await db.get(makeKey(id, attr));
@@ -69,6 +77,11 @@ const dbIsEncrypted = async (db, id, attr) => {
  * Specifically the attestation value is returned.
  *
  * null is returned if the key doesn't exist in the database.
+ *
+ * @param {*} db - Hyperbee or batch
+ * @param {string} id - CID
+ * @param {string} attr - attribute/key
+ * @returns {*}
  */
 const dbRawValue = async (db, id, attr) => {
   const result = await db.get(makeKey(id, attr));

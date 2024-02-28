@@ -6,7 +6,12 @@ import { makeKey } from "./makeKey.js";
 /**
  * Upgrade the OTS timestamp of an attestation, then save that new timestamp.
  *
- * sigKey is an ed25519 public key.
+ * @param {*} db - Hyperbee or batch
+ * @param {string} id - CID
+ * @param {string} attr - attribute/key
+ * @param {Uint8Array} sigKey - ed25519 public key
+ * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
+ * @returns {*} - underlying hyperbee db.put result, usually undefined
  */
 const dbUpgrade = async (db, id, attr, sigKey, encryptionKey = false) => {
   const att = await dbGet(db, id, attr, sigKey, encryptionKey);

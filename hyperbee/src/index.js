@@ -2,6 +2,11 @@
 //
 // Checks are in place for each encode function
 
+/**
+ * @module
+ * @ignore
+ */
+
 const encodeUint32 = (uint) => {
   if (!Number.isSafeInteger(uint) || uint > 2 ** 32 - 1 || uint < 0) {
     throw new Error("not uint32");

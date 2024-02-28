@@ -3,6 +3,12 @@ import pkg from "tweetnacl";
 
 const { secretbox } = pkg;
 
+/**
+ * @ignore
+ * @param {*} msgWithNonce
+ * @param {*} encryptionKey
+ * @returns {*}
+ */
 const decryptValue = (msgWithNonce, encryptionKey) => {
   // Adapted from https://github.com/dchest/tweetnacl-js/wiki/Examples#secretbox
   const nonce = msgWithNonce.slice(0, secretbox.nonceLength);

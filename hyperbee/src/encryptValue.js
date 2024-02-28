@@ -1,6 +1,11 @@
 import { encode } from "@ipld/dag-cbor";
 import pkg from "tweetnacl";
 
+/**
+ * @module
+ * @ignore
+ */
+
 const { secretbox, randomBytes } = pkg;
 
 const newKey = () => randomBytes(secretbox.keyLength);

@@ -11,10 +11,10 @@ import assert from "node:assert";
 import { dbPut, setSigningKey } from "./src/dbPut.js";
 import { keyFromPem } from "./src/signAttestation.js";
 import { encodeFromType, indexFindMatches, indexPut } from "./src/index.js";
+import { dbRawValue } from "./src/dbGet.js";
 
 // Last import
 import "dotenv/config";
-import { dbRawValue } from "./src/dbGet.js";
 
 const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigKey);
@@ -69,29 +69,11 @@ app.use((err, req, res, next) => {
 
 /// Routes ///
 
+// All routes are documented in docs/http.md rather than here.
+
 // Search index (data in query params)
 // CIDs are returned
 app.get("/i", async (req, res) => {
-  // Currently for search only exact matches are supported
-  //
-  // Data is sent through query params
-  // Example query params (decoded into an object):
-  //
-  // {
-  //   query: "match",
-  //   key: <str>,
-  //   val: <int|float|str>
-  //   type: "int32|unix|uint32|str|float64"
-  // }
-  //
-  // "unix" means Unix time in milliseconds stored as an int64.
-  //
-  // An additional key is available: {names: "1"}. This enables setting the
-  // names of the assets. The output is no longer an array of CIDs but instead
-  // an array of objects: {"name": "<name of asset>", "cid": "<cid of asset>"}.
-  // The names of the asset are pulled from the `title` or `name` attestation,
-  // in that order.
-
   if (req.query.query !== "match") {
     res.status(400).send("only match queries are supported");
     return;
@@ -146,14 +128,6 @@ app.get("/c/:cid", async (req, res) => {
 
 // Set a single attestation for a CID
 app.post("/c/:cid/:attr", async (req, res, next) => {
-  // Expected body from client is dag-cbor encoded
-  // Two attrs in map:
-  //
-  // {
-  //   value: <any value>,
-  //   encKey: <false or bytes>
-  // }
-
   let data;
   try {
     data = decode(new Uint8Array(req.body));
@@ -177,21 +151,6 @@ app.post("/c/:cid/:attr", async (req, res, next) => {
 
 // Set multiple attestations for a CID
 app.post("/c/:cid", async (req, res, next) => {
-  // Expected body from client is dag-cbor encoded
-  // Example:
-  //
-  // [
-  //   {"key": "caption", "value": "foo", "type": "str"}
-  //   {"key": "rating", "value": 3.5, "type": "float64"}
-  // ]
-  //
-  // "type" is one of int32|unix|uint32|str|float64
-  // where "unix" means Unix time in milliseconds stored as an int64.
-  // If "type" is not included or null the field will never be indexed.
-  //
-  // If query param "index" is set to "1" (like: ?index=1)
-  // then indexing will be done for each attribute (except as described above).
-
   let data;
   try {
     data = decode(new Uint8Array(req.body));

@@ -3,6 +3,11 @@ import OpenTimestamps from "opentimestamps";
 
 import { encodeAttestation } from "./encodeAttestation.js";
 
+/**
+ * @module
+ * @ignore
+ */
+
 const timestampAttestation = async (signedAttestation) => {
   const signedAttCID = await encodeAttestation(signedAttestation);
   const detached = OpenTimestamps.DetachedTimestampFile.fromBytes(

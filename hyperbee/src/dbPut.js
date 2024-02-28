@@ -10,12 +10,22 @@ import { dbGet } from "./dbGet.js";
 
 let sigKey = null;
 
+/**
+ * Set a global signing key for write operations.
+ * @param {Uint8Array} privKey - ed25519 private key
+ */
 const setSigningKey = (privKey) => {
   sigKey = privKey;
 };
 
 /**
- * Providing a batch instead of a db is allowed.
+ * Put data in the database.
+ * @param {*} db - Hyperbee or batch
+ * @param {string} id - CID
+ * @param {string} attr - attribute/key
+ * @param {*} value - data to be stored, as JavaScript object
+ * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
+ * @returns {*} - underlying hyperbee db.put result, usually undefined
  */
 const dbPut = async (db, id, attr, value, encryptionKey = false) => {
   const rawAttestation = {
@@ -64,6 +74,13 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
  *
  * A batch is used so that the append is treated as one locked atomic operation,
  * not a separate read and write.
+ *
+ * @param {*} db - Hyperbee
+ * @param {string} id - CID
+ * @param {string} attr - attribute/key
+ * @param {*} value - data to be stored, as JavaScript object
+ * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
+ * @returns {*} - array as now stored in database
  */
 const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
   const batch = db.batch();
@@ -95,6 +112,8 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
 };
 
 /**
+ * Add a relation to the database according to our relationship schema.
+ *
  * If the given key and/or verb doesn't exist it will be created.
  *
  * Duplicate CIDs in the array are allowed.
@@ -102,6 +121,8 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
  * A batch is used so that the change is treated as one locked atomic operation,
  * not a separate read and write.
  *
+ * @param {*} db - Hyperbee
+ * @param {string} id - CID
  * @param {string} childOrParent is either "children" or "parents" as the db key
  * @param {string} verb is a verb for the relation like "derived" or "transcoded"
  * @param {CID} relationCid is the CID object to be added as a relation
@@ -139,6 +160,12 @@ const dbAddRelation = async (db, id, childOrParent, verb, relationCid) => {
 
 /**
  * Same as dbAddRelation. The first CID that matches the given one is removed.
+ *
+ * @param {*} db - Hyperbee
+ * @param {string} id - CID
+ * @param {string} childOrParent is either "children" or "parents" as the db key
+ * @param {string} verb is a verb for the relation like "derived" or "transcoded"
+ * @param {CID} relationCid is the CID object to be added as a relation
  */
 const dbRemoveRelation = async (db, id, childOrParent, verb, relationCid) => {
   if (childOrParent !== "children" && childOrParent !== "parents") {
