@@ -3,8 +3,8 @@ import time
 import logging
 
 
-from .entity import Entity, EntityError
-from .config import LOGLEVEL, UWAZI_SERVER, USERNAME, PASSWORD
+from .entity import Entity, EntityError, load_entity_data, save_entity_data
+from .config import LOGLEVEL, UWAZI_SERVER, USERNAME, PASSWORD, ENTITY_DATA
 from .template import Template
 
 # Seconds to delay in loops
@@ -115,6 +115,8 @@ def main():
     login()
     logging.info("started and logged in to Uwazi")
 
+    load_entity_data(ENTITY_DATA)
+
     while True:
         load_templates()
         logging.debug("loaded templates")
@@ -127,6 +129,7 @@ def main():
 
             entity.metadata_hyperbee_sync()
 
+        save_entity_data(ENTITY_DATA)
         time.sleep(LOOP_DELAY)
         # Prevents error: requests.exceptions.ConnectionError: ('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))
         session.close()
@@ -138,6 +141,7 @@ while True:
     try:
         main()
     except Exception:  # pylint: disable=broad-exception-caught
+        save_entity_data(ENTITY_DATA)
         logging.exception(
             "unexpected exception was raised, waiting 30 secs then restarting"
         )

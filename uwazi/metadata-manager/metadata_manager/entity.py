@@ -6,6 +6,7 @@ import logging
 from typing import Optional
 from hashlib import sha256
 from collections import defaultdict
+import pickle
 
 import dag_cbor
 
@@ -18,14 +19,6 @@ from .config import (
 )
 from .template import Template
 
-# Track what metadata was last sent to the hyperbee server, to prevent needless writes
-# Maps entity CID to metadata object, "metadata"
-entity_metadata = defaultdict(lambda: {})
-
-# Track when entities were last edited, to skip processing metadata early
-# Maps entity CID to Unix millis timestamp from Uwazi "editDate".
-entity_edit_dates = defaultdict(lambda: 0)
-
 
 class EntityError(Exception):
     pass
@@ -33,6 +26,14 @@ class EntityError(Exception):
 
 class Entity:
     """Uwazi Entity"""
+
+    # Track what metadata was last sent to the hyperbee server, to prevent needless writes
+    # Maps entity CID to metadata object, "metadata"
+    entity_metadata = defaultdict(dict)
+
+    # Track when entities were last edited, to skip processing metadata early
+    # Maps entity CID to Unix millis timestamp from Uwazi "editDate".
+    entity_edit_dates = defaultdict(int)
 
     def __init__(
         self, data: dict, templates: dict[str, Template], session=None
@@ -132,7 +133,7 @@ class Entity:
             logging.debug("no sync due to empty metadata for %s", self)
             return
 
-        if entity_edit_dates[self.cid] >= self.data["editDate"]:
+        if Entity.entity_edit_dates[self.cid] >= self.data["editDate"]:
             # Hasn't been edited since last upload
             logging.debug("skipping meta upload due to editDate for %s", self)
             return
@@ -144,14 +145,14 @@ class Entity:
         for field, values in self.data["metadata"].items():
             if field == CID_METADATA_NAME:
                 continue
-            if entity_metadata[self.cid].get(field) != values:
+            if Entity.entity_metadata[self.cid].get(field) != values:
                 # Has changed
                 changed_metadata[field] = values
 
         aa_metadata = self._get_authattr_metadata(changed_metadata)
 
         # Manually handle Uwazi title, not in metadata object
-        if entity_metadata[self.cid].get("title") != self.data["title"]:
+        if Entity.entity_metadata[self.cid].get("title") != self.data["title"]:
             aa_metadata.append(
                 {"key": "title", "value": self.data["title"], "type": "str"}
             )
@@ -172,10 +173,10 @@ class Entity:
             return
 
         # Success, update global records
-        entity_edit_dates[self.cid] = self.data["editDate"]
+        Entity.entity_edit_dates[self.cid] = self.data["editDate"]
         for field, values in changed_metadata.items():
-            entity_metadata[self.cid][field] = values
-        entity_metadata[self.cid]["title"] = self.data["title"]
+            Entity.entity_metadata[self.cid][field] = values
+        Entity.entity_metadata[self.cid]["title"] = self.data["title"]
 
         logging.info("successful metadata upload for %s", self)
 
@@ -236,3 +237,25 @@ class Entity:
             return
 
         logging.info("set CID for %s", self)
+
+
+def load_entity_data(path):
+    if not os.path.exists(path):
+        logging.warning("skipping entity data loading, file not found: %s", path)
+        return
+
+    with open(path, "rb") as f:
+        data = pickle.load(f)
+    Entity.entity_metadata = data["entity_metadata"]
+    Entity.entity_edit_dates = data["entity_edit_dates"]
+    logging.info("loaded entity data from %s", path)
+
+
+def save_entity_data(path):
+    data = {
+        "entity_metadata": Entity.entity_metadata,
+        "entity_edit_dates": Entity.entity_edit_dates,
+    }
+    with open(path, "wb") as f:
+        pickle.dump(data, f)
+    logging.debug("saved entity data to %s", path)
