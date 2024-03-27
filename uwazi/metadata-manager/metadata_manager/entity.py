@@ -5,6 +5,7 @@ import subprocess
 import logging
 from typing import Optional
 from hashlib import sha256
+from collections import defaultdict
 
 import dag_cbor
 
@@ -18,8 +19,12 @@ from .config import (
 from .template import Template
 
 # Track what metadata was last sent to the hyperbee server, to prevent needless writes
-# Maps entity CID to SHA-256 hash of DAG-CBOR metadata sent to hyperbee server
-entity_metadata = {}
+# Maps entity CID to metadata object, "metadata"
+entity_metadata = defaultdict(lambda: {})
+
+# Track when entities were last edited, to skip processing metadata early
+# Maps entity CID to Unix millis timestamp from Uwazi "editDate".
+entity_edit_dates = defaultdict(lambda: 0)
 
 
 class EntityError(Exception):
@@ -91,38 +96,24 @@ class Entity:
             ].startswith("preview."):
                 return attachment["filename"]
 
-    def _get_authattr_metadata(self) -> list:
+    def _get_authattr_metadata(self, data) -> list:
         """
         Returns the entity's metadata as a format an Authenticated Attributes server will accept.
 
-        The CID metadata field is not included.
-
-        The title of the Uwazi entity is included under the name "title", despite
-        being outside the "metadata" field.
+        The metadata is given in the `data` param, not taken from the instance to allow
+        a subset of metadata to be provided.
 
         Relationships are not supported, everything else should be.
         """
-
-        # "metadata" field in self.data contains what we need
-        # metadata': {'test_metadata': [{'value': 'foo'}], 'sha256cid': [{'value': 'bafkreicq4s4oweux2bkwsuktmjyl4gagx3englpwd7fa6uvsv3mvokzgzy'}]}
 
         # See the POST to /:cid function in server.js for an example of what format
         # is being conformed to here.
         ret = []
 
-        for field, values in self.data["metadata"].items():
-            if field == CID_METADATA_NAME:
-                continue
-            if field == "title":
-                # This will be replaced by the Uwazi entity title
-                continue
-
+        for field, values in data.items():
             entry = self.template.encode_authattr(field, values)
             if entry is not None:
                 ret.append(entry)
-
-        # Add Uwazi entity title
-        ret.append({"key": "title", "value": self.data["title"], "type": "str"})
 
         return ret
 
@@ -135,25 +126,42 @@ class Entity:
         Metadata is not actually sent if it matches what was sent last time.
         """
 
-        metadata = self._get_authattr_metadata()
+        metadata = self.data.get("metadata")
         if not metadata:
             # Empty, skip
             logging.debug("no sync due to empty metadata for %s", self)
             return
 
-        encoded_metadata = dag_cbor.encode(metadata)
-        meta_hash = sha256(encoded_metadata).digest()
-        if entity_metadata.get(self.cid) == meta_hash:
-            # Don't re-upload
-            logging.debug("skipping metadata upload for %s", self)
+        if entity_edit_dates[self.cid] >= self.data["editDate"]:
+            # Hasn't been edited since last upload
+            logging.debug("skipping meta upload due to editDate for %s", self)
             return
+
+        # Check which metadata items have changed and encode those
+
+        changed_metadata = {}  # subset with same shape as metadata
+
+        for field, values in self.data["metadata"].items():
+            if field == CID_METADATA_NAME:
+                continue
+            if entity_metadata[self.cid].get(field) != values:
+                # Has changed
+                changed_metadata[field] = values
+
+        aa_metadata = self._get_authattr_metadata(changed_metadata)
+
+        # Manually handle Uwazi title, not in metadata object
+        if entity_metadata[self.cid].get("title") != self.data["title"]:
+            aa_metadata.append(
+                {"key": "title", "value": self.data["title"], "type": "str"}
+            )
 
         # Don't share session with Uwazi server
         params = {"index": "1"} if indexing else {}
         r = requests.post(
             f"{AUTHATTR_SERVER}/c/{self.cid}",
             headers={"Authorization": "Bearer " + AUTHATTR_JWT},
-            data=encoded_metadata,
+            data=dag_cbor.encode(aa_metadata),
             params=params,
             timeout=10,
         )
@@ -163,8 +171,12 @@ class Entity:
             )
             return
 
-        # Success, record it
-        entity_metadata[self.cid] = meta_hash
+        # Success, update global records
+        entity_edit_dates[self.cid] = self.data["editDate"]
+        for field, values in changed_metadata.items():
+            entity_metadata[self.cid][field] = values
+        entity_metadata[self.cid]["title"] = self.data["title"]
+
         logging.info("successful metadata upload for %s", self)
 
     def _calc_cid(self) -> str:
