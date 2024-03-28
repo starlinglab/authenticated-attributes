@@ -1028,6 +1028,7 @@
   }
   #non-sidebar {
     flex-grow: 1;
+    width: 70%;
     height: 100%;
     display: flex;
     flex-direction: column;
