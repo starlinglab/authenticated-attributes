@@ -126,6 +126,20 @@ app.get("/c/:cid", async (req, res) => {
   res.send(Buffer.from(encode(metadata)));
 });
 
+// Get all CIDs
+app.get("/cids", async (req, res) => {
+  const cids = new Set();
+  for await (const { key } of db.createReadStream({
+    gt: "att/",
+    lt: "att0", // 0 is the symbol after / in binary
+  })) {
+    // keys are in the form "att/<cid>/<attr>", we only want the CID
+    cids.add(key.toString().split("/")[1]);
+  }
+  res.type("application/cbor");
+  res.send(Buffer.from(encode(Array.from(cids))));
+});
+
 // Set a single attestation for a CID
 app.post("/c/:cid/:attr", async (req, res, next) => {
   let data;

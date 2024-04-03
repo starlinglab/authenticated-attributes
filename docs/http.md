@@ -10,6 +10,7 @@
     - [POST /c/:cid/:attr](#post-ccidattr)
     - [POST /c/:cid](#post-ccid)
     - [GET /i](#get-i)
+    - [GET /cids](#get-cids)
 
 
 ## Running
@@ -98,3 +99,7 @@ Example query params (decoded as an object):
 The response body is a DAG-CBOR encoded array of CID strings (not CID objects).
 
 One additional query param is available: `{names: "1"}`. This enables setting the names of the assets. The response body is no longer an array of CIDs but instead an array of objects: `{"name": "<name of asset>", "cid": "<cid of asset>"}`. The names of the asset are pulled from the `title` or `name` attestation of the CID if it exists (in that order). This is just a convenience method for applications trying to make a more friendly search results page.
+
+### GET /cids
+
+Get all the CIDs stored in this database. The response is a DAG-CBOR encoded array of strings, not CID objects.
