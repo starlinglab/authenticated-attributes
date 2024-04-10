@@ -87,7 +87,29 @@ app.get("/i", async (req, res) => {
     return;
   }
 
-  const cids = await indexFindMatches(db, req.query.key, encodedValue);
+  let cids = [];
+
+  if (req.query.type === "str-array") {
+    if (req.query.query !== "intersect") {
+      res.status(400).send("query type not supported with str-array");
+      return;
+    }
+
+    // Return all matches for all parts of array
+    // XXX this is quadratic-time-ish
+    const indexPromises = [];
+    for (const item of encodedValue) {
+      indexPromises.push(indexFindMatches(db, req.query.key, item));
+    }
+    const results = await Promise.all(indexPromises); // Array of CID string arrays
+    for (const result of results) {
+      cids.push(...result);
+    }
+  } else {
+    // Regular type with just a single value
+    cids = await indexFindMatches(db, req.query.key, encodedValue);
+  }
+
   if (req.query.names !== "1") {
     res.type("application/cbor");
     res.send(Buffer.from(encode(cids)));
