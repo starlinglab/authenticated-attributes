@@ -74,7 +74,7 @@ app.use((err, req, res, next) => {
 // Search index (data in query params)
 // CIDs are returned
 app.get("/i", async (req, res) => {
-  if (req.query.query !== "match" || req.query.query !== "intersect") {
+  if (req.query.query !== "match" && req.query.query !== "intersect") {
     res.status(400).send("only match/intersect queries are supported");
     return;
   }
