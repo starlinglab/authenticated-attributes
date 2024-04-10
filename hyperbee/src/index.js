@@ -131,6 +131,8 @@ const encodeFromType = (val, type) => {
       return encodeString(val);
     case "float64":
       return encodeFloat64(Number(val));
+    case "str-array":
+      return encodeStrArray(val);
     default:
       throw new Error("unrecognized type");
   }
