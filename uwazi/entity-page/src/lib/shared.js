@@ -19,5 +19,8 @@ export function getIndexType(val) {
   if (typeof val === "string") {
     return "str";
   }
+  if (Array.isArray(val) && typeof val[0] === "string") {
+    return "str-array";
+  }
   return null;
 }

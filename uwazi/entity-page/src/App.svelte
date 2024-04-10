@@ -272,7 +272,7 @@
           type: "text",
           name: "sha256cid",
           indexInTemplate: 0,
-          value: "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54",
+          value: "bafybeibqzv26nf3i5lzwjooqqoowe3krgynsaeamwu6sqrkjsumel7crsm",
         },
       },
       attachments: [

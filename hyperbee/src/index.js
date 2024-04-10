@@ -96,10 +96,22 @@ const encodeInt32 = (int) => {
 const encodeString = (str) => Buffer.from(str.toLowerCase().trim());
 
 /**
+ * Encode a string array. This is more of an intermediate encoding as it just
+ * returns an array of Buffers. But indexPut will handle it.
+ */
+const encodeStrArray = (strs) => {
+  const arr = [];
+  for (const str of strs) {
+    arr.push(Buffer.from(str));
+  }
+  return arr;
+};
+
+/**
  * Uses the correct encoding function for the given params
  *
  * @param {number|string} val
- * @param {string} type - one of int32|unix|uint32|str|float64
+ * @param {string} type - one of int32|unix|uint32|str|float64|str-array
  *
  * "unix" means Unix time in milliseconds stored as an int64.
  *
@@ -124,12 +136,7 @@ const encodeFromType = (val, type) => {
   }
 };
 
-/**
- * Make an entry in the index.
- *
- * values must be encoded before being passed in, so they must always be Buffer.
- */
-const indexPut = async (db, prop, value, cid) => {
+const indexPutSingle = async (db, prop, value, cid) => {
   const bufSize = `i/${prop}/`.length + value.length + `/${cid}`.length;
   const buf = Buffer.alloc(bufSize);
   let offset = buf.write(`i/${prop}/`);
@@ -137,6 +144,37 @@ const indexPut = async (db, prop, value, cid) => {
   buf.write(`/${cid}`, offset);
   // Store key with null value
   await db.put(buf);
+};
+
+/**
+ * value should be Array of Buffer
+ */
+const indexPutArray = async (db, prop, value, cid) => {
+  let batch = db; // db might actually be batch
+  if (db.constructor.name !== "Batch") {
+    // db is not a batch so create one
+    batch = db.batch();
+    await batch.lock();
+  }
+  for (const v of value) {
+    indexPutSingle(batch, prop, v, cid);
+  }
+  if (db.constructor.name !== "Batch") {
+    await batch.flush();
+  }
+};
+
+/**
+ * Make an entry in the index.
+ *
+ * values must be encoded before being passed in, so they must always be Buffer.
+ * Or an array of buffers, in which case the type str-array is assumed.
+ */
+const indexPut = async (db, prop, value, cid) => {
+  if (Array.isArray(value)) {
+    return indexPutArray(db, prop, value, cid);
+  }
+  return indexPutSingle(db, prop, value, cid);
 };
 
 /**
@@ -182,6 +220,10 @@ const indexClear = async (db, prop) => {
  * This only works if the db was properly opened with a binary key encoding (the default).
  *
  * Matches are returned as CID strings, not CID objects.
+ *
+ * This function supports the str-array type, and so will return all CIDs that have `value`
+ * in their arrays for `prop`. So in that case `value` should just be a single Buffer, the
+ * array entry being searched for. Not the whole array itself.
  */
 const indexFindMatches = async (db, prop, value) => {
   // Create buffer for db key
@@ -213,6 +255,7 @@ export {
   encodeDate,
   encodeFloat64,
   encodeString,
+  encodeStrArray,
   indexPut,
   indexDel,
   indexClear,
