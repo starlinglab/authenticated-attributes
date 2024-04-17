@@ -80,7 +80,11 @@ app.get("/i", async (req, res) => {
   }
   let encodedValue;
   try {
-    encodedValue = encodeFromType(req.query.val, req.query.type);
+    if (req.query.type === "str-array") {
+      encodedValue = encodeFromType(JSON.parse(req.query.val), req.query.type);
+    } else {
+      encodedValue = encodeFromType(req.query.val, req.query.type);
+    }
   } catch (e) {
     console.log(e);
     res.status(400).send(e.message);

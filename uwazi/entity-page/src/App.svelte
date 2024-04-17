@@ -518,7 +518,7 @@
         params = {
           query: "intersect",
           key,
-          val,
+          val: JSON.stringify(val),
           type: indexType,
           names: "1",
         };

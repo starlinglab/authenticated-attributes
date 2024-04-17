@@ -100,6 +100,9 @@ const encodeString = (str) => Buffer.from(str.toLowerCase().trim());
  * returns an array of Buffers. But indexPut will handle it.
  */
 const encodeStrArray = (strs) => {
+  if (!Array.isArray(strs)) {
+    throw new Error("not array");
+  }
   const arr = [];
   for (const str of strs) {
     arr.push(Buffer.from(str));
