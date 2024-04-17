@@ -1,6 +1,3 @@
-*.hypercore
-icc*
-
 **/node_modules
 
 # Created by https://www.toptal.com/developers/gitignore/api/node,svelte,linux,macos,windows
