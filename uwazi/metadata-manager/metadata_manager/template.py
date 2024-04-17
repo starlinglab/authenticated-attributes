@@ -35,7 +35,7 @@ class Template:
         Relationships are currently unsupported, everything else should be.
         """
 
-        if len(values) != 1 or "value" not in values[0]:
+        if len(values) == 0 or "value" not in values[0]:
             return None
 
         prop = None
@@ -50,6 +50,9 @@ class Template:
         if prop["type"] in ("text", "markdown"):
             return {"key": prop["name"], "value": values[0]["value"], "type": "str"}
         if prop["type"] == "numeric":
+            if values[0]["value"] == "":
+                # Numeric value not set
+                return None
             return {
                 "key": prop["name"],
                 # Convert int to float so it's encoded properly in DAG-CBOR
@@ -69,10 +72,11 @@ class Template:
             return {
                 "key": prop["name"],
                 "value": [x["label"] for x in values],
-                "type": None,
+                "type": "str-array",
             }
         if prop["type"] == "relationship":
             # TODO: support this
+            # https://github.com/starlinglab/authenticated-attributes/issues/48
             return None
         if prop["type"] == "date":
             # Value is an Unix time integer

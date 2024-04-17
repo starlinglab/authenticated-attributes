@@ -272,7 +272,7 @@
           type: "text",
           name: "sha256cid",
           indexInTemplate: 0,
-          value: "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54",
+          value: "bafybeibqzv26nf3i5lzwjooqqoowe3krgynsaeamwu6sqrkjsumel7crsm",
         },
       },
       attachments: [
@@ -512,16 +512,28 @@
     const bufferPromises = [];
     for (let i = 0; i < $hyperbeeSources.length; i++) {
       const hb = $hyperbeeSources[i];
+
+      let params;
+      if (indexType === "str-array") {
+        params = {
+          query: "intersect",
+          key,
+          val: JSON.stringify(val),
+          type: indexType,
+          names: "1",
+        };
+      } else {
+        params = {
+          query: "match",
+          key,
+          val,
+          type: indexType,
+          names: "1", // asset names along with CIDs
+        };
+      }
+
       bufferPromises.push(
-        fetch(
-          `${hb.server}/i?${new URLSearchParams({
-            query: "match",
-            key,
-            val,
-            type: indexType,
-            names: "1", // asset names along with CIDs
-          })}`
-        ).then((value) => {
+        fetch(`${hb.server}/i?${new URLSearchParams(params)}`).then((value) => {
           if (!value.ok) {
             setErrMsg(`failed to load data: ${value.statusText}`);
             setLoading(false);

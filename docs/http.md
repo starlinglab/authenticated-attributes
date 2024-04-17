@@ -10,6 +10,8 @@
     - [POST /c/:cid/:attr](#post-ccidattr)
     - [POST /c/:cid](#post-ccid)
     - [GET /i](#get-i)
+      - [Query type match](#query-type-match)
+      - [Query type intersect](#query-type-intersect)
     - [GET /cids](#get-cids)
 
 
@@ -71,17 +73,18 @@ Set multiple attestations for a CID at once. The request body is a DAG-CBOR enco
 ```json
 [
   {"key": "caption", "value": "foo", "type": "str"},
-  {"key": "rating", "value": 3.5, "type": "float64"}
+  {"key": "rating", "value": 3.5, "type": "float64"},
+  {"key": "people", "value": ["Alice", "Bob", "Eve"], "type": "str-array"}
 ]
 ```
 
-`type` is one of `int32|unix|uint32|str|float64`, where "unix" means Unix time in milliseconds stored as an int64. If `type` is not included or null the attestation will never be indexed.
+`type` is one of `int32|unix|uint32|str|float64|str-array`, where "unix" means Unix time in milliseconds stored as an int64. If `type` is not included or null the attestation will never be indexed.
 
 If query param "index" is set to "1" (like: `?index=1`) then indexing will be done for each attribute (except as described above).
 
 ### GET /i
 
-Search the index, using query params. Currently only searches for exact matches are supported.
+Search the index, using query params.
 
 Example query params (decoded as an object):
 
@@ -89,7 +92,7 @@ Example query params (decoded as an object):
 {
   query: "match",
   key: <str>,
-  val: <int|float|str>
+  val: "<int|float|str>"
   type: "int32|unix|uint32|str|float64"
 }
 ```
@@ -99,6 +102,24 @@ Example query params (decoded as an object):
 The response body is a DAG-CBOR encoded array of CID strings (not CID objects).
 
 One additional query param is available: `{names: "1"}`. This enables setting the names of the assets. The response body is no longer an array of CIDs but instead an array of objects: `{"name": "<name of asset>", "cid": "<cid of asset>"}`. The names of the asset are pulled from the `title` or `name` attestation of the CID if it exists (in that order). This is just a convenience method for applications trying to make a more friendly search results page.
+
+#### Query type match
+
+The option `query: "match"` is described above. Only exact matches are retured.
+
+#### Query type intersect
+
+The option `query: "intersect"` returns all assets that have string array values sharing at least one value with the provided query array.
+
+Example query params (decoded as object):
+
+```
+{
+  query: "intersect",
+  key: <str>,
+  val: "<string array as JSON>"
+}
+```
 
 ### GET /cids
 

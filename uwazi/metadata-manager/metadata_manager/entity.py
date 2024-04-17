@@ -4,7 +4,6 @@ import json
 import subprocess
 import logging
 from typing import Optional
-from hashlib import sha256
 from collections import defaultdict
 import pickle
 

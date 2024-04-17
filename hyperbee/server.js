@@ -74,19 +74,49 @@ app.use((err, req, res, next) => {
 // Search index (data in query params)
 // CIDs are returned
 app.get("/i", async (req, res) => {
-  if (req.query.query !== "match") {
-    res.status(400).send("only match queries are supported");
+  if (req.query.query !== "match" && req.query.query !== "intersect") {
+    res.status(400).send("only match/intersect queries are supported");
     return;
   }
   let encodedValue;
   try {
-    encodedValue = encodeFromType(req.query.val, req.query.type);
+    if (req.query.type === "str-array") {
+      encodedValue = encodeFromType(JSON.parse(req.query.val), req.query.type);
+    } else {
+      encodedValue = encodeFromType(req.query.val, req.query.type);
+    }
   } catch (e) {
     res.status(400).send(e.message);
     return;
   }
 
-  const cids = await indexFindMatches(db, req.query.key, encodedValue);
+  let cids;
+
+  if (req.query.type === "str-array") {
+    if (req.query.query !== "intersect") {
+      res.status(400).send("query type not supported with str-array");
+      return;
+    }
+
+    // Return all matches for all parts of array
+    // XXX this is quadratic-time-ish
+    const indexPromises = [];
+    for (const item of encodedValue) {
+      indexPromises.push(indexFindMatches(db, req.query.key, item));
+    }
+    const results = await Promise.all(indexPromises); // Array of CID string arrays
+    cids = new Set(); // Prevent duplicate matches
+    for (const result of results) {
+      for (const cid of result) {
+        cids.add(cid);
+      }
+    }
+    cids = Array.from(cids); // Convert back to array for encoding
+  } else {
+    // Regular type with just a single value
+    cids = await indexFindMatches(db, req.query.key, encodedValue);
+  }
+
   if (req.query.names !== "1") {
     res.type("application/cbor");
     res.send(Buffer.from(encode(cids)));
