@@ -86,7 +86,6 @@ app.get("/i", async (req, res) => {
       encodedValue = encodeFromType(req.query.val, req.query.type);
     }
   } catch (e) {
-    console.log(e);
     res.status(400).send(e.message);
     return;
   }
@@ -215,7 +214,6 @@ app.post("/c/:cid", async (req, res, next) => {
         try {
           encodedValue = encodeFromType(value, type);
         } catch (e) {
-          console.log(e);
           res.status(400).send(e.message);
           return;
         }
