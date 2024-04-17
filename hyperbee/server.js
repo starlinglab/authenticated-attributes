@@ -91,7 +91,7 @@ app.get("/i", async (req, res) => {
     return;
   }
 
-  let cids = [];
+  let cids;
 
   if (req.query.type === "str-array") {
     if (req.query.query !== "intersect") {
@@ -106,9 +106,13 @@ app.get("/i", async (req, res) => {
       indexPromises.push(indexFindMatches(db, req.query.key, item));
     }
     const results = await Promise.all(indexPromises); // Array of CID string arrays
+    cids = new Set(); // Prevent duplicate matches
     for (const result of results) {
-      cids.push(...result);
+      for (const cid of result) {
+        cids.add(cid);
+      }
     }
+    cids = Array.from(cids); // Convert back to array for encoding
   } else {
     // Regular type with just a single value
     cids = await indexFindMatches(db, req.query.key, encodedValue);
