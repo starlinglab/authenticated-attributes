@@ -9,6 +9,7 @@
   },
   "extends": ["airbnb-base", "prettier"],
   "rules": {
+    "no-continue": "off",
     "import/no-unresolved": "off",
     "no-console": "off",
     "no-plusplus": ["error", { "allowForLoopAfterthoughts": true }],

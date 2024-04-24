@@ -1,3 +1,5 @@
+*.pem
+*.key
 hypercores/
 internal-scripts/
 *.hypercore
