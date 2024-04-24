@@ -42,6 +42,9 @@ for (const record of records) {
 
   if (record["Related to (CID)"].trim() !== "") {
     for (const relatedCid of str2arr(record["Related to (CID)"])) {
+      if (relatedCid === "") {
+        continue;
+      }
       promises.push(
         dbAddRelation(
           db,
@@ -58,13 +61,25 @@ for (const record of records) {
   promises.push(dbPut(db, record.CID, "publisher", record.Publisher));
   promises.push(dbPut(db, record.CID, "publish_date", record["Publish Date"]));
   promises.push(dbPut(db, record.CID, "capture_date", record["Capture Date"]));
-  promises.push(dbPut(db, record.CID, "location", record.Location));
-  promises.push(dbPut(db, record.CID, "election", str2arr(record.Election)));
-  promises.push(dbPut(db, record.CID, "candidate", str2arr(record.Candidate)));
-  promises.push(dbPut(db, record.CID, "party", str2arr(record.Party)));
-  promises.push(
-    dbPut(db, record.CID, "notes", record["Notes/ Description (Optional)"])
-  );
+  if (record.Location !== "") {
+    promises.push(dbPut(db, record.CID, "location", record.Location));
+  }
+  if (record.Election !== "") {
+    promises.push(dbPut(db, record.CID, "election", str2arr(record.Election)));
+  }
+  if (record.Candidate !== "") {
+    promises.push(
+      dbPut(db, record.CID, "candidate", str2arr(record.Candidate))
+    );
+  }
+  if (record.Party !== "") {
+    promises.push(dbPut(db, record.CID, "party", str2arr(record.Party)));
+  }
+  if (record["Notes/ Description (Optional)"] !== "") {
+    promises.push(
+      dbPut(db, record.CID, "notes", record["Notes/ Description (Optional)"])
+    );
+  }
 }
 
 await Promise.all(promises);
