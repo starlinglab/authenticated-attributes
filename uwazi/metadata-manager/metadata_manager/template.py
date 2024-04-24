@@ -47,7 +47,9 @@ class Template:
             return None
 
         # Handle based on type
-        if prop["type"] in ("text", "markdown"):
+        if prop["type"] in ("text", "rich_text", "markdown"):
+            if not values[0]["value"]:
+                return None
             return {"key": prop["name"], "value": values[0]["value"], "type": "str"}
         if prop["type"] == "numeric":
             if values[0]["value"] == "":
