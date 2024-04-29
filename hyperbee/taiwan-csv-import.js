@@ -16,6 +16,11 @@ function str2arr(s) {
   return arr;
 }
 
+function isoDate2uwazi(s) {
+  // Convert "2024-01-12" into a UTC unix timestamp: 1705017600
+  return new Date(s).getTime() / 1000;
+}
+
 const sigKey = await keyFromPem("taiwan_db2_key.pem");
 setSigningKey(sigKey);
 
@@ -59,8 +64,12 @@ for (const record of records) {
 
   promises.push(dbPut(db, record.CID, "source_url", record.URL));
   promises.push(dbPut(db, record.CID, "publisher", record.Publisher));
-  promises.push(dbPut(db, record.CID, "publish_date", record["Publish Date"]));
-  promises.push(dbPut(db, record.CID, "capture_date", record["Capture Date"]));
+  promises.push(
+    dbPut(db, record.CID, "publish_date", isoDate2uwazi(record["Publish Date"]))
+  );
+  promises.push(
+    dbPut(db, record.CID, "capture_date", isoDate2uwazi(record["Capture Date"]))
+  );
   if (record.Location !== "") {
     promises.push(dbPut(db, record.CID, "location", record.Location));
   }
