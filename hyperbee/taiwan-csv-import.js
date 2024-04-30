@@ -17,7 +17,7 @@ function str2arr(s) {
 }
 
 function isoDate2uwazi(s) {
-  // Convert "2024-01-12" into a UTC unix timestamp: 1705017600
+  // Convert "2024-01-12" into a Unix timestamp assuming UTC: 1705017600
   return new Date(s).getTime() / 1000;
 }
 
@@ -68,7 +68,20 @@ for (const record of records) {
     dbPut(db, record.CID, "publish_date", isoDate2uwazi(record["Publish Date"]))
   );
   promises.push(
-    dbPut(db, record.CID, "capture_date", isoDate2uwazi(record["Capture Date"]))
+    dbPut(
+      db,
+      record.CID,
+      "capture_date",
+      isoDate2uwazi(record["Article Photo Capture Date"])
+    )
+  );
+  promises.push(
+    dbPut(
+      db,
+      record.CID,
+      "wacz_capture_date",
+      isoDate2uwazi(record["WACZ Capture Date"])
+    )
   );
   if (record.Location !== "") {
     promises.push(dbPut(db, record.CID, "location", record.Location));
