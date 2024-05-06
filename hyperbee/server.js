@@ -16,6 +16,7 @@ import { NeedsKeyError, dbGet, dbRawValue } from "./src/dbGet.js";
 
 // Last import
 import "dotenv/config";
+import { attToVC } from "./src/vc.js";
 
 const sigPrivKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigPrivKey);
@@ -166,7 +167,7 @@ app.get("/c/:cid/:attr", async (req, res) => {
     );
   } catch (e) {
     if (e instanceof NeedsKeyError) {
-      res.status(400).send();
+      res.status(400).send("needs encryption key");
       return;
     }
 
@@ -174,8 +175,15 @@ app.get("/c/:cid/:attr", async (req, res) => {
     throw e;
   }
 
-  res.type("application/cbor");
-  res.send(Buffer.from(encode(att)));
+  if (!req.query.format || req.query.format === "cbor") {
+    res.type("application/cbor");
+    res.send(Buffer.from(encode(att)));
+  } else if (req.query.format === "vc") {
+    res.type("application/json");
+    res.send(attToVC(att));
+  } else {
+    res.status(400).send("invalid format requested");
+  }
 });
 
 // Get all attestations for CID

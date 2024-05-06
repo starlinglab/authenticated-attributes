@@ -62,6 +62,8 @@ A couple query params are available for dealing with encrypted values: `key` and
 
 Not specifying `key` for an attestation with an encrypted value will result in error code 400, as that is required to fully verify the attestation signature.
 
+The query param `format` can be set to `vc` to get the attestation returned in Verifiable Credential JSON format. See [vc.md](./vc.md) for more details. Leaving `format` unset, empty, or set to `cbor` will result in the default DAG-CBOR encoding in the output.
+
 ### GET /c/:cid
 
 Returns all attestations for a CID in a map, with attributes as keys (like `description`) and the whole AA object as a value (see the main schema for details).
