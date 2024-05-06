@@ -13,7 +13,7 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
  * @ignore
  * @param {Uint8Array} privKey
  * @param {*} rawAttestation
- * @returns {object}
+ * @returns {Promise<object>}
  */
 const signAttestation = async (privKey, rawAttestation) => {
   const pubKey = await getPublicKeyAsync(privKey);

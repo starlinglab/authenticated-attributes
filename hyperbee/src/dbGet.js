@@ -28,7 +28,7 @@ class NeedsKeyError extends Error {}
  * @param {Uint8Array} [encKey=false] - 32 byte key, if decryption is needed
  * @param {boolean} [reduced=false] - if set to true only the value and timestamp are returned, not the whole object
  * @param {boolean} [leaveEncrypted=false] - set to true to leave value encrypted
- * @returns {object|null} - see schema docs
+ * @returns {Promise<object|null>} - see schema docs
  */
 const dbGet = async (
   db,
@@ -82,7 +82,7 @@ const dbGet = async (
  * @param {*} db - Hyperbee or batch
  * @param {string} id - CID
  * @param {string} attr - attribute/key
- * @returns {boolean|null}
+ * @returns {Promise<boolean|null>}
  */
 const dbIsEncrypted = async (db, id, attr) => {
   const result = await db.get(makeKey(id, attr));
@@ -104,7 +104,7 @@ const dbIsEncrypted = async (db, id, attr) => {
  * @param {*} db - Hyperbee or batch
  * @param {string} id - CID
  * @param {string} attr - attribute/key
- * @returns {*}
+ * @returns {Promise<*>}
  */
 const dbRawValue = async (db, id, attr) => {
   const result = await db.get(makeKey(id, attr));

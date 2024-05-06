@@ -5,7 +5,7 @@ import * as dagCBOR from "@ipld/dag-cbor";
 /**
  * @ignore
  * @param {*} attestation
- * @returns {CID}
+ * @returns {Promise<CID>}
  */
 const encodeAttestation = async (attestation) => {
   const block = await Block.encode({

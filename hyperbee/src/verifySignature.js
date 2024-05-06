@@ -13,7 +13,7 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
  * @throws if failed to verify
  * @param {*} attestationObj
  * @param {Uint8Array} givenPubKey
- * @returns {true}
+ * @returns {Promise<true>}
  */
 const verifyAttSignature = async (attestationObj, givenPubKey) => {
   // check that the signed message is the CID for the rawAttestation

@@ -11,7 +11,7 @@ import { makeKey } from "./makeKey.js";
  * @param {string} attr - attribute/key
  * @param {Uint8Array} sigKey - ed25519 public key
  * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
- * @returns {*} - underlying hyperbee db.put result, usually undefined
+ * @returns {Promise<*>} - underlying hyperbee db.put result, usually undefined
  */
 const dbUpgrade = async (db, id, attr, sigKey, encryptionKey = false) => {
   const att = await dbGet(db, id, attr, sigKey, encryptionKey);

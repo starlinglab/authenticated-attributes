@@ -25,7 +25,7 @@ const setSigningKey = (privKey) => {
  * @param {string} attr - attribute/key
  * @param {*} value - data to be stored, as JavaScript object
  * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
- * @returns {*} - underlying hyperbee db.put result, usually undefined
+ * @returns {Promise<*>} - underlying hyperbee db.put result, usually undefined
  */
 const dbPut = async (db, id, attr, value, encryptionKey = false) => {
   const rawAttestation = {
@@ -80,7 +80,7 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
  * @param {string} attr - attribute/key
  * @param {*} value - data to be stored, as JavaScript object
  * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
- * @returns {*} - array as now stored in database
+ * @returns {Promise<*>} - array as now stored in database
  */
 const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
   const batch = db.batch();
