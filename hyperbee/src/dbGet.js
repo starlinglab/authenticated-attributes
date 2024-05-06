@@ -59,7 +59,7 @@ const dbGet = async (
   }
   await verifyAttSignature(resultObj, sigKey);
 
-  if (leaveEncrypted) {
+  if (resultObj.attestation.encrypted && leaveEncrypted) {
     resultObj.attestation.value = encryptedValue;
   }
 
