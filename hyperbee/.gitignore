@@ -3,3 +3,4 @@ internal-scripts/
 *.hypercore
 icc*
 demo2-*.js
+*.pem

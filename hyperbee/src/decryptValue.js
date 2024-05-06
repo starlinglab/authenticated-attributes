@@ -4,10 +4,11 @@ import pkg from "tweetnacl";
 const { secretbox } = pkg;
 
 /**
- * @ignore
- * @param {*} msgWithNonce
- * @param {*} encryptionKey
- * @returns {*}
+ * Decrypt and decode an encrypted value from the database.
+ *
+ * @param {*} msgWithNonce - the bytes of attestation.value as a Uint8Array or Buffer
+ * @param {*} encryptionKey - a 32 byte decryption key (Uint8Array or Buffer)
+ * @returns {*} - the decrypted value as a JavaScript object (NOT dag-cbor bytes)
  */
 const decryptValue = (msgWithNonce, encryptionKey) => {
   // Adapted from https://github.com/dchest/tweetnacl-js/wiki/Examples#secretbox

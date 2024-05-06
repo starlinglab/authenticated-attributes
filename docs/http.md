@@ -6,6 +6,7 @@
   - [Running](#running)
   - [Headers](#headers)
   - [Paths](#paths)
+    - [GET /c/:cid/:attr](#get-ccidattr)
     - [GET /c/:cid](#get-ccid)
     - [POST /c/:cid/:attr](#post-ccidattr)
     - [POST /c/:cid](#post-ccid)
@@ -27,13 +28,47 @@ Sending a JWT as a bearer token is required for POST requests.
 
 ## Paths
 
+### GET /c/:cid/:attr
+
+Get a specific attestation for a specific CID. The response body is DAG-CBOR encoded.
+
+Here is an example response body after DAG-CBOR decoding:
+
+```javascript
+{
+  signature: {
+    pubKey: Uint8Array(32),
+    sig: Uint8Array(64),
+    msg: CID(bafyreietqpflteqz6kj7lmdqz76kzkwdo65o4bhivxrmqvha7pdgixxos4)
+  },
+  timestamp: {
+    ots: {
+        proof: Uint8Array(503),
+        upgraded: false,
+        msg: CID(bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m)
+    }
+  },
+  attestation: {
+    CID: CID(bafkreif7gtpfl7dwi5nflge2rsfp6vq6q5kkwfm7uvxyyezxhsnde5ly3y),
+    value: 'Web archive foo bar',
+    attribute: 'description',
+    encrypted: false,
+    timestamp: '2023-05-29T19:03:28.601Z'
+  }
+}
+```
+
+A couple query params are available for dealing with encrypted values: `key` and `decrypt`. `key` should be set to the 32-byte decryption key (base64url encoded), and optionally `decrypt` can be set to `0` if the returned `attestation.value` field should not be decrypted in the response body.
+
+Not specifying `key` for an attestation with an encrypted value will result in error code 400, as that is required to fully verify the attestation signature.
+
 ### GET /c/:cid
 
 Returns all attestations for a CID in a map, with attributes as keys (like `description`) and the whole AA object as a value (see the main schema for details).
 
 The response body is DAG-CBOR encoded.
 
-Here is an pseudo-example response body after DAG-CBOR decoding:
+Here is an example response body after DAG-CBOR decoding:
 
 ```javascript
 {
@@ -57,9 +92,13 @@ Here is an pseudo-example response body after DAG-CBOR decoding:
       encrypted: false,
       timestamp: '2023-05-29T19:03:28.601Z'
     }
-  }
+  },
+  "author": ...
 }
 ```
+
+Encrypted values will remain encrypted as described in [database.md](./database.md).
+
 ### POST /c/:cid/:attr
 
 Set an attestion for a CID. The request body is a DAG-CBOR encoded map with two attributes: `value` (anything), and `encKey` (false or 32 bytes).

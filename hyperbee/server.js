@@ -7,17 +7,19 @@ import { env } from "node:process";
 import bodyParser from "body-parser";
 import { expressjwt } from "express-jwt";
 import assert from "node:assert";
+import { getPublicKeyAsync } from "@noble/ed25519";
 
 import { dbPut, setSigningKey } from "./src/dbPut.js";
 import { keyFromPem } from "./src/signAttestation.js";
 import { encodeFromType, indexFindMatches, indexPut } from "./src/index.js";
-import { dbRawValue } from "./src/dbGet.js";
+import { NeedsKeyError, dbGet, dbRawValue } from "./src/dbGet.js";
 
 // Last import
 import "dotenv/config";
 
-const sigKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
-setSigningKey(sigKey);
+const sigPrivKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
+setSigningKey(sigPrivKey);
+const sigPubKey = await getPublicKeyAsync(sigPrivKey);
 
 // Prevent leaking error msgs
 // https://expressjs.com/en/advanced/best-practice-performance.html#set-node_env-to-production
@@ -139,6 +141,41 @@ app.get("/i", async (req, res) => {
 
   res.type("application/cbor");
   res.send(Buffer.from(encode(ret)));
+});
+
+// Get one attestation
+app.get("/c/:cid/:attr", async (req, res) => {
+  let encKey = false;
+  if (req.query.key) {
+    encKey = Buffer.from(req.query.key, "base64url");
+  }
+  let leaveEncrypted = false;
+  if (req.query.decrypt === "0") {
+    leaveEncrypted = true;
+  }
+  let att;
+  try {
+    att = await dbGet(
+      db,
+      req.params.cid,
+      req.params.attr,
+      sigPubKey,
+      encKey,
+      false,
+      leaveEncrypted
+    );
+  } catch (e) {
+    if (e instanceof NeedsKeyError) {
+      res.status(400).send();
+      return;
+    }
+
+    // Unexpected error, give up
+    throw e;
+  }
+
+  res.type("application/cbor");
+  res.send(Buffer.from(encode(att)));
 });
 
 // Get all attestations for CID
