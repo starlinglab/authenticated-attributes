@@ -65,6 +65,8 @@ Not specifying `key` for an attestation with an encrypted value will result in e
 
 The query param `format` can be set to `vc` to get the attestation returned in Verifiable Credential JSON format. See [vc.md](./vc.md) for more details. Leaving `format` unset, empty, or set to `cbor` will result in the default DAG-CBOR encoding in the output.
 
+Status code 404 is returned if the attribute doesn't exist in the database currently.
+
 ### GET /c/:cid
 
 Returns all attestations for a CID in a map, with attributes as keys (like `description`) and the whole AA object as a value (see the main schema for details).
@@ -170,3 +172,5 @@ Get all the CIDs stored in this database. The response is a DAG-CBOR encoded arr
 ### GET /path
 
 Given a query param `p` set to a filepath, the server returns the CID of the asset in the database stored at that path. If there is no entry in the database of any asset stored at that path, then status code 404 is returned.
+
+The CID is returned as a plain text string, not DAG-CBOR encoded.

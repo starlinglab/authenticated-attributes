@@ -166,6 +166,10 @@ app.get("/c/:cid/:attr", async (req, res) => {
       false,
       leaveEncrypted
     );
+    if (att === null) {
+      res.status(404).send("attribute not found");
+      return;
+    }
   } catch (e) {
     if (e instanceof NeedsKeyError) {
       res.status(400).send("needs encryption key");
@@ -283,6 +287,7 @@ app.get("/path", async (req, res) => {
   if (cid === null) {
     res.status(404).send();
   } else {
+    res.type("text/plain");
     res.send(cid);
   }
 });
