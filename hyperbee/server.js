@@ -17,6 +17,7 @@ import { NeedsKeyError, dbGet, dbRawValue } from "./src/dbGet.js";
 // Last import
 import "dotenv/config";
 import { attToVC } from "./src/vc.js";
+import { pathGet } from "./src/path.js";
 
 const sigPrivKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigPrivKey);
@@ -274,6 +275,16 @@ app.post("/c/:cid", async (req, res, next) => {
   }
 
   res.status(200).send();
+});
+
+// Get all attestations for CID
+app.get("/path", async (req, res) => {
+  const cid = await pathGet(db, req.query.p);
+  if (cid === null) {
+    res.status(404).send();
+  } else {
+    res.send(cid);
+  }
 });
 
 /// End of routes ///
