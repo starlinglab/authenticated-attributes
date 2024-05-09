@@ -5,7 +5,7 @@
   - [Table of Contents](#table-of-contents)
   - [Running](#running)
   - [Headers](#headers)
-  - [Endpoints](#endpoints)
+  - [Paths](#paths)
     - [GET /c/:cid/:attr](#get-ccidattr)
     - [GET /c/:cid](#get-ccid)
     - [POST /c/:cid/:attr](#post-ccidattr)
@@ -14,7 +14,6 @@
       - [Query type match](#query-type-match)
       - [Query type intersect](#query-type-intersect)
     - [GET /cids](#get-cids)
-    - [GET /path](#get-path)
 
 
 ## Running
@@ -27,7 +26,7 @@ CORS headers are set correctly to allow browser usage.
 
 Sending a JWT as a bearer token is required for POST requests.
 
-## Endpoints
+## Paths
 
 ### GET /c/:cid/:attr
 
@@ -168,9 +167,3 @@ Example query params (decoded as object):
 ### GET /cids
 
 Get all the CIDs stored in this database. The response is a DAG-CBOR encoded array of strings, not CID objects.
-
-### GET /path
-
-Given a query param `p` set to a filepath, the server returns the CID of the asset in the database stored at that path. If there is no entry in the database of any asset stored at that path, then status code 404 is returned.
-
-The CID is returned as a plain text string, not DAG-CBOR encoded.
