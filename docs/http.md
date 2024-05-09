@@ -14,6 +14,7 @@
       - [Query type match](#query-type-match)
       - [Query type intersect](#query-type-intersect)
     - [GET /cids](#get-cids)
+    - [POST /rel/:cid](#post-relcid)
 
 
 ## Running
@@ -167,3 +168,17 @@ Example query params (decoded as object):
 ### GET /cids
 
 Get all the CIDs stored in this database. The response is a DAG-CBOR encoded array of strings, not CID objects.
+
+### POST /rel/:cid
+
+Add a relationship for this CID. The request body is DAG-CBOR encoded. Here is an example:
+
+```javascript
+{
+  type: "children", // "children" or "parents"
+  verb: "related", // derived, transcoded, redacted, verified, related, etc.
+  cid: CID(...), // CID as native DAG-CBOR encoding, not string
+}
+```
+
+This will automatically add the reverse relationship under the linked CID. For example if you set a `children` relationship with CID-A in the URL and CID-B in the body, that will get stored in the database, as well as a `parents` relationship from CID-B to CID-A. The verb will remain the same in both cases.

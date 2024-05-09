@@ -1,6 +1,7 @@
 import * as Block from "multiformats/block";
 import { sha256 } from "multiformats/hashes/sha2";
 import * as dagCBOR from "@ipld/dag-cbor";
+import { CID } from "multiformats";
 
 const obj = {
   first: 1,
@@ -25,3 +26,15 @@ const blockb = await Block.encode({
 });
 
 console.log("cid is the same", blocka.cid.equals(blockb.cid));
+
+console.log(
+  Buffer.from(
+    dagCBOR.encode({
+      type: "children",
+      verb: "related",
+      cid: CID.parse(
+        "bafybeieuew6ha6jw2tsh5mlfjfx4mcutzxxtlzcs2yvgrippuxwyyc4xgm"
+      ),
+    })
+  ).toString("hex")
+);

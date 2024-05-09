@@ -8,8 +8,9 @@ import bodyParser from "body-parser";
 import { expressjwt } from "express-jwt";
 import assert from "node:assert";
 import { getPublicKeyAsync } from "@noble/ed25519";
+import { CID } from "multiformats";
 
-import { dbPut, setSigningKey } from "./src/dbPut.js";
+import { dbAddRelation, dbPut, setSigningKey } from "./src/dbPut.js";
 import { keyFromPem } from "./src/signAttestation.js";
 import { encodeFromType, indexFindMatches, indexPut } from "./src/index.js";
 import { NeedsKeyError, dbGet, dbRawValue } from "./src/dbGet.js";
@@ -53,13 +54,15 @@ app.use(
 // Allow access to raw POST body bytes
 app.use(bodyParser.raw({ type: () => true }));
 
-// JWT checking
-app.use(
-  expressjwt({
-    secret: env.JWT_SECRET,
-    algorithms: ["HS256"],
-  }).unless({ method: ["OPTIONS", "GET"] })
-);
+// JWT checking (can be disabled)
+if (env.JWT_SECRET !== "DISABLE_JWT_FOR_DEBUGGING_ONLY") {
+  app.use(
+    expressjwt({
+      secret: env.JWT_SECRET,
+      algorithms: ["HS256"],
+    }).unless({ method: ["OPTIONS", "GET"] })
+  );
+}
 
 // Make 401 error visible to user
 app.use((err, req, res, next) => {
@@ -271,6 +274,38 @@ app.post("/c/:cid", async (req, res, next) => {
     }
     await Promise.all(putPromises);
     await batch.flush();
+  } catch (e) {
+    next(e);
+    res.status(500).send();
+    return;
+  }
+
+  res.status(200).send();
+});
+
+// Add a relationship
+app.post("/rel/:cid", async (req, res, next) => {
+  let data;
+  try {
+    data = decode(new Uint8Array(req.body));
+    assert.ok("type" in data);
+    assert.ok("verb" in data);
+    assert.ok("cid" in data);
+    assert.ok(data.type === "children" || data.type === "parents");
+  } catch (e) {
+    console.log(e);
+    res.status(400).send();
+    return;
+  }
+  try {
+    await dbAddRelation(db, req.params.cid, data.type, data.verb, data.cid);
+    await dbAddRelation(
+      db,
+      data.cid.toString(),
+      data.type === "children" ? "parents" : "children", // invert
+      data.verb,
+      CID.parse(req.params.cid)
+    );
   } catch (e) {
     next(e);
     res.status(500).send();
