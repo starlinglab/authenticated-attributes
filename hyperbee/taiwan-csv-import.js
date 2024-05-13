@@ -54,9 +54,19 @@ for (const record of records) {
         dbAddRelation(
           db,
           record.CID,
-          "children",
+          "parents",
           "related",
           CID.parse(relatedCid)
+        )
+      );
+      // And the opposite direction
+      promises.push(
+        dbAddRelation(
+          db,
+          relatedCid,
+          "children",
+          "related",
+          CID.parse(record.CID)
         )
       );
     }
