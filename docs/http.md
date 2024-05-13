@@ -110,6 +110,8 @@ Set an attestion for a CID. The request body is a DAG-CBOR encoded map with two 
 
 The response body is empty with status code 200 indicating success, 400 indicating request body error, and 500 indicating database error.
 
+If the query param `append` is set to `1`, then the provided value is appended to a pre-existing array stored at that attribute. An array is created if nothing is stored at that attribute. If a non-array is stored there, status code 400 will be returned.
+
 ### POST /c/:cid
 
 Set multiple attestations for a CID at once. The request body is a DAG-CBOR encoded array of objects. For example:

@@ -62,13 +62,15 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
   );
 };
 
+class NotArrayError extends Error {}
+
 /**
  * Appends to an array in the database.
  *
  * If the given attribute doesn't exist an array will be created.
  *
- * If a non-array object is already stored under the given attribute an error
- * will be thrown.
+ * If a non-array object is already stored under the given attribute a
+ * NotArrayError will be thrown.
  *
  * The new value of the array is returned.
  *
@@ -101,7 +103,7 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
     return [value];
   }
   if (!(result.value instanceof Array)) {
-    throw new Error(`A non-array object is stored at ${attr}`);
+    throw new NotArrayError();
   }
 
   // Append to existing array
@@ -205,4 +207,11 @@ const dbRemoveRelation = async (db, id, childOrParent, verb, relationCid) => {
   await batch.flush();
 };
 
-export { dbPut, setSigningKey, dbAppend, dbAddRelation, dbRemoveRelation };
+export {
+  dbPut,
+  setSigningKey,
+  dbAppend,
+  dbAddRelation,
+  dbRemoveRelation,
+  NotArrayError,
+};

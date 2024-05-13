@@ -10,7 +10,13 @@ import assert from "node:assert";
 import { getPublicKeyAsync } from "@noble/ed25519";
 import { CID } from "multiformats";
 
-import { dbAddRelation, dbPut, setSigningKey } from "./src/dbPut.js";
+import {
+  dbAddRelation,
+  dbAppend,
+  dbPut,
+  setSigningKey,
+  NotArrayError,
+} from "./src/dbPut.js";
 import { keyFromPem } from "./src/signAttestation.js";
 import { encodeFromType, indexFindMatches, indexPut } from "./src/index.js";
 import { NeedsKeyError, dbGet, dbRawValue } from "./src/dbGet.js";
@@ -235,8 +241,22 @@ app.post("/c/:cid/:attr", async (req, res, next) => {
     return;
   }
   try {
-    await dbPut(db, req.params.cid, req.params.attr, data.value, data.encKey);
+    if (req.query.append === "1") {
+      await dbAppend(
+        db,
+        req.params.cid,
+        req.params.attr,
+        data.value,
+        data.encKey
+      );
+    } else {
+      await dbPut(db, req.params.cid, req.params.attr, data.value, data.encKey);
+    }
   } catch (e) {
+    if (e instanceof NotArrayError) {
+      res.status(400).send("non-array data stored under this attribute");
+      return;
+    }
     next(e);
     res.status(500).send();
     return;
