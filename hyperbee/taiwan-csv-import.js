@@ -112,6 +112,8 @@ for (const record of records) {
       dbPut(db, record.CID, "notes", record["Notes/ Description (Optional)"])
     );
   }
+
+  promises.push(dbPut(db, record.CID, "public_link", true));
 }
 
 await Promise.all(promises);
