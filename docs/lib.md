@@ -33,8 +33,8 @@ No signatures are validated!</p>
 <dt><a href="#dbAppend">dbAppend(db, id, attr, value, [encryptionKey])</a> ⇒ <code>Promise.&lt;*&gt;</code></dt>
 <dd><p>Appends to an array in the database.</p>
 <p>If the given attribute doesn&#39;t exist an array will be created.</p>
-<p>If a non-array object is already stored under the given attribute an error
-will be thrown.</p>
+<p>If a non-array object is already stored under the given attribute a
+NotArrayError will be thrown.</p>
 <p>The new value of the array is returned.</p>
 <p>A batch is used so that the append is treated as one locked atomic operation,
 not a separate read and write.</p>
@@ -163,8 +163,8 @@ Appends to an array in the database.
 
 If the given attribute doesn't exist an array will be created.
 
-If a non-array object is already stored under the given attribute an error
-will be thrown.
+If a non-array object is already stored under the given attribute a
+NotArrayError will be thrown.
 
 The new value of the array is returned.
 
