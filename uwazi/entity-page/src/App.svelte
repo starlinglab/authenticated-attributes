@@ -13,12 +13,13 @@
 
   export let REPLAYWEB_SW_FILENAME = "sw.js";
   export let NO_EDIT_BUTTON_IN_PROD = true;
+  export let IPFS_GATEWAY = "";
 
   /// Consts ///
 
   const dagCborURL =
     "https://cdn.jsdelivr.net/npm/@ipld/dag-cbor@9.0.3/dist/index.min.js";
-  const replayWebURL = "https://cdn.jsdelivr.net/npm/replaywebpage@1.8.7/ui.js";
+  const replayWebURL = "https://cdn.jsdelivr.net/npm/replaywebpage@2.0.0/ui.js";
   const visURL =
     "https://cdn.jsdelivr.net/npm/vis-network@9.1.6/standalone/umd/vis-network.min.js";
   const multiformatsURL =
@@ -165,7 +166,7 @@
     return an;
   };
 
-  const getEntityInfo = (cid) => {
+  const getEntityInfo = async (cid) => {
     if (cid === false || cid === ogEntityCid) {
       // Original page
       const an = entityHasAttachment(entity); // attachment number
@@ -218,7 +219,40 @@
         };
       }
     }
-    // No match found, return basic info
+    // No match found, CID is for external file
+    // Try to load info from IPFS gateway if possible
+
+    if (IPFS_GATEWAY) {
+      const ret = await fetch(`${IPFS_GATEWAY}/ipfs/${cid}`, {
+        method: "HEAD",
+      }).then((response) => {
+        if (!response.ok) {
+          return {
+            title: "Unknown",
+            hasAttachment: false,
+            cid,
+          };
+        }
+        // Got headers
+        const isWacz =
+          response.headers.get("Content-Type") === "application/zip";
+        return {
+          title: "Unknown", // TODO use title attribute
+          hasAttachment: true,
+          cid,
+          fileType: isWacz
+            ? "application/wacz"
+            : response.headers.get("Content-Type"),
+          fileName: "unknown", // TODO use title attribute
+          fileSize: Number(response.headers.get("Content-Length")),
+          fileUrl: `${IPFS_GATEWAY}/ipfs/${cid}`,
+          isWacz,
+        };
+      });
+
+      return ret;
+    }
+
     return {
       title: "Unknown",
       hasAttachment: false,
@@ -232,8 +266,12 @@
     try {
       const datas = await loadData(sources, cid);
       dbEntries = getDbEntries(sources, datas);
-      entityInfo = getEntityInfo(cid);
+      entityInfo = await getEntityInfo(cid);
       publicLink = checkPublicLink(datas);
+
+      if (entityInfo.isWacz) {
+        await loadScript(replayWebURL);
+      }
     } catch (e) {
       errMsg = e.toString();
       console.error(e);
@@ -304,9 +342,8 @@
   }
 
   let ogEntityCid;
-  let entityInfo = getEntityInfo(false);
-  ogEntityCid = structuredClone(entityInfo).cid;
-  let fileCid = ogEntityCid;
+  let entityInfo;
+  let fileCid;
 
   let entities = [];
   if (import.meta.env.PROD) {
@@ -340,6 +377,10 @@
   /// Main function ///
 
   (async () => {
+    entityInfo = await getEntityInfo(false);
+    ogEntityCid = structuredClone(entityInfo).cid;
+    fileCid = ogEntityCid;
+
     if (!entityInfo.hasAttachment) {
       errMsg = "No attachment for this entity";
       return;
@@ -685,10 +726,7 @@
             <p>
               <strong>CID</strong> <code>{fileCid}</code>
               {#if publicLink}
-                <a
-                  href="https://ipfs.hypha.coop/ipfs/{fileCid}"
-                  target="_blank"
-                >
+                <a href="{IPFS_GATEWAY}/ipfs/{fileCid}" target="_blank">
                   <svg
                     style="color: var(--theme1);"
                     class="icon"
@@ -701,6 +739,26 @@
                 </a>
               {/if}
             </p>
+            {#if entityInfo.isWacz && publicLink}
+              <p>
+                View on <a
+                  href={`https://replayweb.page/?source=${encodeURIComponent(
+                    `${IPFS_GATEWAY}/ipfs/${fileCid}`
+                  )}`}
+                  target="_blank"
+                  >replayweb.page
+                  <svg
+                    style="color: var(--theme1);"
+                    class="icon"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 512 512"
+                    ><!--! Font Awesome Pro 6.4.0 by @fontawesome - https://fontawesome.com License - https://fontawesome.com/license (Commercial License) Copyright 2023 Fonticons, Inc. --><path
+                      d="M320 0c-17.7 0-32 14.3-32 32s14.3 32 32 32h82.7L201.4 265.4c-12.5 12.5-12.5 32.8 0 45.3s32.8 12.5 45.3 0L448 109.3V192c0 17.7 14.3 32 32 32s32-14.3 32-32V32c0-17.7-14.3-32-32-32H320zM80 32C35.8 32 0 67.8 0 112V432c0 44.2 35.8 80 80 80H400c44.2 0 80-35.8 80-80V320c0-17.7-14.3-32-32-32s-32 14.3-32 32V432c0 8.8-7.2 16-16 16H80c-8.8 0-16-7.2-16-16V112c0-8.8 7.2-16 16-16H192c17.7 0 32-14.3 32-32s-14.3-32-32-32H80z"
+                    /></svg
+                  >
+                </a>
+              </p>
+            {/if}
           </div>
           <div class="bottom-buttons">
             {#if !noSources}
