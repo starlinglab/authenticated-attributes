@@ -36,6 +36,7 @@ Database entries are stored as binary data, encoded with [DAG-CBOR](https://ipld
 
 ```javascript
 {
+  version: "1.0",
   signature: {
     pubKey: Uint8Array(32),
     sig: Uint8Array(64),
@@ -70,6 +71,8 @@ When `CID(...)` is shown that represents a CID stored natively, not as text. Tha
 Some information already in the database key is repeated in the `attestation`, such as `CID` and `attribute`. This allows for export of the whole object for external verification and use elsewhere.
 
 When the attestation is encrypted, the schema looks very similar to the above. The only change is `attestation.encrypted` is `true`, and `attestation.value` is always binary data. That binary data, once decrypted, is a DAG-CBOR encoding of whatever the original value was: object, binary data, string, integer, etc.
+
+Currently only a `version` of `1.0` is supported. In the past, debug databases had no `version` field and that is considered equivalent to `1.0`. Future non-breaking changes will only update the minor version, after the dot.
 
 ## Cryptographic keys
 

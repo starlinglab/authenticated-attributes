@@ -7,6 +7,7 @@ import { encryptValue } from "./encryptValue.js";
 import { timestampAttestation } from "./otsTimestamp.js";
 import { makeKey } from "./makeKey.js";
 import { dbGet } from "./dbGet.js";
+import { attestationVersion } from "./version.js";
 
 let sigKey = null;
 
@@ -58,6 +59,7 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
       timestamp: {
         ots: otsTimestamp,
       },
+      version: attestationVersion,
     })
   );
 };

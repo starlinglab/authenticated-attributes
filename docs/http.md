@@ -37,6 +37,7 @@ Here is an example response body after DAG-CBOR decoding:
 
 ```javascript
 {
+  version: "1.0",
   signature: {
     pubKey: Uint8Array(32),
     sig: Uint8Array(64),
@@ -78,6 +79,7 @@ Here is an example response body after DAG-CBOR decoding:
 ```javascript
 {
   "description": {
+    version: "1.0",
     signature: {
       pubKey: Uint8Array(32),
       sig: Uint8Array(64),

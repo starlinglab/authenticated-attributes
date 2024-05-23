@@ -1,10 +1,14 @@
+/* eslint-disable max-classes-per-file */
+
 import { decode } from "@ipld/dag-cbor";
 
 import { verifyAttSignature } from "./verifySignature.js";
 import { decryptValue } from "./decryptValue.js";
 import { makeKey } from "./makeKey.js";
+import { isAttVersionSupported } from "./version.js";
 
 class NeedsKeyError extends Error {}
+class BadVersionError extends Error {}
 
 /**
  * Get verified output from the database.
@@ -12,6 +16,8 @@ class NeedsKeyError extends Error {}
  *
  * If the value is encrypted and encKey is not provided, a NeedsKeyError will be raised,
  * as this means the signature cannot be validated either.
+ *
+ * If the attestation version is unknown, a BadVersionError will be raised.
  *
  * The "encrypted" boolean will not be changed.
  *
@@ -44,6 +50,10 @@ const dbGet = async (
     return null;
   }
   const resultObj = decode(result.value);
+
+  if (!isAttVersionSupported(resultObj.version)) {
+    throw new BadVersionError();
+  }
 
   let encryptedValue;
 
@@ -79,6 +89,8 @@ const dbGet = async (
  *
  * null is returned if the key doesn't exist in the database.
  *
+ * If the attestation version is unknown, a BadVersionError will be raised.
+ *
  * @param {*} db - Hyperbee or batch
  * @param {string} id - CID
  * @param {string} attr - attribute/key
@@ -90,6 +102,9 @@ const dbIsEncrypted = async (db, id, attr) => {
     return null;
   }
   const resultObj = decode(result.value);
+  if (!isAttVersionSupported(resultObj.version)) {
+    throw new BadVersionError();
+  }
   return resultObj.attestation.encrypted;
 };
 
@@ -100,6 +115,8 @@ const dbIsEncrypted = async (db, id, attr) => {
  * Specifically the attestation value is returned.
  *
  * null is returned if the key doesn't exist in the database.
+ *
+ * If the attestation version is unknown, a BadVersionError will be raised.
  *
  * @param {*} db - Hyperbee or batch
  * @param {string} id - CID
@@ -112,6 +129,9 @@ const dbRawValue = async (db, id, attr) => {
     return null;
   }
   const resultObj = decode(result.value);
+  if (!isAttVersionSupported(resultObj.version)) {
+    throw new BadVersionError();
+  }
   return resultObj.attestation.value;
 };
 
