@@ -191,9 +191,9 @@ Add a relationship for this CID. The request body is DAG-CBOR encoded. Here is a
 ```javascript
 {
   type: "children", // "children" or "parents"
-  verb: "related", // derived, transcoded, redacted, verified, related, etc.
+  relation_type: "related", // More available, see schema.md
   cid: CID(...), // CID as native DAG-CBOR encoding, not string
 }
 ```
 
-This will automatically add the reverse relationship under the linked CID. For example if you set a `children` relationship with CID-A in the URL and CID-B in the body, that will get stored in the database, as well as a `parents` relationship from CID-B to CID-A. The verb will remain the same in both cases.
+This will automatically add the reverse relationship under the linked CID. For example if you set a `children` relationship with CID-A in the URL and CID-B in the body, that will get stored in the database, as well as a `parents` relationship from CID-B to CID-A. The relation type will remain the same in both cases.

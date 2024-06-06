@@ -8,6 +8,7 @@ Authenticated Attributes is built on top of [Hyperbee](https://docs.pears.com/bu
   - [Key-value format](#key-value-format)
     - [Encoding](#encoding)
     - [Schema](#schema)
+  - [Other database entries](#other-database-entries)
   - [Cryptographic keys](#cryptographic-keys)
     - [Signing](#signing)
     - [Encryption](#encryption)
@@ -73,6 +74,10 @@ Some information already in the database key is repeated in the `attestation`, s
 When the attestation is encrypted, the schema looks very similar to the above. The only change is `attestation.encrypted` is `true`, and `attestation.value` is always binary data. That binary data, once decrypted, is a DAG-CBOR encoding of whatever the original value was: object, binary data, string, integer, etc.
 
 Currently only a `version` of `1.0` is supported. In the past, debug databases had no `version` field and that is considered equivalent to `1.0`. Future non-breaking changes will only update the minor version, after the dot.
+
+## Other database entries
+
+For more information on specific kinds of attestation, or other types of key-value pairs stored in the database, please see [schema.md](./schema.md).
 
 ## Cryptographic keys
 

@@ -50,14 +50,14 @@ NotArrayError will be thrown.</p>
 <p>A batch is used so that the append is treated as one locked atomic operation,
 not a separate read and write.</p>
 </dd>
-<dt><a href="#dbAddRelation">dbAddRelation(db, id, childOrParent, verb, relationCid)</a></dt>
+<dt><a href="#dbAddRelation">dbAddRelation(db, id, childOrParent, relationType, relationCid)</a></dt>
 <dd><p>Add a relation to the database according to our relationship schema.</p>
-<p>If the given key and/or verb doesn&#39;t exist it will be created.</p>
+<p>If the given key and/or relationType doesn&#39;t exist it will be created.</p>
 <p>Duplicate CIDs in the array are allowed.</p>
 <p>A batch is used so that the change is treated as one locked atomic operation,
 not a separate read and write.</p>
 </dd>
-<dt><a href="#dbRemoveRelation">dbRemoveRelation(db, id, childOrParent, verb, relationCid)</a></dt>
+<dt><a href="#dbRemoveRelation">dbRemoveRelation(db, id, childOrParent, relationType, relationCid)</a></dt>
 <dd><p>Same as dbAddRelation. The first CID that matches the given one is removed.</p>
 </dd>
 <dt><a href="#dbUpgrade">dbUpgrade(db, id, attr, sigKey, [encryptionKey])</a> ⇒ <code>Promise.&lt;*&gt;</code></dt>
@@ -210,10 +210,10 @@ not a separate read and write.
 
 <a name="dbAddRelation"></a>
 
-## dbAddRelation(db, id, childOrParent, verb, relationCid)
+## dbAddRelation(db, id, childOrParent, relationType, relationCid)
 Add a relation to the database according to our relationship schema.
 
-If the given key and/or verb doesn't exist it will be created.
+If the given key and/or relationType doesn't exist it will be created.
 
 Duplicate CIDs in the array are allowed.
 
@@ -227,12 +227,12 @@ not a separate read and write.
 | db | <code>\*</code> | Hyperbee |
 | id | <code>string</code> | CID |
 | childOrParent | <code>string</code> | is either "children" or "parents" as the db key |
-| verb | <code>string</code> | is a verb for the relation like "derived" or "transcoded" |
+| relationType | <code>string</code> | is a type for the relation like "derived" or "transcoded" |
 | relationCid | <code>CID</code> | is the CID object to be added as a relation |
 
 <a name="dbRemoveRelation"></a>
 
-## dbRemoveRelation(db, id, childOrParent, verb, relationCid)
+## dbRemoveRelation(db, id, childOrParent, relationType, relationCid)
 Same as dbAddRelation. The first CID that matches the given one is removed.
 
 **Kind**: global function  
@@ -242,7 +242,7 @@ Same as dbAddRelation. The first CID that matches the given one is removed.
 | db | <code>\*</code> | Hyperbee |
 | id | <code>string</code> | CID |
 | childOrParent | <code>string</code> | is either "children" or "parents" as the db key |
-| verb | <code>string</code> | is a verb for the relation like "derived" or "transcoded" |
+| relationType | <code>string</code> | is a type for the relation like "derived" or "transcoded" |
 | relationCid | <code>CID</code> | is the CID object to be added as a relation |
 
 <a name="dbUpgrade"></a>

@@ -118,7 +118,7 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
 /**
  * Add a relation to the database according to our relationship schema.
  *
- * If the given key and/or verb doesn't exist it will be created.
+ * If the given key and/or relationType doesn't exist it will be created.
  *
  * Duplicate CIDs in the array are allowed.
  *
@@ -128,10 +128,16 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
  * @param {*} db - Hyperbee
  * @param {string} id - CID
  * @param {string} childOrParent is either "children" or "parents" as the db key
- * @param {string} verb is a verb for the relation like "derived" or "transcoded"
+ * @param {string} relationType is a type for the relation like "derived" or "transcoded"
  * @param {CID} relationCid is the CID object to be added as a relation
  */
-const dbAddRelation = async (db, id, childOrParent, verb, relationCid) => {
+const dbAddRelation = async (
+  db,
+  id,
+  childOrParent,
+  relationType,
+  relationCid
+) => {
   if (childOrParent !== "children" && childOrParent !== "parents") {
     throw new Error("childOrParent must be children or parents");
   }
@@ -149,14 +155,14 @@ const dbAddRelation = async (db, id, childOrParent, verb, relationCid) => {
   );
   if (result === null) {
     // Nothing is stored under this attribute yet
-    await dbPut(batch, id, childOrParent, { [verb]: [relationCid] });
+    await dbPut(batch, id, childOrParent, { [relationType]: [relationCid] });
     await batch.flush();
     return;
   }
-  if (verb in result.value) {
-    result.value[verb].push(relationCid);
+  if (relationType in result.value) {
+    result.value[relationType].push(relationCid);
   } else {
-    result.value[verb] = [relationCid];
+    result.value[relationType] = [relationCid];
   }
   await dbPut(batch, id, childOrParent, result.value);
   await batch.flush();
@@ -168,10 +174,16 @@ const dbAddRelation = async (db, id, childOrParent, verb, relationCid) => {
  * @param {*} db - Hyperbee
  * @param {string} id - CID
  * @param {string} childOrParent is either "children" or "parents" as the db key
- * @param {string} verb is a verb for the relation like "derived" or "transcoded"
+ * @param {string} relationType is a type for the relation like "derived" or "transcoded"
  * @param {CID} relationCid is the CID object to be added as a relation
  */
-const dbRemoveRelation = async (db, id, childOrParent, verb, relationCid) => {
+const dbRemoveRelation = async (
+  db,
+  id,
+  childOrParent,
+  relationType,
+  relationCid
+) => {
   if (childOrParent !== "children" && childOrParent !== "parents") {
     throw new Error("childOrParent must be children or parents");
   }
@@ -192,16 +204,16 @@ const dbRemoveRelation = async (db, id, childOrParent, verb, relationCid) => {
     await batch.flush();
     return;
   }
-  if (!(verb in result.value)) {
-    // Array for this verb doesn't exist, so do nothing
+  if (!(relationType in result.value)) {
+    // Array for this relationType doesn't exist, so do nothing
     await batch.flush();
     return;
   }
-  // Array exists for verb
-  for (let i = 0; i < result.value[verb].length; i++) {
-    const cid = result.value[verb][i];
+  // Array exists for relationType
+  for (let i = 0; i < result.value[relationType].length; i++) {
+    const cid = result.value[relationType][i];
     if (cid.equals(relationCid)) {
-      result.value[verb].splice(i, 1);
+      result.value[relationType].splice(i, 1);
       break;
     }
   }

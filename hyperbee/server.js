@@ -324,7 +324,7 @@ app.post("/rel/:cid", async (req, res, next) => {
   try {
     data = decode(new Uint8Array(req.body));
     assert.ok("type" in data);
-    assert.ok("verb" in data);
+    assert.ok("relation_type" in data);
     assert.ok("cid" in data);
     assert.ok(data.type === "children" || data.type === "parents");
   } catch (e) {
@@ -333,12 +333,18 @@ app.post("/rel/:cid", async (req, res, next) => {
     return;
   }
   try {
-    await dbAddRelation(db, req.params.cid, data.type, data.verb, data.cid);
+    await dbAddRelation(
+      db,
+      req.params.cid,
+      data.type,
+      data.relation_type,
+      data.cid
+    );
     await dbAddRelation(
       db,
       data.cid.toString(),
       data.type === "children" ? "parents" : "children", // invert
-      data.verb,
+      data.relation_type,
       CID.parse(req.params.cid)
     );
   } catch (e) {
