@@ -279,17 +279,32 @@ app.post("/c/:cid", async (req, res, next) => {
   try {
     const batch = db.batch();
     const putPromises = [];
-    for (const { key, value, type } of data) {
-      putPromises.push(dbPut(batch, req.params.cid, key, value));
-      if (req.query.index === "1" && type != null) {
+    for (const entry of data) {
+      try {
+        assert.ok(entry.encKey == null || entry.encKey instanceof Uint8Array);
+      } catch (e) {
+        res.status(400).send();
+        return;
+      }
+
+      putPromises.push(
+        dbPut(batch, req.params.cid, entry.key, entry.value, entry.encKey)
+      );
+      if (
+        req.query.index === "1" &&
+        entry.type != null &&
+        entry.encKey == null
+      ) {
         let encodedValue;
         try {
-          encodedValue = encodeFromType(value, type);
+          encodedValue = encodeFromType(entry.value, entry.type);
         } catch (e) {
           res.status(400).send(e.message);
           return;
         }
-        putPromises.push(indexPut(batch, key, encodedValue, req.params.cid));
+        putPromises.push(
+          indexPut(batch, entry.key, encodedValue, req.params.cid)
+        );
       }
     }
     await Promise.all(putPromises);

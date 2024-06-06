@@ -123,12 +123,23 @@ Set multiple attestations for a CID at once. The request body is a DAG-CBOR enco
   {"key": "caption", "value": "foo", "type": "str"},
   {"key": "rating", "value": 3.5, "type": "float64"},
   {"key": "people", "value": ["Alice", "Bob", "Eve"], "type": "str-array"}
+  {"key": "desc", "value": "foo bar baz"},
 ]
 ```
 
 `type` is one of `int32|unix|uint32|str|float64|str-array`, where "unix" means Unix time in milliseconds stored as an int64. If `type` is not included or null the attestation will never be indexed.
 
 If query param "index" is set to "1" (like: `?index=1`) then indexing will be done for each attribute (except as described above).
+
+An encryption key can also be set (per-attribute) so that it is stored encrypted in the database. It must be 32 bytes, encoded in binary as DAG-CBOR allows us to.
+
+```json
+[
+  {"key": "secret_caption", "value": "oh ho ho", "encKey": "<32 binary bytes>"}
+]
+```
+
+Encrypted attributes cannot be indexed, and so setting a `type` on them will be ignored.
 
 ### GET /i
 
