@@ -223,10 +223,11 @@
     // Try to load info from IPFS gateway if possible
 
     if (IPFS_GATEWAY) {
-      const ret = await fetch(`${IPFS_GATEWAY}/ipfs/${cid}`, {
-        method: "HEAD",
-      }).then((response) => {
-        if (!response.ok) {
+      try {
+        const resp = await fetch(`${IPFS_GATEWAY}/ipfs/${cid}`, {
+          method: "HEAD",
+        });
+        if (!resp.ok) {
           return {
             title: "Unknown",
             hasAttachment: false,
@@ -234,23 +235,28 @@
           };
         }
         // Got headers
-        const isWacz =
-          response.headers.get("Content-Type") === "application/zip";
+        const isWacz = resp.headers.get("Content-Type") === "application/zip";
         return {
           title: "Unknown", // TODO use title attribute
           hasAttachment: true,
           cid,
           fileType: isWacz
             ? "application/wacz"
-            : response.headers.get("Content-Type"),
+            : resp.headers.get("Content-Type"),
           fileName: "unknown", // TODO use title attribute
-          fileSize: Number(response.headers.get("Content-Length")),
+          fileSize: Number(resp.headers.get("Content-Length")),
           fileUrl: `${IPFS_GATEWAY}/ipfs/${cid}`,
           isWacz,
         };
-      });
-
-      return ret;
+      } catch (e) {
+        /* eslint-disable-next-line no-console */
+        console.log(`IPFS gateway fetch failed: ${e.message}`);
+        return {
+          title: "Unknown",
+          hasAttachment: false,
+          cid,
+        };
+      }
     }
 
     return {
