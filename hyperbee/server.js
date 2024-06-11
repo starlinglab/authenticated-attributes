@@ -24,6 +24,7 @@ import { NeedsKeyError, dbGet, dbRawValue } from "./src/dbGet.js";
 // Last import
 import "dotenv/config";
 import { attToVC } from "./src/vc.js";
+import { DecryptError } from "./src/decryptValue.js";
 
 const sigPrivKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
 setSigningKey(sigPrivKey);
@@ -154,7 +155,7 @@ app.get("/i", async (req, res) => {
 });
 
 // Get one attestation
-app.get("/c/:cid/:attr", async (req, res) => {
+app.get("/c/:cid/:attr", async (req, res, next) => {
   let encKey = false;
   if (req.query.key) {
     encKey = Buffer.from(req.query.key, "base64url");
@@ -183,9 +184,15 @@ app.get("/c/:cid/:attr", async (req, res) => {
       res.status(400).send("needs encryption key");
       return;
     }
+    if (e instanceof DecryptError) {
+      res.status(400).send("failed to decrypt");
+      return;
+    }
 
     // Unexpected error, give up
-    throw e;
+    next(e);
+    res.status(500).send();
+    return;
   }
 
   if (!req.query.format || req.query.format === "cbor") {
