@@ -1,6 +1,7 @@
 # HTTP API
 
 ## Table of Contents
+
 - [HTTP API](#http-api)
   - [Table of Contents](#table-of-contents)
   - [Running](#running)
@@ -13,9 +14,9 @@
     - [GET /i](#get-i)
       - [Query type match](#query-type-match)
       - [Query type intersect](#query-type-intersect)
+      - [Query type list](#query-type-list)
     - [GET /cids](#get-cids)
     - [POST /rel/:cid](#post-relcid)
-
 
 ## Running
 
@@ -135,7 +136,11 @@ An encryption key can also be set (per-attribute) so that it is stored encrypted
 
 ```json
 [
-  {"key": "secret_caption", "value": "oh ho ho", "encKey": "<32 binary bytes>"}
+  {
+    "key": "secret_caption",
+    "value": "oh ho ho",
+    "encKey": "<32 binary bytes>"
+  }
 ]
 ```
 
@@ -179,6 +184,21 @@ Example query params (decoded as object):
   val: "<string array as JSON>"
 }
 ```
+
+#### Query type list
+
+The option `query: "list"` returns values that have been indexed for the given key. It does return CIDs.
+
+Example query params (decoded as object):
+
+```
+{
+  query: "list",
+  key: <str>
+}
+```
+
+The response body is a DAG-CBOR encoded array of strings, values that can be used for `match` queries in the future.
 
 ### GET /cids
 

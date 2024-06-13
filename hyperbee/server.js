@@ -18,7 +18,12 @@ import {
   NotArrayError,
 } from "./src/dbPut.js";
 import { keyFromPem } from "./src/signAttestation.js";
-import { encodeFromType, indexFindMatches, indexPut } from "./src/index.js";
+import {
+  encodeFromType,
+  indexFindMatches,
+  indexList,
+  indexPut,
+} from "./src/index.js";
 import { NeedsKeyError, dbGet, dbRawValue } from "./src/dbGet.js";
 
 // Last import
@@ -87,10 +92,22 @@ app.use((err, req, res, next) => {
 // Search index (data in query params)
 // CIDs are returned
 app.get("/i", async (req, res) => {
-  if (req.query.query !== "match" && req.query.query !== "intersect") {
-    res.status(400).send("only match/intersect queries are supported");
+  if (
+    req.query.query !== "match" &&
+    req.query.query !== "intersect" &&
+    req.query.query !== "list"
+  ) {
+    res.status(400).send("only match/intersect/list queries are supported");
     return;
   }
+
+  if (req.query.query === "list") {
+    const vals = await indexList(db, req.query.key);
+    res.type("application/cbor");
+    res.send(Buffer.from(encode(vals)));
+    return;
+  }
+
   let encodedValue;
   try {
     if (req.query.type === "str-array") {

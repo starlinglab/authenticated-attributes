@@ -253,6 +253,34 @@ const indexFindMatches = async (db, prop, value) => {
   return cids;
 };
 
+/**
+ * List all the values that are indexed for a given property.
+ *
+ * This only works if the db was properly opened with a binary key encoding (the default).
+ *
+ * Matches are returned as CID strings, not CID objects.
+ *
+ * @param {*} db - Hyperbee
+ * @param {string} prop - property/key/attribute
+ */
+const indexList = async (db, prop) => {
+  const bufSize = `i/${prop}/`.length;
+  const startKey = Buffer.from(`i/${prop}/`);
+  const endKey = Buffer.from(`i/${prop}0`);
+
+  const vals = [];
+  for await (const { key } of db.createReadStream({
+    gte: startKey,
+    lt: endKey,
+  })) {
+    const valWithCid = key.subarray(bufSize).toString();
+    // Remove last slash and text after (aka the CID)
+    const val = valWithCid.substring(0, valWithCid.lastIndexOf("/"));
+    vals.push(val);
+  }
+  return vals;
+};
+
 export {
   encodeUint32,
   encodeInt32,
@@ -266,4 +294,5 @@ export {
   indexClear,
   indexFindMatches,
   encodeFromType,
+  indexList,
 };
