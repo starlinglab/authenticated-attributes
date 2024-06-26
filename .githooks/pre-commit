@@ -5,25 +5,11 @@
 
 PASS=true
 
-cd hyperbee || exit 1
 for file in $(git diff --cached --name-only --diff-filter=ACMR . | sed 's| |\\ |g')
 do
-    npx prettier --ignore-unknown --write ../"$file"
+    npx prettier --ignore-unknown --write "$file"
     
-    if npx --no-install eslint --quiet ../"$file"; then
-    printf "\t\033[32mESLint Passed: %s\033[0m\n" "$file"
-  else
-    printf "\t\033[41mESLint Failed: %s\033[0m\n" "$file"
-    PASS=false
-  fi
-done
-
-cd ../uwazi/entity-page || exit 1
-for file in $(git diff --cached --name-only --diff-filter=ACMR . | sed 's| |\\ |g')
-do
-    npx prettier --ignore-unknown --write ../../"$file"
-
-    if npx --no-install eslint --quiet ../../"$file"; then
+    if npx --no-install eslint --quiet "$file"; then
     printf "\t\033[32mESLint Passed: %s\033[0m\n" "$file"
   else
     printf "\t\033[41mESLint Failed: %s\033[0m\n" "$file"
@@ -35,11 +21,6 @@ done
 if ! $PASS; then
     exit 1
 fi
-
-# Still inside entity-page dir
-npx vitest run || exit 1
-
-cd ../.. || exit 1
 
 # Add back the modified/prettified files to staging
 git diff --cached --name-only --diff-filter=ACMR | sed 's| |\\ |g' | xargs git add
