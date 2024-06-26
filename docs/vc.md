@@ -1,6 +1,6 @@
 # Verifiable Credentials
 
-It is possible to export attestations as [Verifiable Credentials](https://en.wikipedia.org/wiki/Verifiable_credentials) as defined by the W3C. Currently this code is frontend-only in [vc.js](../uwazi/entity-page/src/lib/vc.js), but it could be moved to the backend when needed.
+It is possible to export attestations as [Verifiable Credentials](https://en.wikipedia.org/wiki/Verifiable_credentials) as defined by the W3C, through the [HTTP API](./http.md).
 
 ## Example VC
 
@@ -24,7 +24,7 @@ It is possible to export attestations as [Verifiable Credentials](https://en.wik
     "attribute": "description",
     "value": "Web archive foo bar",
     // Explains the how to decode what has been stored at "value"
-    "encoding": "json", // "json", "base64_dag-cbor", "base64_encrypted_dag-cbor"
+    "encoding": "json" // "json", "base64_dag-cbor", "base64_encrypted_dag-cbor"
   },
   "proof": {
     "type": "authattr_ed25519_v1", // Something unique
@@ -52,4 +52,3 @@ The signature of the attestation can be verified from the VC alone, by reconstru
 | `proof.type`                  | string                                                        | Always `authattr_ed25519_v1`, except for version updates                                                                                   |
 | `proof.pubKey`                | string                                                        | Base64-encoded ed25519 public key                                                                                                          |
 | `proof.sig`                   | string                                                        | Base64-encoded ed25519 signature                                                                                                           |
-

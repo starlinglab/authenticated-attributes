@@ -41,7 +41,7 @@ env.NODE_ENV = "production";
 
 const app = express();
 const port = env.PORT ?? 3001;
-const corePath = env.UWAZI_HYPERCORE ?? "server.hypercore";
+const corePath = env.HYPERCORE ?? "server.hypercore";
 
 // Setup hyperbee
 const core = new Hypercore(corePath);

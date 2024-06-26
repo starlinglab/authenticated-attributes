@@ -20,7 +20,7 @@
 
 ## Running
 
-Run `node server.js` in the `hyperbee` directory. You can set the port it runs on with the `PORT` environment variable, and `UWAZI_HYPERCORE` to where the database files will be stored. Set `JWT_SECRET` to your JWT secret for authenticating writes.
+Run `node server.js` in the `hyperbee` directory. You can set the port it runs on with the `PORT` environment variable, and `HYPERCORE` to where the database files will be stored. Set `JWT_SECRET` to your JWT secret for authenticating writes.
 
 ## Headers
 
