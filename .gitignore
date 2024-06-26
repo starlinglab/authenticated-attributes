@@ -1,7 +1,12 @@
-**/node_modules
+hypercores/
+internal-scripts/
+*.hypercore
+icc*
+demo2-*.js
+*.pem
 
-# Created by https://www.toptal.com/developers/gitignore/api/node,svelte,linux,macos,windows
-# Edit at https://www.toptal.com/developers/gitignore?templates=node,svelte,linux,macos,windows
+# Created by https://www.toptal.com/developers/gitignore/api/node,linux,macos,windows
+# Edit at https://www.toptal.com/developers/gitignore?templates=node,linux,macos,windows
 
 ### Linux ###
 *~
@@ -191,13 +196,6 @@ dist
 # SvelteKit build / generate output
 .svelte-kit
 
-### Svelte ###
-# gitignore template for the SvelteKit, frontend web component framework
-# website: https://kit.svelte.dev/
-
-.svelte-kit/
-package
-
 ### Windows ###
 # Windows thumbnail cache files
 Thumbs.db
@@ -224,4 +222,4 @@ $RECYCLE.BIN/
 # Windows shortcuts
 *.lnk
 
-# End of https://www.toptal.com/developers/gitignore/api/node,svelte,linux,macos,windows
+# End of https://www.toptal.com/developers/gitignore/api/node,linux,macos,windows
