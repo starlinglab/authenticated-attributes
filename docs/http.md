@@ -7,16 +7,16 @@
   - [Running](#running)
   - [Headers](#headers)
   - [Paths](#paths)
-    - [GET /c/:cid/:attr](#get-ccidattr)
-    - [GET /c/:cid](#get-ccid)
-    - [POST /c/:cid/:attr](#post-ccidattr)
-    - [POST /c/:cid](#post-ccid)
-    - [GET /i](#get-i)
+    - [GET /v1/c/:cid/:attr](#get-v1ccidattr)
+    - [GET /v1/c/:cid](#get-v1ccid)
+    - [POST /v1/c/:cid/:attr](#post-v1ccidattr)
+    - [POST /v1/c/:cid](#post-v1ccid)
+    - [GET /v1/i](#get-v1i)
       - [Query type match](#query-type-match)
       - [Query type intersect](#query-type-intersect)
       - [Query type list](#query-type-list)
-    - [GET /cids](#get-cids)
-    - [POST /rel/:cid](#post-relcid)
+    - [GET /v1/cids](#get-v1cids)
+    - [POST /v1/rel/:cid](#post-v1relcid)
 
 ## Running
 
@@ -30,7 +30,7 @@ Sending a JWT as a bearer token is required for POST requests.
 
 ## Paths
 
-### GET /c/:cid/:attr
+### GET /v1/c/:cid/:attr
 
 Get a specific attestation for a specific CID. The response body is DAG-CBOR encoded.
 
@@ -69,7 +69,7 @@ The query param `format` can be set to `vc` to get the attestation returned in V
 
 Status code 404 is returned if the attribute doesn't exist in the database currently.
 
-### GET /c/:cid
+### GET /v1/c/:cid
 
 Returns all attestations for a CID in a map, with attributes as keys (like `description`) and the whole AA object as a value (see the main schema for details).
 
@@ -107,7 +107,7 @@ Here is an example response body after DAG-CBOR decoding:
 
 Encrypted values will remain encrypted as described in [database.md](./database.md).
 
-### POST /c/:cid/:attr
+### POST /v1/c/:cid/:attr
 
 Set an attestion for a CID. The request body is a DAG-CBOR encoded map with two attributes: `value` (anything), and `encKey` (false or 32 bytes).
 
@@ -115,7 +115,7 @@ The response body is empty with status code 200 indicating success, 400 indicati
 
 If the query param `append` is set to `1`, then the provided value is appended to a pre-existing array stored at that attribute. An array is created if nothing is stored at that attribute. If a non-array is stored there, status code 400 will be returned.
 
-### POST /c/:cid
+### POST /v1/c/:cid
 
 Set multiple attestations for a CID at once. The request body is a DAG-CBOR encoded array of objects. For example:
 
@@ -146,7 +146,7 @@ An encryption key can also be set (per-attribute) so that it is stored encrypted
 
 Encrypted attributes cannot be indexed, and so setting a `type` on them will be ignored.
 
-### GET /i
+### GET /v1/i
 
 Search the index, using query params.
 
@@ -200,11 +200,11 @@ Example query params (decoded as object):
 
 The response body is a DAG-CBOR encoded array of strings, values that can be used for `match` queries in the future.
 
-### GET /cids
+### GET /v1/cids
 
 Get all the CIDs stored in this database. The response is a DAG-CBOR encoded array of strings, not CID objects.
 
-### POST /rel/:cid
+### POST /v1/rel/:cid
 
 Add a relationship for this CID. The request body is DAG-CBOR encoded. Here is an example:
 

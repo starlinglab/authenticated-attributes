@@ -91,7 +91,7 @@ app.use((err, req, res, next) => {
 
 // Search index (data in query params)
 // CIDs are returned
-app.get("/i", async (req, res) => {
+app.get("/v1/i", async (req, res) => {
   if (
     req.query.query !== "match" &&
     req.query.query !== "intersect" &&
@@ -172,7 +172,7 @@ app.get("/i", async (req, res) => {
 });
 
 // Get one attestation
-app.get("/c/:cid/:attr", async (req, res, next) => {
+app.get("/v1/c/:cid/:attr", async (req, res, next) => {
   let encKey = false;
   if (req.query.key) {
     encKey = Buffer.from(req.query.key, "base64url");
@@ -224,7 +224,7 @@ app.get("/c/:cid/:attr", async (req, res, next) => {
 });
 
 // Get all attestations for CID
-app.get("/c/:cid", async (req, res) => {
+app.get("/v1/c/:cid", async (req, res) => {
   const metadata = {};
   for await (const { key, value } of db.createReadStream({
     gte: `att/${req.params.cid}`,
@@ -239,7 +239,7 @@ app.get("/c/:cid", async (req, res) => {
 });
 
 // Get all CIDs
-app.get("/cids", async (req, res) => {
+app.get("/v1/cids", async (req, res) => {
   const cids = new Set();
   for await (const { key } of db.createReadStream({
     gt: "att/",
@@ -253,7 +253,7 @@ app.get("/cids", async (req, res) => {
 });
 
 // Set a single attestation for a CID
-app.post("/c/:cid/:attr", async (req, res, next) => {
+app.post("/v1/c/:cid/:attr", async (req, res, next) => {
   let data;
   try {
     data = decode(new Uint8Array(req.body));
@@ -290,7 +290,7 @@ app.post("/c/:cid/:attr", async (req, res, next) => {
 });
 
 // Set multiple attestations for a CID
-app.post("/c/:cid", async (req, res, next) => {
+app.post("/v1/c/:cid", async (req, res, next) => {
   let data;
   try {
     data = decode(new Uint8Array(req.body));
@@ -343,7 +343,7 @@ app.post("/c/:cid", async (req, res, next) => {
 });
 
 // Add a relationship
-app.post("/rel/:cid", async (req, res, next) => {
+app.post("/v1/rel/:cid", async (req, res, next) => {
   let data;
   try {
     data = decode(new Uint8Array(req.body));
