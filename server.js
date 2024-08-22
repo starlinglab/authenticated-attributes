@@ -208,7 +208,6 @@ app.get("/v1/c/:cid/:attr", async (req, res, next) => {
 
     // Unexpected error, give up
     next(e);
-    res.status(500).send();
     return;
   }
 
@@ -282,7 +281,6 @@ app.post("/v1/c/:cid/:attr", async (req, res, next) => {
       return;
     }
     next(e);
-    res.status(500).send();
     return;
   }
 
@@ -335,7 +333,6 @@ app.post("/v1/c/:cid", async (req, res, next) => {
     await batch.flush();
   } catch (e) {
     next(e);
-    res.status(500).send();
     return;
   }
 
@@ -373,7 +370,6 @@ app.post("/v1/rel/:cid", async (req, res, next) => {
     );
   } catch (e) {
     next(e);
-    res.status(500).send();
     return;
   }
 
