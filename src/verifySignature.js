@@ -38,7 +38,7 @@ const verifyAttSignature = async (attestationObj, givenPubKey) => {
     );
   }
 
-  const isValid = await verifyAsync(sig, msg, givenPubKey);
+  const isValid = await verifyAsync(sig, msg.bytes, givenPubKey);
   if (!isValid) {
     throw new Error("signature could not be validated");
   }

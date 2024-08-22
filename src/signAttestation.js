@@ -18,7 +18,7 @@ if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const signAttestation = async (privKey, rawAttestation) => {
   const pubKey = await getPublicKeyAsync(privKey);
   const rawAttCID = await encodeAttestation(rawAttestation);
-  const signature = await signAsync(rawAttCID, privKey);
+  const signature = await signAsync(rawAttCID.bytes, privKey);
   return { sig: signature, msg: rawAttCID, pubKey };
 };
 
