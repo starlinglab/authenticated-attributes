@@ -16,6 +16,7 @@
       - [Query type intersect](#query-type-intersect)
       - [Query type list](#query-type-list)
     - [GET /v1/cids](#get-v1cids)
+    - [GET /v1/atts](#get-v1atts)
     - [POST /v1/rel/:cid](#post-v1relcid)
 
 ## Running
@@ -203,6 +204,10 @@ The response body is a DAG-CBOR encoded array of strings, values that can be use
 ### GET /v1/cids
 
 Get all the CIDs stored in this database. The response is a DAG-CBOR encoded array of strings, not CID objects.
+
+### GET /v1/atts
+
+Get all the attestations stored in the database, in a DAG-CBOR array.
 
 ### POST /v1/rel/:cid
 
