@@ -23,7 +23,7 @@ import {
   indexFindMatches,
   indexList,
   indexPut,
-} from "./src/index.js";
+} from "./src/dbIndex.js";
 import { NeedsKeyError, dbGet, dbRawValue } from "./src/dbGet.js";
 
 // Last import

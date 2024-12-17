@@ -1,8 +1,10 @@
 {
-  "name": "hyperbee-demo",
-  "version": "0.0.0",
+  "name": "authenticated-attributes",
+  "version": "1.0.1",
   "private": true,
   "type": "module",
+  "main": "src/index.js",
+  "exports": "./src/index.js",
   "dependencies": {
     "@ipld/dag-cbor": "^9.0.0",
     "@noble/ed25519": "^2.1.0",
@@ -21,7 +23,7 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "author": "",
+  "author": "Starling Lab",
   "license": "MIT",
   "devDependencies": {
     "eslint": "^8.45.0",
