@@ -1,13 +1,18 @@
 import { encode } from "@ipld/dag-cbor";
 import { CID } from "multiformats";
-
+import OpenTimestamps from "opentimestamps";
 import { getPublicKeyAsync } from "@noble/ed25519";
+
 import { signAttestation } from "./signAttestation.js";
 import { encryptValue } from "./encryptValue.js";
-import { timestampAttestation } from "./otsTimestamp.js";
+import {
+  timestampAttestation,
+  getDetachedTimestampFile,
+} from "./otsTimestamp.js";
 import { makeKey } from "./makeKey.js";
 import { dbGet } from "./dbGet.js";
 import { attestationVersion } from "./version.js";
+import { encodeAttestation } from "./encodeAttestation.js";
 
 let sigKey = null;
 
@@ -62,6 +67,79 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
       version: attestationVersion,
     })
   );
+};
+
+/**
+ * Put data in the database, adding multiple key-value pairs at once.
+ * This is much faster because timestamping can be batched, but each timestamp proof
+ * will be larger than with dbPut.
+ * @param {*} db - Hyperbee
+ * @param {*} data - array of triples: [cidString, attrString, valueObject]
+ * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
+ */
+const dbPutMultiple = async (db, data, encryptionKey = false) => {
+  const detaches = [];
+  const puts = {}; // map key string to un-encoded attestation object
+
+  // Store put data
+  for (const [id, attr, value] of data) {
+    const rawAttestation = {
+      CID: CID.parse(id),
+      attribute: attr,
+      value,
+      encrypted: Boolean(encryptionKey),
+      timestamp: new Date().toISOString(),
+    };
+    // eslint-disable-next-line no-await-in-loop
+    const signature = await signAttestation(sigKey, rawAttestation);
+    const signedAttestation = {
+      attestation: rawAttestation,
+      signature,
+    };
+
+    const attestation = rawAttestation;
+    if (encryptionKey) {
+      attestation.value = encryptValue(value, encryptionKey);
+      attestation.encrypted = true;
+    }
+
+    // eslint-disable-next-line no-await-in-loop
+    detaches.push(await getDetachedTimestampFile(signedAttestation));
+
+    puts[makeKey(id, attr)] = {
+      attestation,
+      signature,
+      timestamp: {
+        // Copied from otsTimestamp.js
+        ots: {
+          // eslint-disable-next-line no-await-in-loop
+          msg: (await encodeAttestation(signedAttestation)).toString(),
+          upgraded: false,
+          proof: null, // added below
+        },
+      },
+      version: attestationVersion,
+    };
+  }
+
+  // Timestamp, but disable console.log first to prevent "Submitting to remote calendar" messages
+  // Adapted from otsTimestamp.js
+  const oldConsoleLog = console.log;
+  console.log = () => {};
+  await OpenTimestamps.stamp(detaches);
+  console.log = oldConsoleLog;
+
+  // Do puts
+  const batch = db.batch();
+  let i = 0;
+  for (const [id, attr] of data) {
+    const key = makeKey(id, attr);
+    puts[key].timestamp.ots.proof = detaches[i].serializeToBytes();
+    // eslint-disable-next-line no-await-in-loop
+    await batch.put(key, encode(puts[key]));
+    i += 1;
+  }
+  await batch.flush();
 };
 
 class NotArrayError extends Error {}
@@ -228,4 +306,5 @@ export {
   dbAddRelation,
   dbRemoveRelation,
   NotArrayError,
+  dbPutMultiple,
 };

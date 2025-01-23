@@ -6,6 +6,8 @@ export {
   dbAppend,
   dbAddRelation,
   dbRemoveRelation,
+  NotArrayError,
+  dbPutMultiple,
 } from "./dbPut.js";
 export { dbUpgrade } from "./dbUpgrade.js";
 export { decryptValue } from "./decryptValue.js";

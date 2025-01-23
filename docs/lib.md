@@ -35,11 +35,19 @@ No signatures are validated!</p>
 <p>null is returned if the key doesn&#39;t exist in the database.</p>
 <p>If the attestation version is unknown, a BadVersionError will be raised.</p>
 </dd>
+<dt><a href="#openDB">openDB(path)</a> ⇒ <code>Hyperbee</code></dt>
+<dd><p>Creates hypercore/hyperbee at given path.</p>
+</dd>
 <dt><a href="#setSigningKey">setSigningKey(privKey)</a></dt>
 <dd><p>Set a global signing key for write operations.</p>
 </dd>
 <dt><a href="#dbPut">dbPut(db, id, attr, value, [encryptionKey])</a> ⇒ <code>Promise.&lt;*&gt;</code></dt>
 <dd><p>Put data in the database.</p>
+</dd>
+<dt><a href="#dbPutMultiple">dbPutMultiple(db, data, [encryptionKey])</a></dt>
+<dd><p>Put data in the database, adding multiple key-value pairs at once.
+This is much faster because timestamping can be batched, but each timestamp proof
+will be larger than with dbPut.</p>
 </dd>
 <dt><a href="#dbAppend">dbAppend(db, id, attr, value, [encryptionKey])</a> ⇒ <code>Promise.&lt;*&gt;</code></dt>
 <dd><p>Appends to an array in the database.</p>
@@ -160,6 +168,19 @@ If the attestation version is unknown, a BadVersionError will be raised.
 | id    | <code>string</code> | CID               |
 | attr  | <code>string</code> | attribute/key     |
 
+<a name="openDB"></a>
+
+## openDB(path) ⇒ <code>Hyperbee</code>
+
+Creates hypercore/hyperbee at given path.
+
+**Kind**: global function  
+**Returns**: <code>Hyperbee</code> - database
+
+| Param | Type                |
+| ----- | ------------------- |
+| path  | <code>String</code> |
+
 <a name="setSigningKey"></a>
 
 ## setSigningKey(privKey)
@@ -188,6 +209,22 @@ Put data in the database.
 | attr            | <code>string</code>     |                    | attribute/key                           |
 | value           | <code>\*</code>         |                    | data to be stored, as JavaScript object |
 | [encryptionKey] | <code>Uint8Array</code> | <code>false</code> | 32 byte key, if encryption is needed    |
+
+<a name="dbPutMultiple"></a>
+
+## dbPutMultiple(db, data, [encryptionKey])
+
+Put data in the database, adding multiple key-value pairs at once.
+This is much faster because timestamping can be batched, but each timestamp proof
+will be larger than with dbPut.
+
+**Kind**: global function
+
+| Param           | Type                    | Default            | Description                                            |
+| --------------- | ----------------------- | ------------------ | ------------------------------------------------------ |
+| db              | <code>\*</code>         |                    | Hyperbee                                               |
+| data            | <code>\*</code>         |                    | array of triples: [cidString, attrString, valueObject] |
+| [encryptionKey] | <code>Uint8Array</code> | <code>false</code> | 32 byte key, if encryption is needed                   |
 
 <a name="dbAppend"></a>
 

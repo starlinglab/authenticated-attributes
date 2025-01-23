@@ -8,6 +8,14 @@ import { encodeAttestation } from "./encodeAttestation.js";
  * @ignore
  */
 
+const getDetachedTimestampFile = async (signedAttestation) => {
+  const signedAttCID = await encodeAttestation(signedAttestation);
+  return OpenTimestamps.DetachedTimestampFile.fromBytes(
+    new OpenTimestamps.Ops.OpSHA256(),
+    Buffer.from(signedAttCID.toString())
+  );
+};
+
 const timestampAttestation = async (signedAttestation) => {
   const signedAttCID = await encodeAttestation(signedAttestation);
   const detached = OpenTimestamps.DetachedTimestampFile.fromBytes(
@@ -25,7 +33,7 @@ const timestampAttestation = async (signedAttestation) => {
   return {
     proof: fileOts,
     upgraded: false,
-    msg: signedAttCID,
+    msg: signedAttCID.toString(),
   };
 };
 
@@ -72,4 +80,9 @@ const upgradeTimestampAttestation = async (tsAtt) => {
   return tsAtt;
 };
 
-export { timestampAttestation, getInfo, upgradeTimestampAttestation };
+export {
+  timestampAttestation,
+  getInfo,
+  upgradeTimestampAttestation,
+  getDetachedTimestampFile,
+};
