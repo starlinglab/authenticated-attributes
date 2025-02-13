@@ -58,6 +58,11 @@ NotArrayError will be thrown.</p>
 <p>A batch is used so that the append is treated as one locked atomic operation,
 not a separate read and write.</p>
 </dd>
+<dt><a href="#batchRelationships">batchRelationships(db, data)</a> ⇒ <code>*</code></dt>
+<dd><p>Turn relationship data into batched put data for dbPutMultiple.
+Note that this will not overwrite existing relationships.
+See dbAddRelation for data details.</p>
+</dd>
 <dt><a href="#dbAddRelation">dbAddRelation(db, id, childOrParent, relationType, relationCid)</a></dt>
 <dd><p>Add a relation to the database according to our relationship schema.</p>
 <p>If the given key and/or relationType doesn&#39;t exist it will be created.</p>
@@ -252,6 +257,22 @@ not a separate read and write.
 | attr            | <code>string</code>     |                    | attribute/key                           |
 | value           | <code>\*</code>         |                    | data to be stored, as JavaScript object |
 | [encryptionKey] | <code>Uint8Array</code> | <code>false</code> | 32 byte key, if encryption is needed    |
+
+<a name="batchRelationships"></a>
+
+## batchRelationships(db, data) ⇒ <code>\*</code>
+
+Turn relationship data into batched put data for dbPutMultiple.
+Note that this will not overwrite existing relationships.
+See dbAddRelation for data details.
+
+**Kind**: global function  
+**Returns**: <code>\*</code> - - data for dbPutMultiple
+
+| Param | Type            | Description                                             |
+| ----- | --------------- | ------------------------------------------------------- |
+| db    | <code>\*</code> | Hyperbee                                                |
+| data  | <code>\*</code> | array of [id, childOrParent, relationType, relationCid] |
 
 <a name="dbAddRelation"></a>
 

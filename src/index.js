@@ -8,6 +8,7 @@ export {
   dbRemoveRelation,
   NotArrayError,
   dbPutMultiple,
+  batchRelationships,
 } from "./dbPut.js";
 export { dbUpgrade } from "./dbUpgrade.js";
 export { decryptValue } from "./decryptValue.js";

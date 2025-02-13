@@ -194,6 +194,76 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
 };
 
 /**
+ * Turn relationship data into batched put data for dbPutMultiple.
+ * Note that this will not overwrite existing relationships.
+ * See dbAddRelation for data details.
+ *
+ * @param {*} db - Hyperbee
+ * @param {*} data - array of [id, childOrParent, relationType, relationCid]
+ * @returns {*} - data for dbPutMultiple
+ */
+const batchRelationships = async (db, data) => {
+  const batch = db.batch();
+  await batch.lock();
+
+  // Get existing id+childOrParent data, store it, add this data to it,
+  // then transform that whole struct into triples for dbPutMultiple
+
+  const hierData = {};
+
+  for (const [id, childOrParent, relationType, relationCid] of data) {
+    if (childOrParent !== "children" && childOrParent !== "parents") {
+      throw new Error(
+        `childOrParent must be children or parents, found '${childOrParent}'`
+      );
+    }
+
+    let result;
+    if (hierData[id] != null && hierData[id][childOrParent] != null) {
+      result = hierData[id][childOrParent];
+    } else {
+      // eslint-disable-next-line no-await-in-loop
+      result = await dbGet(
+        batch,
+        id,
+        childOrParent,
+        // eslint-disable-next-line no-await-in-loop
+        await getPublicKeyAsync(sigKey),
+        false,
+        true
+      );
+      if (result != null) {
+        if (!hierData[id]) hierData[id] = {};
+        hierData[id][childOrParent] = result.value;
+      }
+    }
+    if (result == null) {
+      // Nothing stored here yet
+      if (!hierData[id]) hierData[id] = {};
+      hierData[id][childOrParent] = { [relationType]: [relationCid] };
+    } else if (relationType in hierData[id][childOrParent]) {
+      hierData[id][childOrParent][relationType].push(relationCid);
+    } else {
+      hierData[id][childOrParent][relationType] = [relationCid];
+    }
+  }
+
+  // Transform hierData into data for dbPutMultiple: [[cidString, attrString, valueObject], ...]
+  const putData = [];
+  for (const [key, value] of Object.entries(hierData)) {
+    if (value.children) {
+      putData.push([key, "children", value.children]);
+    }
+    if (value.parents) {
+      putData.push([key, "parents", value.parents]);
+    }
+  }
+
+  await batch.close();
+  return putData;
+};
+
+/**
  * Add a relation to the database according to our relationship schema.
  *
  * If the given key and/or relationType doesn't exist it will be created.
@@ -307,4 +377,5 @@ export {
   dbRemoveRelation,
   NotArrayError,
   dbPutMultiple,
+  batchRelationships,
 };
