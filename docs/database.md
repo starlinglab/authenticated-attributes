@@ -3,6 +3,7 @@
 Authenticated Attributes is built on top of [Hyperbee](https://docs.pears.com/building-blocks/hyperbee), a key-value store with BitTorrent-esque replication. Authenticated Attributes is also a key-value store, but every value is signed, timestamped, and optionally encrypted. Our schema is designed around [CIDs](https://docs.ipfs.tech/concepts/content-addressing/) and making "attestations about media", rather than just generic key-value storage.
 
 ## Table of Contents
+
 - [Database](#database)
   - [Table of Contents](#table-of-contents)
   - [Key-value format](#key-value-format)
@@ -17,7 +18,6 @@ Authenticated Attributes is built on top of [Hyperbee](https://docs.pears.com/bu
   - [API](#api)
     - [Node.js library](#nodejs-library)
     - [HTTP API](#http-api)
-
 
 ## Key-value format
 
@@ -42,6 +42,7 @@ Database entries are stored as binary data, encoded with [DAG-CBOR](https://ipld
     pubKey: Uint8Array(32),
     sig: Uint8Array(64),
     // CID of "attestation" object
+    // "value" is never encrypted for this
     msg: CID(bafyreietqpflteqz6kj7lmdqz76kzkwdo65o4bhivxrmqvha7pdgixxos4)
   },
   timestamp: {
@@ -98,8 +99,10 @@ The NaCl API is used, so the specific encryption algorithm is xsalsa20-poly1305.
 Attestations are timestamped with [OpenTimestamps](https://opentimestamps.org/). This requires Internet access and takes about one second to finish. At first only the incomplete proof is stored (indicated by `timestamp.ots.upgraded` being `false`), but the proof can be upgraded at a later date.
 
 The timestamp serves to prove that the attestation was not made after `attestation.timestamp`, within the several hours long error bars afforded by the system. In practice, this means `attestation.timestamp` is provably accurate to about a day interval.
-
 If you trust the signer you can ignore the proof and rely on `attestation.timestamp` alone, making it accurate to about a second.
+
+The exact data that is timestamped is the _string_ of the CID at `timestamp.ots.msg`, such as `bafy...`.
+That is then hashed with SHA-256 according to the OpenTimestamps process.
 
 ### Timestamping methods
 
