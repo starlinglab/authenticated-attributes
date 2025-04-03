@@ -1,6 +1,6 @@
 {
   "root": true,
-  "ignorePatterns": ["**/*.*", "!**/*.js", "**/node_modules"],
+  "ignorePatterns": ["**/*", "!**/*.js", "**/node_modules"],
   "env": {
     "node": true,
     "es2022": true

@@ -20,6 +20,15 @@ $ cp example.env .env
 $ nano .env
 ```
 
+### Docker
+
+For the HTTP server, a Docker container and Docker Compose file are available.
+
+1. Download [docker-compose.yml](./docker-compose.yml) to your server
+2. Generate a signing key as described above or in the compose file
+3. Edit the JWT secret in the compose file
+4. Run `docker compose up -d`
+
 ## Development
 
 After cloning the repo, run `npm install` to install dependencies. Enable pre-commit hooks with `git config core.hooksPath .githooks`. Now you should be ready to make code changes, and formatting and linting will happen automatically before committing.

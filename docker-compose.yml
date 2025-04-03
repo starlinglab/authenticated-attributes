@@ -1,0 +1,14 @@
+services:
+  aa:
+    image: ghcr.io/starlinglab/authenticated-attributes:latest
+    ports:
+      - "127.0.0.1:3001:3001"
+    environment:
+      # Change this to 32 random bytes
+      - JWT_SECRET="CHANGE ME NOW"
+    volumes:
+      # Keep database available on local disk
+      - ./server.hypercore:/server.hypercore
+      # Generate an ed25519 key, then provide it here
+      #   openssl genpkey -algorithm ED25519 > signing_key.pem
+      - ./signing_key.pem:/sigkey.pem
