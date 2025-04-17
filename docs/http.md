@@ -39,7 +39,7 @@ Here is an example response body after DAG-CBOR decoding:
 
 ```javascript
 {
-  version: "1.0",
+  version: "1.1",
   signature: {
     pubKey: Uint8Array(32),
     sig: Uint8Array(64),
@@ -49,7 +49,7 @@ Here is an example response body after DAG-CBOR decoding:
     ots: {
         proof: Uint8Array(503),
         upgraded: false,
-        msg: CID(bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m)
+        msg: "bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m"
     }
   },
   attestation: {
@@ -81,7 +81,7 @@ Here is an example response body after DAG-CBOR decoding:
 ```javascript
 {
   "description": {
-    version: "1.0",
+    version: "1.1",
     signature: {
       pubKey: Uint8Array(32),
       sig: Uint8Array(64),
@@ -91,7 +91,7 @@ Here is an example response body after DAG-CBOR decoding:
       ots: {
           proof: Uint8Array(503),
           upgraded: false,
-          msg: CID(bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m)
+          msg: "bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m"
       }
     },
     attestation: {

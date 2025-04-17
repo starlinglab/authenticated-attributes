@@ -3,7 +3,7 @@
 /**
  * The current attestation version this database writes.
  */
-const attestationVersion = "1.0";
+const attestationVersion = "1.1";
 
 /**
  * Find out if this attestation can be decoded.

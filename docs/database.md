@@ -37,7 +37,7 @@ Database entries are stored as binary data, encoded with [DAG-CBOR](https://ipld
 
 ```javascript
 {
-  version: "1.0",
+  version: "1.1",
   signature: {
     pubKey: Uint8Array(32),
     sig: Uint8Array(64),
@@ -51,7 +51,7 @@ Database entries are stored as binary data, encoded with [DAG-CBOR](https://ipld
         upgraded: false,
         // CID of signature and attestation objects together in a map:
         // {signature, attestation}
-        msg: CID(bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m)
+        msg: "bafyreialprnoiwl25t37feen7wbkwwr4l5bpnokjydkog3mhiuodi2av6m"
     }
     // Possible other timestamp formats in the future
   },
@@ -75,6 +75,15 @@ Some information already in the database key is repeated in the `attestation`, s
 When the attestation is encrypted, the schema looks very similar to the above. The only change is `attestation.encrypted` is `true`, and `attestation.value` is always binary data. That binary data, once decrypted, is a DAG-CBOR encoding of whatever the original value was: object, binary data, string, integer, etc.
 
 Currently only a `version` of `1.0` is supported. In the past, debug databases had no `version` field and that is considered equivalent to `1.0`. Future non-breaking changes will only update the minor version, after the dot.
+Note that changing `timestamp` info is not considered a breaking change.
+
+<details>
+<summary>Version history</summary>
+
+Version 1.1 switched `timestamp.ots.msg` to a string type instead of a CID. This is more accurate
+to what actually gets timestamped.
+
+</details>
 
 ## Other database entries
 
