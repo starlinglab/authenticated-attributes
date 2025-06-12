@@ -110,11 +110,13 @@ Encrypted values will remain encrypted as described in [database.md](./database.
 
 ### POST /v1/c/:cid/:attr
 
-Set an attestion for a CID. The request body is a DAG-CBOR encoded map with two attributes: `value` (anything), and `encKey` (false or 32 bytes).
+Set an attestion for a CID (whether present in the database or not). The request body is a DAG-CBOR encoded map with two attributes: `value` (anything), and `encKey` (false or 32 bytes).
 
 The response body is empty with status code 200 indicating success, 400 indicating request body error, and 500 indicating database error.
 
 If the query param `append` is set to `1`, then the provided value is appended to a pre-existing array stored at that attribute. An array is created if nothing is stored at that attribute. If a non-array is stored there, status code 400 will be returned.
+
+If the CID doesn't already exist in the database, it will be created.
 
 ### POST /v1/c/:cid
 
