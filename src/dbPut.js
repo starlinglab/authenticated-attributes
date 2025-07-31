@@ -13,6 +13,7 @@ import { makeKey } from "./makeKey.js";
 import { dbGet } from "./dbGet.js";
 import { attestationVersion } from "./version.js";
 import { encodeAttestation } from "./encodeAttestation.js";
+import { getKeyByName } from "./keystore.js";
 
 /**
  * Put data in the database.
@@ -20,10 +21,23 @@ import { encodeAttestation } from "./encodeAttestation.js";
  * @param {string} id - CID
  * @param {string} attr - attribute/key
  * @param {*} value - data to be stored, as JavaScript object
+ * @param {Uint8Array} sigKeyName - name of signing key in keystore
  * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
  * @returns {Promise<*>} - underlying hyperbee db.put result, usually undefined
  */
-const dbPut = async (db, id, attr, value, encryptionKey = false) => {
+const dbPut = async (
+  db,
+  id,
+  attr,
+  value,
+  sigKeyName,
+  encryptionKey = false
+) => {
+  const sigKey = getKeyByName(db.id, sigKeyName).priv;
+  if (sigKey == null) {
+    throw new Error(`key name has no private key in keystore: ${sigKeyName}`);
+  }
+
   const rawAttestation = {
     CID: CID.parse(id),
     attribute: attr,
@@ -65,9 +79,15 @@ const dbPut = async (db, id, attr, value, encryptionKey = false) => {
  * will be larger than with dbPut.
  * @param {*} db - Hyperbee
  * @param {*} data - array of triples: [cidString, attrString, valueObject]
+ * @param {Uint8Array} sigKeyName - name of signing key in keystore
  * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
  */
-const dbPutMultiple = async (db, data, encryptionKey = false) => {
+const dbPutMultiple = async (db, data, sigKeyName, encryptionKey = false) => {
+  const sigKey = getKeyByName(db.id, sigKeyName).priv;
+  if (sigKey == null) {
+    throw new Error(`key name has no private key in keystore: ${sigKeyName}`);
+  }
+
   const detaches = [];
   const puts = {}; // map key string to un-encoded attestation object
 
@@ -151,24 +171,30 @@ class NotArrayError extends Error {}
  * @param {string} id - CID
  * @param {string} attr - attribute/key
  * @param {*} value - data to be stored, as JavaScript object
+ * @param {Uint8Array} sigKeyName - name of signing key in keystore
  * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
  * @returns {Promise<*>} - array as now stored in database
  */
-const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
+const dbAppend = async (
+  db,
+  id,
+  attr,
+  value,
+  sigKeyName,
+  encryptionKey = false
+) => {
   const batch = db.batch();
   await batch.lock();
 
-  const result = await dbGet(
-    batch,
-    id,
-    attr,
-    await getPublicKeyAsync(sigKey),
-    encryptionKey,
-    true
-  );
+  const sigKey = getKeyByName(db.id, sigKeyName).priv;
+  if (sigKey == null) {
+    throw new Error(`key name has no private key in keystore: ${sigKeyName}`);
+  }
+
+  const result = await dbGet(batch, id, attr, encryptionKey, true);
   if (result === null) {
     // Nothing is stored under this attribute yet
-    await dbPut(batch, id, attr, [value], encryptionKey);
+    await dbPut(batch, id, attr, [value], sigKeyName, encryptionKey);
     await batch.flush();
     return [value];
   }
@@ -178,7 +204,7 @@ const dbAppend = async (db, id, attr, value, encryptionKey = false) => {
 
   // Append to existing array
   result.value.push(value);
-  await dbPut(batch, id, attr, result.value, encryptionKey);
+  await dbPut(batch, id, attr, result.value, sigKeyName, encryptionKey);
   await batch.flush();
   return result.value;
 };
@@ -213,15 +239,7 @@ const batchRelationships = async (db, data) => {
       result = hierData[id][childOrParent];
     } else {
       // eslint-disable-next-line no-await-in-loop
-      result = await dbGet(
-        batch,
-        id,
-        childOrParent,
-        // eslint-disable-next-line no-await-in-loop
-        await getPublicKeyAsync(sigKey),
-        false,
-        true
-      );
+      result = await dbGet(batch, id, childOrParent, false, true);
       if (result != null) {
         if (!hierData[id]) hierData[id] = {};
         hierData[id][childOrParent] = result.value;
@@ -268,13 +286,15 @@ const batchRelationships = async (db, data) => {
  * @param {string} childOrParent is either "children" or "parents" as the db key
  * @param {string} relationType is a type for the relation like "derived" or "transcoded"
  * @param {CID} relationCid is the CID object to be added as a relation
+ * @param {Uint8Array} sigKeyName - name of signing key in keystore
  */
 const dbAddRelation = async (
   db,
   id,
   childOrParent,
   relationType,
-  relationCid
+  relationCid,
+  sigKeyName
 ) => {
   if (childOrParent !== "children" && childOrParent !== "parents") {
     throw new Error("childOrParent must be children or parents");
@@ -283,17 +303,16 @@ const dbAddRelation = async (
   const batch = db.batch();
   await batch.lock();
 
-  const result = await dbGet(
-    batch,
-    id,
-    childOrParent,
-    await getPublicKeyAsync(sigKey),
-    false,
-    true
-  );
+  const result = await dbGet(batch, id, childOrParent, false, true);
   if (result === null) {
     // Nothing is stored under this attribute yet
-    await dbPut(batch, id, childOrParent, { [relationType]: [relationCid] });
+    await dbPut(
+      batch,
+      id,
+      childOrParent,
+      { [relationType]: [relationCid] },
+      sigKeyName
+    );
     await batch.flush();
     return;
   }
@@ -302,7 +321,7 @@ const dbAddRelation = async (
   } else {
     result.value[relationType] = [relationCid];
   }
-  await dbPut(batch, id, childOrParent, result.value);
+  await dbPut(batch, id, childOrParent, result.value, sigKeyName);
   await batch.flush();
 };
 
@@ -314,13 +333,15 @@ const dbAddRelation = async (
  * @param {string} childOrParent is either "children" or "parents" as the db key
  * @param {string} relationType is a type for the relation like "derived" or "transcoded"
  * @param {CID} relationCid is the CID object to be added as a relation
+ * @param {Uint8Array} sigKeyName - name of signing key in keystore
  */
 const dbRemoveRelation = async (
   db,
   id,
   childOrParent,
   relationType,
-  relationCid
+  relationCid,
+  sigKeyName
 ) => {
   if (childOrParent !== "children" && childOrParent !== "parents") {
     throw new Error("childOrParent must be children or parents");
@@ -329,14 +350,7 @@ const dbRemoveRelation = async (
   const batch = db.batch();
   await batch.lock();
 
-  const result = await dbGet(
-    batch,
-    id,
-    childOrParent,
-    await getPublicKeyAsync(sigKey),
-    false,
-    true
-  );
+  const result = await dbGet(batch, id, childOrParent, false, true);
   if (result === null) {
     // Nothing is stored under this attribute yet, so do nothing
     await batch.flush();
@@ -355,7 +369,7 @@ const dbRemoveRelation = async (
       break;
     }
   }
-  await dbPut(batch, id, childOrParent, result.value);
+  await dbPut(batch, id, childOrParent, result.value, sigKeyName);
   await batch.flush();
 };
 
