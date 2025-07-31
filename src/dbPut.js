@@ -14,16 +14,6 @@ import { dbGet } from "./dbGet.js";
 import { attestationVersion } from "./version.js";
 import { encodeAttestation } from "./encodeAttestation.js";
 
-let sigKey = null;
-
-/**
- * Set a global signing key for write operations.
- * @param {Uint8Array} privKey - ed25519 private key
- */
-const setSigningKey = (privKey) => {
-  sigKey = privKey;
-};
-
 /**
  * Put data in the database.
  * @param {*} db - Hyperbee or batch
@@ -371,7 +361,6 @@ const dbRemoveRelation = async (
 
 export {
   dbPut,
-  setSigningKey,
   dbAppend,
   dbAddRelation,
   dbRemoveRelation,

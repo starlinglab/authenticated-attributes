@@ -3,19 +3,32 @@ import { webcrypto } from "node:crypto";
 import { verifyAsync } from "@noble/ed25519";
 
 import { encodeAttestation } from "./encodeAttestation.js";
+import { getKeystore } from "./keystore.js";
 
 // Support Node.js 18 (LTS)
 // https://github.com/paulmillr/noble-ed25519#usage
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
+function isEqualArray(a, b) {
+  if (a.length != b.length) {
+    return false;
+  }
+  for (let i = 0; i < a.length; i++) {
+    if (a[i] != b[i]) {
+      return false;
+    }
+    return true;
+  }
+}
+
 /**
  * @ignore
  * @throws if failed to verify
+ * @param {string} dbId - database identifier
  * @param {*} attestationObj
- * @param {Uint8Array} givenPubKey
  * @returns {Promise<true>}
  */
-const verifyAttSignature = async (attestationObj, givenPubKey) => {
+const verifyAttSignature = async (dbId, attestationObj) => {
   // check that the signed message is the CID for the rawAttestation
   const rawAttestationCID = await encodeAttestation(attestationObj.attestation);
   if (!rawAttestationCID.equals(attestationObj.signature.msg)) {
@@ -28,17 +41,23 @@ const verifyAttSignature = async (attestationObj, givenPubKey) => {
 
   const { sig, msg, pubKey } = attestationObj.signature;
 
-  // Confirm public key matches expected one
-  const areEqual =
-    givenPubKey.length === pubKey.length &&
-    givenPubKey.every((value, index) => value === pubKey[index]);
-  if (!areEqual) {
+  // Find this public key in the keystore
+  const keystore = getKeystore(dbId);
+  let foundKey = false;
+  for (const [_, keys] of Object.entries(keystore)) {
+    if (isEqualArray(keys.pub, pubKey)) {
+      foundKey = true;
+      break;
+    }
+  }
+
+  if (!foundKey) {
     throw new Error(
-      `given public key (${givenPubKey}) does not match stored one (${pubKey}`
+      `could not find matching public key in keystore: ${pubKey}`
     );
   }
 
-  const isValid = await verifyAsync(sig, msg.bytes, givenPubKey);
+  const isValid = await verifyAsync(sig, msg.bytes, pubKey);
   if (!isValid) {
     throw new Error("signature could not be validated");
   }

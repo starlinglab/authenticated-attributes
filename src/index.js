@@ -1,7 +1,6 @@
 export { isAttVersionSupported, attestationVersion } from "./version.js";
 export { dbGet, dbIsEncrypted, dbRawValue } from "./dbGet.js";
 export {
-  setSigningKey,
   dbPut,
   dbAppend,
   dbAddRelation,
@@ -15,3 +14,9 @@ export { decryptValue } from "./decryptValue.js";
 export { keyFromPem } from "./signAttestation.js";
 export { attToVC } from "./vc.js";
 export { openDB } from "./dbManager.js";
+export {
+  writePublicKey,
+  writePrivateKey,
+  getKeyByName,
+  getKeystore,
+} from "./keystore.js";

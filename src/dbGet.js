@@ -12,7 +12,7 @@ class BadVersionError extends Error {}
 
 /**
  * Get verified output from the database.
- * Only properly signed entries will be returned.
+ * Only properly signed entries will be returned, using keys from the keystore.
  *
  * If the value is encrypted and encKey is not provided, a NeedsKeyError will be raised,
  * as this means the signature cannot be validated either.
@@ -30,7 +30,6 @@ class BadVersionError extends Error {}
  * @param {*} db - Hyperbee or batch
  * @param {string} id - CID
  * @param {string} attr - attribute/key
- * @param {Uint8Array} sigKey - ed25519 public key
  * @param {Uint8Array} [encKey=false] - 32 byte key, if decryption is needed
  * @param {boolean} [reduced=false] - if set to true only the value and timestamp are returned, not the whole object
  * @param {boolean} [leaveEncrypted=false] - set to true to leave value encrypted
@@ -40,7 +39,6 @@ const dbGet = async (
   db,
   id,
   attr,
-  sigKey,
   encKey = false,
   reduced = false,
   leaveEncrypted = false
@@ -67,7 +65,7 @@ const dbGet = async (
       encKey
     );
   }
-  await verifyAttSignature(resultObj, sigKey);
+  await verifyAttSignature(db.id, resultObj);
 
   if (resultObj.attestation.encrypted && leaveEncrypted) {
     resultObj.attestation.value = encryptedValue;
