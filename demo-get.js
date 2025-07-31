@@ -1,28 +1,15 @@
-import Hypercore from "hypercore";
-import Hyperbee from "hyperbee";
-import { getPublicKeyAsync } from "@noble/ed25519";
-
-import { keyFromPem } from "./src/signAttestation.js";
 import { getInfo } from "./src/otsTimestamp.js";
 import { dbGet, dbIsEncrypted, dbRawValue } from "./src/dbGet.js";
+import { openDB } from "./src/dbManager.js";
 
-// Set up Hypercore and Hyperbee
-const core = new Hypercore("./demo.hypercore");
-await core.ready();
-
-const db = new Hyperbee(core, {
-  keyEncoding: "utf-8", // for demo
-  valueEncoding: "binary",
-});
+const db = await openDB("demo.hypercore");
 
 // Attestation data
 const waczCID = "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54";
 const attribute = "description";
-// XXX: just a demo key
-const sigPubKey = await getPublicKeyAsync(await keyFromPem("./demokey.pem"));
 
 // Decode and print value
-const result = await dbGet(db, waczCID, attribute, sigPubKey);
+const result = await dbGet(db, waczCID, attribute);
 console.log(result);
 // TODO
 // console.log('timestamp verified?', verifyTimestamp(resultObj));
@@ -50,6 +37,4 @@ console.log(
 console.log("Retrieve 'secret-stuff' without encryption key:");
 console.log(await dbRawValue(db, waczCID, "secret-stuff"));
 console.log("Retrieve 'secret-stuff' WITH encryption key:");
-console.log(
-  (await dbGet(db, waczCID, "secret-stuff", sigPubKey, key, true)).value
-);
+console.log((await dbGet(db, waczCID, "secret-stuff", key, true)).value);

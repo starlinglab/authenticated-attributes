@@ -19,4 +19,5 @@ export {
   writePrivateKey,
   getKeyByName,
   getKeystore,
+  generateKeypair,
 } from "./keystore.js";

@@ -16,13 +16,21 @@ import { join, dirname } from "path";
 import { homedir } from "os";
 import * as ed from "@noble/ed25519";
 
+class KeyExistsError extends Error {}
+
 /**
  * @ignore
  * @param {string} dbId - Database identifier
  * @returns {string} - Path to keystore file
  */
 const getKeystorePath = (dbId) => {
-  const dir = join(homedir(), ".local", "share", "authenticated-attributes");
+  const dir = join(
+    homedir(),
+    ".local",
+    "share",
+    "authenticated-attributes",
+    "keystore"
+  );
   return join(dir, `${dbId}.json`);
 };
 
@@ -73,6 +81,8 @@ const saveKeystore = async (dbId, keystore) => {
  * Store a public key in the keystore with the given name.
  * Only use this if you don't have access to the private key.
  *
+ * KeyExistsError is raised if a key with this name already exists in this keystore.
+ *
  * @param {string} dbId - Database identifier
  * @param {string} name - Name/identifier for the key
  * @param {Uint8Array} publicKey - Public key data
@@ -80,6 +90,9 @@ const saveKeystore = async (dbId, keystore) => {
  */
 const writePublicKey = async (dbId, name, publicKey) => {
   const keystore = await loadKeystoreRaw(dbId);
+  if (name in keystore) {
+    throw new KeyExistsError();
+  }
   const base64Key = Buffer.from(publicKey).toString("base64");
   keystore[name] = { pub: base64Key };
   await saveKeystore(dbId, keystore);
@@ -89,6 +102,11 @@ const writePublicKey = async (dbId, name, publicKey) => {
  * Store a private key in the keystore with the given name.
  * The corresponding public key will also be stored.
  *
+ * Only use this if you have generated a private key already externally.
+ * Otherwise use generateKeypair.
+ *
+ * A KeyExistsError is raised if this key already exists.
+ *
  * @param {string} dbId - Database identifier
  * @param {string} name - Name/identifier for the key
  * @param {Uint8Array} privateKey - Private key data
@@ -96,12 +114,25 @@ const writePublicKey = async (dbId, name, publicKey) => {
  */
 const writePrivateKey = async (dbId, name, privateKey) => {
   const keystore = await loadKeystoreRaw(dbId);
-  const base64Key = Buffer.from(privateKey).toString("base64");
+  if (name in keystore) {
+    throw new KeyExistsError();
+  }
   keystore[name] = {
-    priv: base64Key,
-    pub: await ed.getPublicKeyAsync(privateKey),
+    priv: Buffer.from(privateKey).toString("base64"),
+    pub: Buffer.from(await ed.getPublicKeyAsync(privateKey)).toString("base64"),
   };
   await saveKeystore(dbId, keystore);
+};
+
+/**
+ * Create an ed25519 key pair and store it in the keystore.
+ *
+ * @param {string} dbId - Database identifier
+ * @param {string} name - Name/identifier for the key
+ * @returns {Promise<void>}
+ */
+const generateKeypair = async (dbId, name) => {
+  await writePrivateKey(dbId, name, ed.utils.randomPrivateKey());
 };
 
 /**
@@ -144,4 +175,11 @@ const getKeystore = async (dbId) => {
   return keystore;
 };
 
-export { writePublicKey, writePrivateKey, getKeyByName, getKeystore };
+export {
+  writePublicKey,
+  writePrivateKey,
+  getKeyByName,
+  getKeystore,
+  generateKeypair,
+  KeyExistsError,
+};

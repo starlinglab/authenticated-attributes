@@ -7,17 +7,9 @@ import { env } from "node:process";
 import bodyParser from "body-parser";
 import { expressjwt } from "express-jwt";
 import assert from "node:assert";
-import { getPublicKeyAsync } from "@noble/ed25519";
 import { CID } from "multiformats";
 
-import {
-  dbAddRelation,
-  dbAppend,
-  dbPut,
-  setSigningKey,
-  NotArrayError,
-} from "./src/dbPut.js";
-import { keyFromPem } from "./src/signAttestation.js";
+import { dbAddRelation, dbAppend, dbPut, NotArrayError } from "./src/dbPut.js";
 import {
   encodeFromType,
   indexFindMatches,
@@ -30,10 +22,6 @@ import { NeedsKeyError, dbGet, dbRawValue } from "./src/dbGet.js";
 import "dotenv/config";
 import { attToVC } from "./src/vc.js";
 import { DecryptError } from "./src/decryptValue.js";
-
-const sigPrivKey = await keyFromPem(env.HYPERBEE_SIGKEY_PATH);
-setSigningKey(sigPrivKey);
-const sigPubKey = await getPublicKeyAsync(sigPrivKey);
 
 // Prevent leaking error msgs
 // https://expressjs.com/en/advanced/best-practice-performance.html#set-node_env-to-production
@@ -187,7 +175,6 @@ app.get("/v1/c/:cid/:attr", async (req, res, next) => {
       db,
       req.params.cid,
       req.params.attr,
-      sigPubKey,
       encKey,
       false,
       leaveEncrypted
@@ -282,10 +269,18 @@ app.post("/v1/c/:cid/:attr", async (req, res, next) => {
         req.params.cid,
         req.params.attr,
         data.value,
+        req.auth?.sigKey ?? "default",
         data.encKey
       );
     } else {
-      await dbPut(db, req.params.cid, req.params.attr, data.value, data.encKey);
+      await dbPut(
+        db,
+        req.params.cid,
+        req.params.attr,
+        data.value,
+        req.auth?.sigKey ?? "default",
+        data.encKey
+      );
     }
   } catch (e) {
     if (e instanceof NotArrayError) {
@@ -322,7 +317,14 @@ app.post("/v1/c/:cid", async (req, res, next) => {
       }
 
       putPromises.push(
-        dbPut(batch, req.params.cid, entry.key, entry.value, entry.encKey)
+        dbPut(
+          batch,
+          req.params.cid,
+          entry.key,
+          entry.value,
+          req.auth?.sigKey ?? "default",
+          entry.encKey
+        )
       );
       if (
         req.query.index === "1" &&
@@ -371,14 +373,16 @@ app.post("/v1/rel/:cid", async (req, res, next) => {
       req.params.cid,
       data.type,
       data.relation_type,
-      data.cid
+      data.cid,
+      req.auth.sigKey
     );
     await dbAddRelation(
       db,
       data.cid.toString(),
       data.type === "children" ? "parents" : "children", // invert
       data.relation_type,
-      CID.parse(req.params.cid)
+      CID.parse(req.params.cid),
+      req.auth.sigKey
     );
   } catch (e) {
     next(e);

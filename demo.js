@@ -1,20 +1,7 @@
-import Hypercore from "hypercore";
-import Hyperbee from "hyperbee";
+import { dbPut } from "./src/dbPut.js";
+import { openDB } from "./src/dbManager.js";
 
-import { dbPut, setSigningKey } from "./src/dbPut.js";
-import { keyFromPem } from "./src/signAttestation.js";
-
-// Set up Hypercore and Hyperbee
-const core = new Hypercore("./demo.hypercore");
-await core.ready();
-
-const db = new Hyperbee(core, {
-  keyEncoding: "utf-8", // for demo
-  valueEncoding: "binary",
-});
-
-// Set signing key
-setSigningKey(await keyFromPem("./demokey.pem"));
+const db = await openDB("demo.hypercore");
 
 // Attestation data
 const waczCID = "bafybeifgkpgb7yqgjnovszaio7tzetmdfmigylr24hg6a76wnjxcnhkx54";
@@ -28,7 +15,7 @@ console.log(`Value: ${value}`);
 
 // Add attestation, sign, timestamp, and encrypt as needed.
 console.log("Storing...");
-await dbPut(db, waczCID, attribute, value, false);
+await dbPut(db, waczCID, attribute, value, "default", false);
 console.log("Done");
 
 // Encrypted value
@@ -40,5 +27,5 @@ const key = Buffer.from(
 );
 
 console.log("Storing encrypted attribute 'secret-stuff'");
-await dbPut(db, waczCID, "secret-stuff", [123, "secret value"], key);
+await dbPut(db, waczCID, "secret-stuff", [123, "secret value"], "default", key);
 console.log("Done");

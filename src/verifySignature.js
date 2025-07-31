@@ -10,15 +10,15 @@ import { getKeystore } from "./keystore.js";
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 
 function isEqualArray(a, b) {
-  if (a.length != b.length) {
+  if (a.length !== b.length) {
     return false;
   }
   for (let i = 0; i < a.length; i++) {
-    if (a[i] != b[i]) {
+    if (a[i] !== b[i]) {
       return false;
     }
-    return true;
   }
+  return true;
 }
 
 /**
@@ -42,7 +42,7 @@ const verifyAttSignature = async (dbId, attestationObj) => {
   const { sig, msg, pubKey } = attestationObj.signature;
 
   // Find this public key in the keystore
-  const keystore = getKeystore(dbId);
+  const keystore = await getKeystore(dbId);
   let foundKey = false;
   for (const [_, keys] of Object.entries(keystore)) {
     if (isEqualArray(keys.pub, pubKey)) {
@@ -53,7 +53,9 @@ const verifyAttSignature = async (dbId, attestationObj) => {
 
   if (!foundKey) {
     throw new Error(
-      `could not find matching public key in keystore: ${pubKey}`
+      `could not find matching public key in keystore: ${Buffer.from(
+        pubKey
+      ).toString("base64")}`
     );
   }
 

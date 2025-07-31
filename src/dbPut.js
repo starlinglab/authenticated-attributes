@@ -21,7 +21,7 @@ import { getKeyByName } from "./keystore.js";
  * @param {string} id - CID
  * @param {string} attr - attribute/key
  * @param {*} value - data to be stored, as JavaScript object
- * @param {Uint8Array} sigKeyName - name of signing key in keystore
+ * @param {string} sigKeyName - name of signing key in keystore
  * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
  * @returns {Promise<*>} - underlying hyperbee db.put result, usually undefined
  */
@@ -33,7 +33,7 @@ const dbPut = async (
   sigKeyName,
   encryptionKey = false
 ) => {
-  const sigKey = getKeyByName(db.id, sigKeyName).priv;
+  const sigKey = (await getKeyByName(db.id, sigKeyName))?.priv;
   if (sigKey == null) {
     throw new Error(`key name has no private key in keystore: ${sigKeyName}`);
   }
@@ -79,7 +79,7 @@ const dbPut = async (
  * will be larger than with dbPut.
  * @param {*} db - Hyperbee
  * @param {*} data - array of triples: [cidString, attrString, valueObject]
- * @param {Uint8Array} sigKeyName - name of signing key in keystore
+ * @param {string} sigKeyName - name of signing key in keystore
  * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
  */
 const dbPutMultiple = async (db, data, sigKeyName, encryptionKey = false) => {
@@ -171,7 +171,7 @@ class NotArrayError extends Error {}
  * @param {string} id - CID
  * @param {string} attr - attribute/key
  * @param {*} value - data to be stored, as JavaScript object
- * @param {Uint8Array} sigKeyName - name of signing key in keystore
+ * @param {string} sigKeyName - name of signing key in keystore
  * @param {Uint8Array} [encryptionKey=false] - 32 byte key, if encryption is needed
  * @returns {Promise<*>} - array as now stored in database
  */
@@ -286,7 +286,7 @@ const batchRelationships = async (db, data) => {
  * @param {string} childOrParent is either "children" or "parents" as the db key
  * @param {string} relationType is a type for the relation like "derived" or "transcoded"
  * @param {CID} relationCid is the CID object to be added as a relation
- * @param {Uint8Array} sigKeyName - name of signing key in keystore
+ * @param {string} sigKeyName - name of signing key in keystore
  */
 const dbAddRelation = async (
   db,
@@ -333,7 +333,7 @@ const dbAddRelation = async (
  * @param {string} childOrParent is either "children" or "parents" as the db key
  * @param {string} relationType is a type for the relation like "derived" or "transcoded"
  * @param {CID} relationCid is the CID object to be added as a relation
- * @param {Uint8Array} sigKeyName - name of signing key in keystore
+ * @param {string} sigKeyName - name of signing key in keystore
  */
 const dbRemoveRelation = async (
   db,
